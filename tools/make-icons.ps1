@@ -1,30 +1,61 @@
 <#
-  ClawHub app icon from an external asset (no hand-drawn art):
-  Microsoft Fluent Emoji "Video game" 3D (MIT License, https://github.com/microsoft/fluentui-emoji).
-  This script only downloads it and resizes it to the sizes Windows needs.
+  ClawHub app icon from external assets only (no hand-drawn art):
+  Lucide "gamepad-2" glyph (ISC, https://lucide.dev, font src/ClawApp/Fonts/lucide.ttf or lucide-static)
+  in white on a shadcn-style zinc-900 rounded square.
   Output: src/ClawApp/Assets/ClawHub.ico (16-256) + package logos (Square44x44, Square150x150, StoreLogo, Wide310x150).
+  Usage: tools\make-icons.ps1 [-LucideTtf <path to lucide.ttf>]
 #>
+param([string]$LucideTtf)
 Add-Type -AssemblyName System.Drawing
 $root = Split-Path $PSScriptRoot -Parent
 $out = Join-Path $root 'src\ClawApp\Assets'
 New-Item -ItemType Directory -Force $out | Out-Null
 
-$source = Join-Path $out 'fluent-emoji-video-game-3d.png'
-if (-not (Test-Path $source)) {
-    Invoke-WebRequest 'https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Video%20game/3D/video_game_3d.png' -OutFile $source -UseBasicParsing
+if (-not $LucideTtf) {
+    $LucideTtf = @((Join-Path $root 'src\ClawApp\Fonts\lucide.ttf'), (Join-Path $env:TEMP 'lucide-static\package\font\lucide.ttf')) |
+        Where-Object { Test-Path $_ } | Select-Object -First 1
 }
-$src = [System.Drawing.Image]::FromFile($source)
+if (-not $LucideTtf) {
+    $meta = Invoke-RestMethod 'https://registry.npmjs.org/lucide-static/latest'
+    $tgz = Join-Path $env:TEMP 'lucide-static.tgz'
+    Invoke-WebRequest $meta.dist.tarball -OutFile $tgz -UseBasicParsing
+    $dir = Join-Path $env:TEMP 'lucide-static'
+    New-Item -ItemType Directory -Force $dir | Out-Null
+    tar -xzf $tgz -C $dir
+    $LucideTtf = Join-Path $dir 'package\font\lucide.ttf'
+}
+$fonts = New-Object System.Drawing.Text.PrivateFontCollection
+$fonts.AddFontFile($LucideTtf)
+$family = $fonts.Families[0]
+$glyph = [string][char]0xE0DF   # gamepad-2
 
-# Resize onto a transparent canvas; the emoji is centered and scaled to fit (padding = share of the short side).
-function Resize([int]$w, [int]$h, [double]$padding = 0.0) {
+$plate = [System.Drawing.Color]::FromArgb(255, 24, 24, 27)      # zinc-900 (#18181B)
+$edge = [System.Drawing.Color]::FromArgb(255, 63, 63, 70)       # zinc-700 1px edge
+
+function New-Icon([int]$w, [int]$h = $w, [double]$glyphScale = 0.62) {
     $bmp = New-Object System.Drawing.Bitmap $w, $h
     $g = [System.Drawing.Graphics]::FromImage($bmp)
-    $g.InterpolationMode = 'HighQualityBicubic'
-    $g.PixelOffsetMode = 'HighQuality'
     $g.SmoothingMode = 'AntiAlias'
+    $g.TextRenderingHint = 'AntiAliasGridFit'
     $g.Clear([System.Drawing.Color]::Transparent)
-    $s = [Math]::Min($w, $h) * (1 - 2 * $padding)
-    $g.DrawImage($src, [float](($w - $s) / 2), [float](($h - $s) / 2), [float]$s, [float]$s)
+    $s = [Math]::Min($w, $h)
+    $x = ($w - $s) / 2; $y = ($h - $s) / 2
+    $r = [Math]::Max(2, [int]($s * 0.22))
+    $path = New-Object System.Drawing.Drawing2D.GraphicsPath
+    $path.AddArc($x, $y, $r * 2, $r * 2, 180, 90)
+    $path.AddArc($x + $s - $r * 2 - 1, $y, $r * 2, $r * 2, 270, 90)
+    $path.AddArc($x + $s - $r * 2 - 1, $y + $s - $r * 2 - 1, $r * 2, $r * 2, 0, 90)
+    $path.AddArc($x, $y + $s - $r * 2 - 1, $r * 2, $r * 2, 90, 90)
+    $path.CloseFigure()
+    $g.FillPath((New-Object System.Drawing.SolidBrush $plate), $path)
+    if ($s -ge 32) {
+        $pen = [System.Drawing.Pen]::new($edge, [float][Math]::Max(1.0, $s / 128.0))
+        $g.DrawPath($pen, $path)
+    }
+    $font = New-Object System.Drawing.Font $family, ([float]($s * $glyphScale)), ([System.Drawing.FontStyle]::Regular), ([System.Drawing.GraphicsUnit]::Pixel)
+    $fmt = New-Object System.Drawing.StringFormat
+    $fmt.Alignment = 'Center'; $fmt.LineAlignment = 'Center'
+    $g.DrawString($glyph, $font, [System.Drawing.Brushes]::White, (New-Object System.Drawing.RectangleF 0, 0, $w, $h), $fmt)
     $g.Dispose()
     return $bmp
 }
@@ -35,7 +66,7 @@ function Save-Png($bmp, $name) { $bmp.Save((Join-Path $out $name), [System.Drawi
 $sizes = 16, 20, 24, 32, 40, 48, 64, 128, 256
 $pngs = foreach ($sz in $sizes) {
     $ms = New-Object System.IO.MemoryStream
-    $b = Resize $sz $sz
+    $b = New-Icon $sz
     $b.Save($ms, [System.Drawing.Imaging.ImageFormat]::Png); $b.Dispose()
     , $ms.ToArray()
 }
@@ -53,10 +84,9 @@ foreach ($p in $pngs) { $bw.Write($p) }
 [System.IO.File]::WriteAllBytes((Join-Path $out 'ClawHub.ico'), $ico.ToArray())
 
 # Package logos (Xbox mode home app / Game Bar widget)
-Save-Png (Resize 44 44) 'Square44x44Logo.png'
-Save-Png (Resize 150 150 0.12) 'Square150x150Logo.png'
-Save-Png (Resize 50 50) 'StoreLogo.png'
-Save-Png (Resize 310 150 0.1) 'Wide310x150Logo.png'
-Save-Png (Resize 256 256) 'ClawHub-256.png'
-$src.Dispose()
-Get-ChildItem $out | ForEach-Object { "{0,-34} {1,7:N0} bytes" -f $_.Name, $_.Length }
+Save-Png (New-Icon 44) 'Square44x44Logo.png'
+Save-Png (New-Icon 150 150 0.5) 'Square150x150Logo.png'
+Save-Png (New-Icon 50) 'StoreLogo.png'
+Save-Png (New-Icon 310 150 0.5) 'Wide310x150Logo.png'
+Save-Png (New-Icon 256) 'ClawHub-256.png'
+Get-ChildItem $out -File | ForEach-Object { "{0,-28} {1,7:N0} bytes" -f $_.Name, $_.Length }
