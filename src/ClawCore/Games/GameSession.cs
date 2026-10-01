@@ -137,6 +137,9 @@ public sealed class GameSession : IDisposable
         return IntPtr.Zero;
     }
 
+    /// <summary>지금 도는 게임 프로세스 ID (도우미 제외). 프로세스 목록을 훑으므로 UI 스레드에서 부르지 말 것.</summary>
+    public List<int> FindProcessIds() => [.. FindGameProcesses().Select(p => p.Id)];
+
     private void Schedule()
     {
         // 한 번씩만 예약하고 Poll이 끝난 뒤 다시 예약 — 목록 훑기가 느려도 Poll이 겹치지 않는다

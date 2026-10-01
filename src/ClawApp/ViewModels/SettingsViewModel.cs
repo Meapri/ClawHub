@@ -86,8 +86,15 @@ public sealed partial class SettingsViewModel : ObservableObject, INavPage
     {
         if (oldValue is not null) oldValue.IsSelected = false;
         newValue.IsSelected = true;
-        if (newValue.Key == "display") LoadDisplayModes();
+        if (newValue.Key == "display")
+        {
+            LoadDisplayModes();
+            _ = DisplayQuality.RefreshAsync();
+        }
     }
+
+    /// <summary>디스플레이 → 화면 품질 (Intel 드라이버). Views/Sections/DisplayQualitySection이 바인딩.</summary>
+    public DisplayQualityViewModel DisplayQuality => DisplayQualityViewModel.For(_shell);
 
     [RelayCommand] private void Select(SettingsCategory c) => Selected = c;
 

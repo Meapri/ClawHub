@@ -129,6 +129,7 @@ public sealed partial class ShellViewModel : ObservableObject
             GamePerformanceModeOnBattery = game?.PerformanceModeOnBattery?.ToString(),
             GameFpsLimitOnBattery = game?.FpsLimitOnBattery,
             OnBattery = OnBattery,
+            RunningGamePid = game is null ? null : await Task.Run(() => GameProcessPicker.Pick(Session)), // FPS 측정 대상
         };
         try { await Service.SendAsync(new Request { Op = Ops.SetAppState, AppState = state }, TimeSpan.FromSeconds(3)); }
         catch (Exception) { /* 연결 끊김 — 재연결 때 다시 보냄 */ }

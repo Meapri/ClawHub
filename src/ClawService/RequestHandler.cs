@@ -5,7 +5,7 @@ using Microsoft.Win32;
 namespace ClawService;
 
 public sealed class RequestHandler(ILogger<RequestHandler> log, ControllerManager controller, EcManager ec, MsiCenterManager msi,
-    SystemManager system, EnduranceManager endurance, PowerManager power)
+    SystemManager system, EnduranceManager endurance, PowerManager power, DisplayQualityManager displayQuality)
 {
     /// <summary>위젯의 AppCommand를 런처 앱(구독자)에게 보내는 통로 — PipeServer가 연결한다.</summary>
     public Action<string>? RelayAppCommand { get; set; }
@@ -79,6 +79,9 @@ public sealed class RequestHandler(ILogger<RequestHandler> log, ControllerManage
                 case Ops.SetBrightness:
                     system.SetBrightness(req.Brightness ?? throw new ArgumentException("Brightness 누락"));
                     break;
+                case Ops.SetDisplayQuality:
+                    displayQuality.Apply(req.DisplayQuality ?? throw new ArgumentException("DisplayQuality 누락"));
+                    break;
                 case Ops.SetAppState:
                     system.AppState = req.AppState;
                     break;
@@ -123,6 +126,7 @@ public sealed class RequestHandler(ILogger<RequestHandler> log, ControllerManage
             MsiCenterEnabled = msi.IsEnabled,
             BiosVersion = Bios,
             Graphics = system.Graphics,
+            DisplayQuality = displayQuality.State,
             Brightness = system.Brightness,
             AppState = system.AppState,
             OnBattery = power.OnBattery,

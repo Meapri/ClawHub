@@ -26,6 +26,8 @@ public sealed class Request
     public int? FrameGeneration { get; set; }
     /// <summary>SetBrightness: 0–100.</summary>
     public int? Brightness { get; set; }
+    /// <summary>SetDisplayQuality: 바꿀 항목만 (null = 그대로).</summary>
+    public DisplayQualityChange? DisplayQuality { get; set; }
     /// <summary>SetAppState: 런처 앱이 알려 주는 현재 게임·매핑 정보 (위젯 표시용).</summary>
     public AppState? AppState { get; set; }
     /// <summary>AppCommand: 위젯 → 런처 앱 명령 (서비스가 구독 중인 앱에 중계). <see cref="AppCommands"/>.</summary>
@@ -75,6 +77,8 @@ public sealed class AppState
     public int? GameFpsLimitOnBattery { get; set; }
     /// <summary>앱이 본 전원 상태 (true = 배터리 사용 중).</summary>
     public bool OnBattery { get; set; }
+    /// <summary>실행 중 게임의 렌더링 프로세스 ID (FPS 측정 대상). null = 모름/게임 없음.</summary>
+    public int? RunningGamePid { get; set; }
 }
 
 public sealed class ProfileItem
@@ -99,6 +103,8 @@ public sealed class TelemetrySample
     public int? CpuTemp { get; set; }
     public int? CpuWatts { get; set; }
     public double? BatteryWatts { get; set; }
+    /// <summary>게임 FPS (측정 중일 때만).</summary>
+    public double? Fps { get; set; }
 }
 
 /// <summary>서비스 → 앱. Id가 있으면 응답, 0이면 푸시 이벤트.</summary>
@@ -131,6 +137,12 @@ public sealed class Telemetry
     /// <summary>방전 전력 (W). 충전 중이면 null.</summary>
     public double? BatteryWatts { get; set; }
     public int? RemainingMinutes { get; set; }
+    /// <summary>게임 FPS (최근 1초 평균, PresentMon). 게임이 없거나 측정 전이면 null.</summary>
+    public double? Fps { get; set; }
+    /// <summary>평균 프레임 시간 (ms, 최근 1초).</summary>
+    public double? FrameTimeMs { get; set; }
+    /// <summary>1% low FPS (최근 30초 프레임 시간 99백분위).</summary>
+    public double? FpsLow1 { get; set; }
     /// <summary>최근 2분 (2초 간격, 오래된 것부터). 그래프용.</summary>
     public List<TelemetrySample> History { get; set; } = [];
 }
@@ -159,6 +171,8 @@ public sealed class ServiceStatus
     public ChargeLimit? ChargeLimit { get; set; }
 
     public GraphicsState? Graphics { get; set; }
+    /// <summary>Intel 화면 품질 (레트로 스케일링·선명도·저지연·VRR).</summary>
+    public DisplayQualityState? DisplayQuality { get; set; }
     public int? Brightness { get; set; }
     public AppState? AppState { get; set; }
 
@@ -189,6 +203,7 @@ public static class Ops
     public const string GetTelemetry = "GetTelemetry";
     public const string SetGraphics = "SetGraphics";
     public const string SetBrightness = "SetBrightness";
+    public const string SetDisplayQuality = "SetDisplayQuality";
     public const string SetAppState = "SetAppState";
     /// <summary>Intel Endurance Gaming 설정 (EnduranceControl, EnduranceMode). 서비스가 저장하고 시작·절전 복귀 때 재적용.</summary>
     public const string SetEnduranceGaming = "SetEnduranceGaming";
