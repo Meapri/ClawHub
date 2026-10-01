@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ClawHub 신원 패키지 (외부 위치 / sparse). 실제 실행 파일은 C:\Program Files\ClawHub\app 에 있고,
+  이 패키지는 ClawApp.exe에 패키지 신원을 붙여 Xbox 모드 "홈 앱 선택"에 나오게 한다.
+  - windows.gamingApp 확장: Xbox 앱이 홈 앱 후보로 쓰는 것과 같은 선언
+  - Microsoft.appCategory.gamingHome 사용자 지정 기능: 개발자 모드 + CustomCapability.SCCD 로 허용
+  scripts/register-home.ps1 로 빌드·서명·등록한다.
+-->
+<Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+         xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+         xmlns:uap3="http://schemas.microsoft.com/appx/manifest/uap/windows10/3"
+         xmlns:uap4="http://schemas.microsoft.com/appx/manifest/uap/windows10/4"
+         xmlns:uap10="http://schemas.microsoft.com/appx/manifest/uap/windows10/10"
+         xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+         IgnorableNamespaces="uap uap3 uap4 uap10 rescap">
+  <Identity Name="ClawHub" Publisher="CN=ClawHub Dev" Version="1.0.0.0" ProcessorArchitecture="neutral"/>
+  <Properties>
+    <DisplayName>ClawHub</DisplayName>
+    <PublisherDisplayName>ClawHub</PublisherDisplayName>
+    <Logo>Assets\StoreLogo.png</Logo>
+    <uap10:AllowExternalContent>true</uap10:AllowExternalContent>
+  </Properties>
+  <Resources>
+    <Resource Language="ko-kr"/>
+  </Resources>
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.19041.0" MaxVersionTested="10.0.26200.0"/>
+  </Dependencies>
+  <Capabilities>
+    <rescap:Capability Name="runFullTrust"/>
+    <rescap:Capability Name="unvirtualizedResources"/>
+    <uap4:CustomCapability Name="Microsoft.appCategory.gamingHome_8wekyb3d8bbwe"/>
+  </Capabilities>
+  <Applications>
+    <Application Id="ClawHub" Executable="ClawApp.exe" uap10:TrustLevel="mediumIL" uap10:RuntimeBehavior="win32App">
+      <uap:VisualElements DisplayName="ClawHub" Description="MSI Claw 게임 런처" BackgroundColor="transparent"
+                          Square150x150Logo="Assets\Square150x150Logo.png" Square44x44Logo="Assets\Square44x44Logo.png">
+        <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png"/>
+      </uap:VisualElements>
+      <Extensions>
+        <uap3:Extension Category="windows.appExtension">
+          <uap3:AppExtension Name="windows.gamingApp" Id="ClawHub" DisplayName="ClawHub" Description="ClawHub" PublicFolder="Public"/>
+        </uap3:Extension>
+        <uap:Extension Category="windows.protocol">
+          <uap:Protocol Name="clawhub">
+            <uap:DisplayName>ClawHub</uap:DisplayName>
+          </uap:Protocol>
+        </uap:Extension>
+      </Extensions>
+    </Application>
+  </Applications>
+</Package>

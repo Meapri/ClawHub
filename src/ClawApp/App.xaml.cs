@@ -12,9 +12,18 @@ public partial class App : Application
         _single = new Mutex(true, @"Local\ClawHub.App", out var first);
         if (!first)
         {
+            // 이미 실행 중: 기존 창을 앞으로 (Xbox 모드 홈 버튼, clawhub: 링크, 바로가기 재실행)
+            if (EventWaitHandle.TryOpenExisting(ShowEventName, out var show)) show.Set();
             Shutdown();
             return;
         }
+
+        _show = new EventWaitHandle(false, EventResetMode.AutoReset, ShowEventName);
+        new Thread(() =>
+        {
+            while (_show.WaitOne())
+                Dispatcher.BeginInvoke(() => ViewModels.ShellViewModel.Instance?.ShowFromOutside());
+        }) { IsBackground = true, Name = "ClawHub.Show" }.Start();
 
         Services.SystemTheme.Apply(this);
 
@@ -39,6 +48,8 @@ public partial class App : Application
     }
 
     private MainWindow? _window;
+    private EventWaitHandle? _show;
+    private const string ShowEventName = @"Local\ClawHub.Show";
 
     public static Services.StartupMode? StartupOverride { get; private set; }
 

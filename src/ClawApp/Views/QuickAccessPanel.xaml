@@ -31,11 +31,11 @@
                                 <TextBlock Text="{Binding CpuTempText}" FontSize="16" FontWeight="SemiBold"/>
                             </StackPanel>
                             <StackPanel>
-                                <TextBlock Text="GPU" Style="{StaticResource Caption}"/>
+                                <TextBlock Text="CPU 전력" Style="{StaticResource Caption}"/>
                                 <TextBlock Text="{Binding GpuTempText}" FontSize="16" FontWeight="SemiBold"/>
                             </StackPanel>
                             <StackPanel>
-                                <TextBlock Text="전력" Style="{StaticResource Caption}"/>
+                                <TextBlock Text="배터리 소모" Style="{StaticResource Caption}"/>
                                 <TextBlock Text="{Binding PowerText}" FontSize="16" FontWeight="SemiBold"/>
                             </StackPanel>
                             <StackPanel>

@@ -69,8 +69,9 @@ public sealed partial class QuickAccessViewModel : ObservableObject
             var resp = await _shell.Service.SendAsync(new ClawCore.Ipc.Request { Op = ClawCore.Ipc.Ops.GetTelemetry }, TimeSpan.FromSeconds(3));
             var t = resp.Telemetry;
             CpuTempText = t?.CpuTemp is { } c ? $"{c}°" : "–";
-            GpuTempText = t?.GpuTemp is { } g ? $"{g}°" : "–";
-            PowerText = watts is { } w ? $"{w:0.0}W" : t?.CpuWatts is { } cw ? $"CPU {cw}W" : "–";
+            // 이 칩(내장 GPU)은 EC가 GPU 온도를 따로 주지 않음 → CPU 패키지 전력 표시 (실기 확인)
+            GpuTempText = t?.CpuWatts is { } cw ? $"{cw}W" : "–";
+            PowerText = watts is { } w ? $"{w:0.0}W" : "충전 중";
         }
         catch (Exception) { /* 서비스 응답 없음 — 다음 틱에 */ }
     }

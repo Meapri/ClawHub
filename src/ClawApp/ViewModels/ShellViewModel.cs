@@ -349,6 +349,18 @@ public sealed partial class ShellViewModel : ObservableObject
     [System.Runtime.InteropServices.DllImport("user32.dll")]
     private static extern uint GetWindowThreadProcessId(IntPtr hwnd, out uint pid);
 
+    /// <summary>다른 곳에서 ClawHub를 다시 실행했을 때 (Xbox 모드 홈, clawhub: 링크, 바로가기) — 셸을 앞으로.</summary>
+    public void ShowFromOutside()
+    {
+        _inDesktop = false;
+        CloseMenus();
+        IsShellVisible = true;
+        if (IsWindowVisible) RequestFocus();
+        else IsWindowVisible = true;
+        AfterPanelChange();
+        _ = SyncControllerAsync();
+    }
+
     public void OnMsiButton(MsiButton button)
     {
         if (!IsWindowVisible)

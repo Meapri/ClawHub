@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <assembly manifestVersion="1.0" xmlns="urn:schemas-microsoft-com:asm.v1">
   <assemblyIdentity version="1.0.0.0" name="ClawApp"/>
+  <!-- 외부 위치 패키지(packaging/home)와 연결되는 패키지 신원 — Xbox 모드 "홈 앱 선택"에 나오기 위해 필요 -->
+  <msix xmlns="urn:schemas-microsoft-com:msix.v1" publisher="CN=ClawHub Dev" packageName="ClawHub" applicationId="ClawHub"/>
   <!-- 모니터별 DPI(150% 등)에 맞춰 직접 그려서 글자가 비트맵 확대로 뭉개지지 않게 -->
   <application xmlns="urn:schemas-microsoft-com:asm.v3">
     <windowsSettings>
