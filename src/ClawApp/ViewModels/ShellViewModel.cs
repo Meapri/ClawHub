@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Threading;
 using ClawApp.Services;
 using ClawCore.Controller;
+using Gpu = ClawCore.Gpu.IntelGraphics;
 using ClawCore.Ec;
 using ClawCore.Games;
 using ClawCore.Ipc;
@@ -35,6 +36,27 @@ public sealed partial class ShellViewModel : ObservableObject
     private string? _appliedProfileId;
     private GamepadMode? _appliedMode;
     private PerformanceMode? _appliedPerf;
+    private int? _appliedFps;
+    /// <summary>ClawHub가 손대기 전 드라이버의 FPS 제한 (사용자가 Intel 앱에서 정한 값 보존).</summary>
+    private readonly int? _fpsBaseline = Gpu.GetFrameLimit();
+
+    /// <summary>빠른 설정에서 기본 FPS 제한을 바꿈 → 저장하고 바로 적용 (게임별 값이 있으면 그게 우선).</summary>
+    public async Task SetDefaultFpsAsync(int fps)
+    {
+        Settings.FpsLimit = fps;
+        Settings.Save();
+        await SyncControllerAsync();
+    }
+
+    public int CurrentFps => _appliedFps ?? _fpsBaseline ?? 0;
+
+    /// <summary>FPS 제한: 게임별 값 > 사용자 기본값 > ClawHub 시작 때 드라이버 값.</summary>
+    private async Task SyncFpsAsync()
+    {
+        var fps = RunningGame?.FpsLimit ?? Settings.FpsLimit ?? _fpsBaseline;
+        if (fps is not { } f || f == _appliedFps || !Gpu.Available) return;
+        if (await Task.Run(() => Gpu.SetFrameLimit(f))) _appliedFps = f;
+    }
 
     [ObservableProperty] private INavPage? _currentPage;
     [ObservableProperty] private bool _isMainMenuOpen;
@@ -448,6 +470,7 @@ public sealed partial class ShellViewModel : ObservableObject
     /// </summary>
     public async Task SyncControllerAsync()
     {
+        await SyncFpsAsync(); // 드라이버 설정이라 서비스 없이도 적용
         if (!ServiceConnected) return;
         await _syncLock.WaitAsync();
         try
@@ -465,7 +488,7 @@ public sealed partial class ShellViewModel : ObservableObject
             {
                 var resp = profile is null
                     ? await Service.SendAsync(new Request { Op = Ops.RestoreMapping })
-                    : await Service.SendAsync(new Request { Op = Ops.ApplyMapping, Bindings = profile.ToCodes().ToDictionary() });
+                    : await Service.SendAsync(new Request { Op = Ops.ApplyMapping, Bindings = profile.ToCodes().ToDictionary(), Macros = profile.ToMacros() });
                 if (!resp.Ok) { ShowToast($"매핑 적용 실패: {resp.Error}"); return; }
                 _appliedProfileId = profile?.Id;
                 if (resp.Status is { } st) Status = st;
@@ -507,7 +530,7 @@ public sealed partial class ShellViewModel : ObservableObject
     /// <summary>편집 중인 매핑을 잠깐 실제로 적용해 본다. 시간이 지나면 자동으로 원래대로.</summary>
     public async Task TestMappingAsync(MappingProfile profile, TimeSpan duration)
     {
-        if (!await SendAsync(new Request { Op = Ops.ApplyMapping, Bindings = profile.ToCodes().ToDictionary() })) return;
+        if (!await SendAsync(new Request { Op = Ops.ApplyMapping, Bindings = profile.ToCodes().ToDictionary(), Macros = profile.ToMacros() })) return;
         _appliedProfileId = "__test__"; // 다음 동기화 때 반드시 복원되도록
         ShowToast($"{duration.TotalSeconds:0}초 동안 테스트 중 — 메모장 등에서 눌러 보세요");
         await Task.Delay(duration);
@@ -558,8 +581,14 @@ public sealed partial class ShellViewModel : ObservableObject
     {
         Clock = DateTime.Now.ToString("tt h:mm");
         var b = SystemControls.GetBattery();
-        BatteryText = b.Percent is { } p ? $"{(b.Charging ? "⚡" : "")}{p}%" : "";
+        BatteryText = b.Percent is { } p ? $"{p}%" : "";
+        // Segoe Fluent Icons: Battery0~9 = E850~E859, 10 = E83F / 충전 중 0~9 = E85A~E863, 10 = E83E
+        BatteryGlyph = b.Percent is not { } pct ? ""
+            : pct >= 95 ? (b.Charging ? "" : "")
+            : ((char)((b.Charging ? 0xE85A : 0xE850) + pct / 10)).ToString();
     }
+
+    [ObservableProperty] private string _batteryGlyph = "";
 
     private string? _pendingPower;
     private DateTime _pendingPowerAt;

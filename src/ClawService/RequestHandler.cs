@@ -41,7 +41,7 @@ public sealed class RequestHandler(ILogger<RequestHandler> log, ControllerManage
                     ec.SetChargeLimit(req.ChargeLimit ?? throw new ArgumentException("ChargeLimit 누락"));
                     break;
                 case Ops.ApplyMapping:
-                    controller.ApplyMapping(req.Bindings ?? throw new ArgumentException("Bindings 누락"));
+                    controller.ApplyMapping(req.Bindings ?? throw new ArgumentException("Bindings 누락"), req.Macros);
                     break;
                 case Ops.RestoreMapping:
                     controller.RestoreBaseline();
@@ -52,6 +52,8 @@ public sealed class RequestHandler(ILogger<RequestHandler> log, ControllerManage
                 case Ops.SetControllerSettings:
                     controller.SetSettings(req.ControllerSettings ?? throw new ArgumentException("ControllerSettings 누락"));
                     break;
+                case Ops.GetTelemetry:
+                    return new Response { Telemetry = ec.ReadTelemetry() }; // 자주 불리므로 상태는 생략
                 case Ops.SetMsiCenter:
                     msi.Set(req.Enabled ?? throw new ArgumentException("Enabled 누락"));
                     break;

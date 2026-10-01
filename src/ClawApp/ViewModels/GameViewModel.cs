@@ -74,6 +74,26 @@ public sealed partial class GameViewModel(ShellViewModel shell, GameTileViewMode
         if (IsRunning) await shell.SyncControllerAsync(); // 실행 중이면 바로 반영
     }
 
+    public string FpsText => Tile.Game.FpsLimit switch
+    {
+        null => "기본값 따름",
+        0 => "끔",
+        var f => $"{f} FPS",
+    };
+
+    /// <summary>기본값 따름 → 끔 → 30 → 40 → … → 120 → 기본값 따름.</summary>
+    [RelayCommand]
+    private async Task CycleFps()
+    {
+        int?[] order = [null, 0, .. ClawCore.Gpu.IntelGraphics.FpsPresets.Select(f => (int?)f)];
+        var i = Array.IndexOf(order, Tile.Game.FpsLimit);
+        shell.Library.SetFpsLimit(Tile.Game, order[(i + 1) % order.Length]);
+        OnPropertyChanged(nameof(FpsText));
+        if (IsRunning) await shell.SyncControllerAsync();
+    }
+
+    public bool GpuAvailable => ClawCore.Gpu.IntelGraphics.Available;
+
     /// <summary>TextBox에서 벗어날 때 저장된다.</summary>
     public string GameTitle
     {

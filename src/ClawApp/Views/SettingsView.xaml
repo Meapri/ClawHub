@@ -146,15 +146,26 @@
                             <WrapPanel>
                                 <RadioButton Style="{StaticResource ChipRadio}" GroupName="light" Content="기본 효과" IsChecked="{Binding LightDefault}"/>
                                 <RadioButton Style="{StaticResource ChipRadio}" GroupName="light" Content="단색" IsChecked="{Binding LightStatic}"/>
+                                <RadioButton Style="{StaticResource ChipRadio}" GroupName="light" Content="숨쉬기" IsChecked="{Binding LightBreath}"/>
+                                <RadioButton Style="{StaticResource ChipRadio}" GroupName="light" Content="무지개" IsChecked="{Binding LightRainbow}"/>
+                                <RadioButton Style="{StaticResource ChipRadio}" GroupName="light" Content="웨이브" IsChecked="{Binding LightWave}"/>
                                 <RadioButton Style="{StaticResource ChipRadio}" GroupName="light" Content="끄기" IsChecked="{Binding LightOff}"/>
                             </WrapPanel>
+                            <StackPanel Visibility="{Binding HasSpeed, Converter={StaticResource Vis}}" Margin="0,6,0,0">
+                                <TextBlock Text="속도" Margin="0,0,0,8"/>
+                                <WrapPanel>
+                                    <RadioButton Style="{StaticResource ChipRadio}" GroupName="lspeed" Content="느리게" IsChecked="{Binding SpeedSlow}"/>
+                                    <RadioButton Style="{StaticResource ChipRadio}" GroupName="lspeed" Content="보통" IsChecked="{Binding SpeedNormal}"/>
+                                    <RadioButton Style="{StaticResource ChipRadio}" GroupName="lspeed" Content="빠르게" IsChecked="{Binding SpeedFast}"/>
+                                </WrapPanel>
+                            </StackPanel>
                             <DockPanel Margin="0,8,0,0"><TextBlock DockPanel.Dock="Right" Text="{Binding LightBrightness}" Style="{StaticResource Value}"/><TextBlock Text="밝기" Style="{StaticResource SliderTitle}"/></DockPanel>
                             <Slider Minimum="0" Maximum="100" SmallChange="10" TickFrequency="10" Value="{Binding LightBrightness}"/>
                         </StackPanel>
                     </Border>
                     <Border Style="{StaticResource CardPanel}">
                         <StackPanel>
-                            <TextBlock Text="색 (단색)" Margin="0,0,0,10"/>
+                            <TextBlock Text="색 (단색·숨쉬기)" Margin="0,0,0,10"/>
                             <ItemsControl ItemsSource="{Binding LightColors}" Focusable="False">
                                 <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>

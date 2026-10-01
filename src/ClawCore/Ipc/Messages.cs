@@ -13,6 +13,8 @@ public sealed class Request
     public ChargeLimit? ChargeLimit { get; set; }
     /// <summary>ApplyMapping: 버튼 → 펌웨어 키 코드.</summary>
     public Dictionary<ClawButton, byte[]>? Bindings { get; set; }
+    /// <summary>ApplyMapping: M1/M2 매크로.</summary>
+    public Dictionary<ClawButton, MacroStep[]>? Macros { get; set; }
     public GamepadMode? ControllerMode { get; set; }
     public ControllerSettings? ControllerSettings { get; set; }
     /// <summary>SetMsiCenter: true = 켜기, false = 끄기.</summary>
@@ -29,6 +31,18 @@ public sealed class Response
     public string? Event { get; set; }
     public MsiButton? Button { get; set; }
     public ServiceStatus? Status { get; set; }
+    public Telemetry? Telemetry { get; set; }
+}
+
+/// <summary>EC 실시간 값 (읽기 전용). 출처: MSI OSD 코드 정적 분석, 값의 의미는 실기 확인 필요.</summary>
+public sealed class Telemetry
+{
+    public int? CpuTemp { get; set; }
+    public int? GpuTemp { get; set; }
+    /// <summary>CPU 패키지 전력 (W, EC 0xDD).</summary>
+    public int? CpuWatts { get; set; }
+    /// <summary>Get_Fan(0) 원시값 — RPM 변환식 검증 전.</summary>
+    public byte[]? FanRaw { get; set; }
 }
 
 public sealed class ServiceStatus
@@ -70,6 +84,7 @@ public static class Ops
     public const string ApplyTemporaryPerformance = "ApplyTemporaryPerformance";
     public const string RestorePerformance = "RestorePerformance";
     public const string SetMsiCenter = "SetMsiCenter";
+    public const string GetTelemetry = "GetTelemetry";
     public const string Subscribe = "Subscribe";
 
     public const string EventButton = "Button";

@@ -22,6 +22,11 @@ try
         var (mode, mk) = ctl.ReadMode();
         Console.WriteLine($"모드 {mode}, M키 {mk}");
 
+        var motion = ctl.SampleMotion(TimeSpan.FromSeconds(1.5));
+        Console.WriteLine($"자이로/가속도 샘플 {motion.Count}개" + (motion.Count > 0
+            ? $" — 첫 값 G({motion[0][0]},{motion[0][1]},{motion[0][2]}) A({motion[0][3]},{motion[0][4]},{motion[0][5]}), 마지막 G({motion[^1][0]},{motion[^1][1]},{motion[^1][2]})"
+            : " (센서 없음 또는 미지원)"));
+
         var image = ctl.ReadProfile();
         var dump = Path.Combine(JsonStore.UserDir, $"probe-profile-{DateTime.Now:yyyyMMdd-HHmmss}.bin");
         File.WriteAllBytes(dump, image);

@@ -13,6 +13,9 @@ public sealed class AppSettings
     /// <summary>셸이 보일 때 컨트롤러를 XInput 모드로, "데스크톱으로" 갈 때 Desktop 모드로 자동 전환.</summary>
     public bool AutoControllerMode { get; set; } = true;
 
+    /// <summary>기본 FPS 제한 (null = ClawHub가 관리 안 함, 0 = 끔). 게임별 값이 있으면 게임 중엔 그게 우선.</summary>
+    public int? FpsLimit { get; set; }
+
     /// <summary>
     /// 시작 방식. Companion = Windows Xbox 모드(전체 화면 환경)처럼 다른 홈 화면이 있을 때
     /// ClawHub는 숨어서 버튼/자동 매핑만 담당한다.

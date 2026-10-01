@@ -181,6 +181,24 @@ public sealed partial class SettingsViewModel : ObservableObject, INavPage
     public bool LightDefault { get => Light == LightMode.Default; set { if (value) Light = LightMode.Default; } }
     public bool LightStatic { get => Light == LightMode.Static; set { if (value) Light = LightMode.Static; } }
     public bool LightOff { get => Light == LightMode.Off; set { if (value) Light = LightMode.Off; } }
+    public bool LightBreath { get => Light == LightMode.Breath; set { if (value) Light = LightMode.Breath; } }
+    public bool LightRainbow { get => Light == LightMode.Rainbow; set { if (value) Light = LightMode.Rainbow; } }
+    public bool LightWave { get => Light == LightMode.Wave; set { if (value) Light = LightMode.Wave; } }
+    public bool HasSpeed => Light is LightMode.Breath or LightMode.Rainbow or LightMode.Wave;
+    public bool UsesColor => Light is LightMode.Static or LightMode.Breath;
+
+    [ObservableProperty] private int _lightSpeed = 1;
+    public bool SpeedSlow { get => LightSpeed == 0; set { if (value) LightSpeed = 0; } }
+    public bool SpeedNormal { get => LightSpeed == 1; set { if (value) LightSpeed = 1; } }
+    public bool SpeedFast { get => LightSpeed == 2; set { if (value) LightSpeed = 2; } }
+
+    partial void OnLightSpeedChanged(int value)
+    {
+        OnPropertyChanged(nameof(SpeedSlow));
+        OnPropertyChanged(nameof(SpeedNormal));
+        OnPropertyChanged(nameof(SpeedFast));
+        ControllerChanged();
+    }
 
     private void LoadFromStatus()
     {
@@ -196,6 +214,7 @@ public sealed partial class SettingsViewModel : ObservableObject, INavPage
             SwapAbxy = s.SwapAbxy ?? d.SwapAbxy ?? false;
             DiagonalLock = s.DpadDiagonalLock ?? d.DpadDiagonalLock ?? false;
             Light = s.Light;
+            LightSpeed = s.LightSpeed;
             LightBrightness = s.LightBrightness ?? d.LightBrightness ?? 100;
             AbxyBrightness = s.AbxyBrightness ?? d.AbxyBrightness ?? 50;
             foreach (var c in LightColors) c.IsSelected = ((byte[])c.Value).SequenceEqual(s.LightColor);
@@ -221,6 +240,11 @@ public sealed partial class SettingsViewModel : ObservableObject, INavPage
         OnPropertyChanged(nameof(LightDefault));
         OnPropertyChanged(nameof(LightStatic));
         OnPropertyChanged(nameof(LightOff));
+        OnPropertyChanged(nameof(LightBreath));
+        OnPropertyChanged(nameof(LightRainbow));
+        OnPropertyChanged(nameof(LightWave));
+        OnPropertyChanged(nameof(HasSpeed));
+        OnPropertyChanged(nameof(UsesColor));
         ControllerChanged();
     }
 
@@ -228,7 +252,7 @@ public sealed partial class SettingsViewModel : ObservableObject, INavPage
     private void PickColor(ChoiceItem item)
     {
         foreach (var c in LightColors) c.IsSelected = c == item;
-        Light = LightMode.Static;
+        if (!UsesColor) Light = LightMode.Static; // 숨쉬기 중이면 숨쉬기 색만 바꾼다
         ControllerChanged();
     }
 
@@ -255,6 +279,7 @@ public sealed partial class SettingsViewModel : ObservableObject, INavPage
                 Light = Light,
                 LightBrightness = LightBrightness,
                 LightColor = color,
+                LightSpeed = LightSpeed,
                 AbxyBrightness = AbxyBrightness,
             },
         });

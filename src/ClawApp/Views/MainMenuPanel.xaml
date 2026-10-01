@@ -7,9 +7,8 @@
     <Border Background="{DynamicResource Bg1}" BorderBrush="{DynamicResource CardStroke}" BorderThickness="1" CornerRadius="8">
         <DockPanel Margin="12,20,12,12">
             <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="12,0,0,20">
-                <Border Width="36" Height="36" CornerRadius="18" Background="{DynamicResource Accent}" Margin="0,0,12,0">
-                    <TextBlock Text="&#xE7FC;" Style="{StaticResource Icon}" Foreground="{DynamicResource AccentText}" HorizontalAlignment="Center"/>
-                </Border>
+                <Image Source="pack://application:,,,/Assets/ClawHub.ico" Width="40" Height="40" Margin="0,0,12,0"
+                       RenderOptions.BitmapScalingMode="HighQuality"/>
                 <StackPanel VerticalAlignment="Center">
                     <TextBlock Text="ClawHub" FontSize="16" FontWeight="SemiBold"/>
                     <TextBlock Text="MSI Claw 8 EX" Style="{StaticResource Caption}"/>

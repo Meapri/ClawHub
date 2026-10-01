@@ -73,6 +73,39 @@ public sealed class ClawController : IDisposable
         }
     }
 
+    /// <summary>
+    /// 자이로/가속도 값을 잠깐 받아 본다 (센서 유무 확인·자이로 테스트용). 끝나면 스트림을 끈다.
+    /// 값: Gx, Gy, Gz, Ax, Ay, Az (int16 LE).
+    /// </summary>
+    public List<short[]> SampleMotion(TimeSpan duration)
+    {
+        var samples = new List<short[]>();
+        lock (_lock)
+        {
+            _stream.Write(ControllerProtocol.BuildPacket(ControllerProtocol.CmdMotionStream, [1]));
+            try
+            {
+                var buf = new byte[Math.Max(_device.GetMaxInputReportLength(), ControllerProtocol.ReportLength)];
+                var end = DateTime.UtcNow + duration;
+                while (DateTime.UtcNow < end)
+                {
+                    int n;
+                    try { n = _stream.Read(buf, 0, buf.Length); }
+                    catch (TimeoutException) { continue; }
+                    if (n < 17 || buf[4] != ControllerProtocol.CmdMotionData) continue;
+                    var v = new short[6];
+                    for (var i = 0; i < 6; i++) v[i] = BitConverter.ToInt16(buf, 5 + i * 2);
+                    samples.Add(v);
+                }
+            }
+            finally
+            {
+                _stream.Write(ControllerProtocol.BuildPacket(ControllerProtocol.CmdMotionStream, [0]));
+            }
+        }
+        return samples;
+    }
+
     public void SyncRgb()
     {
         lock (_lock) _stream.Write(ControllerProtocol.BuildPacket(ControllerProtocol.CmdSyncRgb, []));

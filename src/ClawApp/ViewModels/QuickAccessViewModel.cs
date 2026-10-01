@@ -28,6 +28,83 @@ public sealed partial class QuickAccessViewModel : ObservableObject
         _shell = shell;
         _perfDebounce = Debounce(TimeSpan.FromMilliseconds(500), async () => await SendPerformanceAsync());
         _brightDebounce = Debounce(TimeSpan.FromMilliseconds(120), () => SystemControls.SetBrightness(Brightness));
+
+        FpsChoices = [new ChoiceItem("끔", 0), .. ClawCore.Gpu.IntelGraphics.FpsPresets.Select(f => new ChoiceItem($"{f}", f))];
+        FrameGenChoices = [new ChoiceItem("끔", 0), new ChoiceItem("2배", 1), new ChoiceItem("3배", 2), new ChoiceItem("4배", 3)];
+
+        // 패널이 열려 있는 동안만 2초마다 온도·전력 갱신
+        _telemetryTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
+        _telemetryTimer.Tick += async (_, _) =>
+        {
+            if (!_shell.IsQuickAccessOpen) { _telemetryTimer.Stop(); return; }
+            await RefreshTelemetryAsync();
+        };
+    }
+
+    // ── 실시간 상태 / FPS / 프레임 생성 ─────────────────────
+
+    private readonly DispatcherTimer _telemetryTimer;
+
+    [ObservableProperty] private string _cpuTempText = "–";
+    [ObservableProperty] private string _gpuTempText = "–";
+    [ObservableProperty] private string _powerText = "–";
+    [ObservableProperty] private string _remainingText = "–";
+
+    public bool GpuAvailable => ClawCore.Gpu.IntelGraphics.Available;
+    public IReadOnlyList<ChoiceItem> FpsChoices { get; }
+    public IReadOnlyList<ChoiceItem> FrameGenChoices { get; }
+
+    public string FpsNote => _shell.RunningGame?.FpsLimit is { } f
+        ? $"지금은 이 게임 전용 값({(f == 0 ? "끔" : f + " FPS")})이 적용 중 — 게임 페이지에서 바꿀 수 있어요"
+        : "모든 게임에 적용되는 기본값";
+
+    private async Task RefreshTelemetryAsync()
+    {
+        var (watts, remaining) = await Task.Run(SystemControls.GetBatteryPower);
+        RemainingText = remaining is { } r ? (r.TotalHours >= 1 ? $"{(int)r.TotalHours}시간 {r.Minutes}분" : $"{r.Minutes}분") : "충전 중";
+
+        if (!_shell.ServiceConnected) return;
+        try
+        {
+            var resp = await _shell.Service.SendAsync(new ClawCore.Ipc.Request { Op = ClawCore.Ipc.Ops.GetTelemetry }, TimeSpan.FromSeconds(3));
+            var t = resp.Telemetry;
+            CpuTempText = t?.CpuTemp is { } c ? $"{c}°" : "–";
+            GpuTempText = t?.GpuTemp is { } g ? $"{g}°" : "–";
+            PowerText = watts is { } w ? $"{w:0.0}W" : t?.CpuWatts is { } cw ? $"CPU {cw}W" : "–";
+        }
+        catch (Exception) { /* 서비스 응답 없음 — 다음 틱에 */ }
+    }
+
+    [CommunityToolkit.Mvvm.Input.RelayCommand]
+    private async Task PickFps(ChoiceItem item)
+    {
+        var fps = (int)item.Value;
+        if (_shell.RunningGame is { FpsLimit: not null } g)
+        {
+            _shell.Library.SetFpsLimit(g, fps); // 이 게임 전용 값이 있으면 그걸 바꾼다
+            await _shell.SyncControllerAsync();
+        }
+        else
+        {
+            await _shell.SetDefaultFpsAsync(fps);
+        }
+        MarkFps();
+    }
+
+    [CommunityToolkit.Mvvm.Input.RelayCommand]
+    private void PickFrameGen(ChoiceItem item)
+    {
+        if (ClawCore.Gpu.IntelGraphics.SetFrameGeneration((int)item.Value))
+            foreach (var c in FrameGenChoices) c.IsSelected = c == item;
+        else
+            _shell.ShowToast("프레임 생성을 바꾸지 못했어요 (드라이버 미지원)");
+    }
+
+    private void MarkFps()
+    {
+        var cur = _shell.CurrentFps;
+        foreach (var c in FpsChoices) c.IsSelected = (int)c.Value == cur;
+        OnPropertyChanged(nameof(FpsNote));
     }
 
     public bool PerfAvailable => _shell.Status?.EcWritable == true;
@@ -85,6 +162,12 @@ public sealed partial class QuickAccessViewModel : ObservableObject
         }
         OnPropertyChanged(string.Empty); // 파생 속성 전체 갱신
         _ = LoadSystemValuesAsync();
+
+        MarkFps();
+        var fg = ClawCore.Gpu.IntelGraphics.GetFrameGeneration() ?? 0;
+        foreach (var c in FrameGenChoices) c.IsSelected = (int)c.Value == fg;
+        _ = RefreshTelemetryAsync();
+        _telemetryTimer.Start();
     }
 
     /// <summary>밝기(WMI)·볼륨 조회는 수백 ms가 걸려서 패널을 먼저 열고 뒤에서 채운다.</summary>

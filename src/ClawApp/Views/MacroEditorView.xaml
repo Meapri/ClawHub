@@ -1,0 +1,97 @@
+<UserControl x:Class="ClawApp.Views.MacroEditorView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:ClawApp"
+             KeyboardNavigation.DirectionalNavigation="Contained">
+    <Grid Margin="32,0,32,12">
+        <!-- ── 단계 목록 + 선택한 단계 시간 ───────────────── -->
+        <Grid Visibility="{Binding IsPickerOpen, Converter={StaticResource NotVis}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="360"/>
+            </Grid.ColumnDefinitions>
+
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Top" Text="{Binding TotalText}" Style="{StaticResource Caption}" Margin="2,0,0,8"/>
+                <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,8,0,0">
+                    <Button Style="{StaticResource PrimaryButton}" Command="{Binding AddStepCommand}" IsEnabled="{Binding CanAdd}" Margin="0,0,8,0">
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE710;" Style="{StaticResource Icon}" Margin="0,0,8,0"/><TextBlock Text="단계 추가"/></StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource NavButton}" Command="{Binding ClearCommand}" Margin="0">
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE74D;" Style="{StaticResource Icon}" Margin="0,0,8,0"/><TextBlock Text="모두 지우기"/></StackPanel>
+                    </Button>
+                </StackPanel>
+                <Grid>
+                    <Border Style="{StaticResource CardPanel}" Visibility="{Binding IsEmpty, Converter={StaticResource Vis}}" VerticalAlignment="Top" Padding="20">
+                        <TextBlock Style="{StaticResource Caption}" FontSize="14"
+                                   Text="'단계 추가'로 키를 순서대로 넣으세요. 버튼을 한 번 누르면 단계가 차례로 실행돼요. 예: Ctrl(공격) → 50ms → Shift(스킬)"/>
+                    </Border>
+                    <ScrollViewer>
+                        <ItemsControl ItemsSource="{Binding Steps}" Focusable="False">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Style="{StaticResource NavItem}" Height="52" Tag="{Binding IsSelected}"
+                                            Command="{Binding DataContext.SelectCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}" GotKeyboardFocus="Step_GotFocus">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Border Width="28" Height="28" CornerRadius="14" Background="{DynamicResource Surface}" Margin="0,0,14,0">
+                                                <TextBlock Text="{Binding Number}" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding KeyLabel}" FontWeight="SemiBold"/>
+                                                <TextBlock Text="{Binding Summary}" Style="{StaticResource Caption}"/>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Grid>
+            </DockPanel>
+
+            <!-- 선택한 단계 -->
+            <StackPanel Grid.Column="1" Margin="20,0,0,0" DataContext="{Binding Selected}"
+                        Visibility="{Binding Converter={StaticResource NullVis}}">
+                <Border Style="{StaticResource CardPanel}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource Caption}"><Run Text="단계 "/><Run Text="{Binding Number, Mode=OneWay}"/></TextBlock>
+                        <TextBlock Text="{Binding KeyLabel}" Style="{StaticResource H2}" Margin="0,2,0,10"/>
+                        <Button Style="{StaticResource NavButton}" Margin="0"
+                                Command="{Binding DataContext.ChangeKeyCommand, RelativeSource={RelativeSource AncestorType=UserControl}}">
+                            <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE765;" Style="{StaticResource Icon}" Margin="0,0,12,0"/><TextBlock Text="키 바꾸기"/></StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource CardPanel}">
+                    <StackPanel>
+                        <DockPanel><TextBlock DockPanel.Dock="Right" Text="{Binding HoldMs, StringFormat={}{0}ms}" Foreground="{DynamicResource TextDim}"/><TextBlock Text="누르고 있는 시간"/></DockPanel>
+                        <Slider Minimum="10" Maximum="2000" SmallChange="10" TickFrequency="10" Value="{Binding HoldMs}"/>
+                        <DockPanel Margin="0,8,0,0"><TextBlock DockPanel.Dock="Right" Text="{Binding GapMs, StringFormat={}{0}ms}" Foreground="{DynamicResource TextDim}"/><TextBlock Text="다음 단계까지 쉬는 시간"/></DockPanel>
+                        <Slider Minimum="0" Maximum="2000" SmallChange="10" TickFrequency="10" Value="{Binding GapMs}"/>
+                    </StackPanel>
+                </Border>
+                <TextBlock Style="{StaticResource Caption}" Margin="2,4,0,0"
+                           Text="매크로는 컨트롤러 펌웨어가 실행해서 진짜 키보드 입력으로 나가요. Y로 15초 동안 실제로 시험해 볼 수 있어요."/>
+            </StackPanel>
+        </Grid>
+
+        <!-- ── 키 고르기 ─────────────────────────────────── -->
+        <DockPanel Visibility="{Binding IsPickerOpen, Converter={StaticResource Vis}}">
+            <TextBlock DockPanel.Dock="Top" Text="이 단계에서 누를 키" Style="{StaticResource Section}" Margin="2,0,0,10"/>
+            <ScrollViewer>
+                <ItemsControl ItemsSource="{Binding Keys}" Focusable="False">
+                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Style="{StaticResource NavButton}" Content="{Binding Label}" MinWidth="60" Padding="12,8" Margin="0,0,6,6"
+                                    HorizontalContentAlignment="Center" local:Nav.InitialFocus="True"
+                                    Command="{Binding DataContext.PickKeyCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    CommandParameter="{Binding}"/>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </DockPanel>
+    </Grid>
+</UserControl>

@@ -11,6 +11,23 @@ public sealed class MappingProfile
     public GamepadMode Mode { get; set; } = GamepadMode.XInput;
     public Dictionary<ClawButton, List<string>> Bindings { get; set; } = [];
 
+    /// <summary>M1/M2 매크로 (있으면 그 버튼의 일반 바인딩보다 우선).</summary>
+    public Dictionary<ClawButton, List<MacroStepDef>> Macros { get; set; } = [];
+
+    public sealed class MacroStepDef
+    {
+        public string Key { get; set; } = "KB_1";
+        public int HoldMs { get; set; } = 50;
+        public int GapMs { get; set; } = 50;
+    }
+
+    public Dictionary<ClawButton, MacroStep[]> ToMacros() =>
+        Macros.Where(kv => kv.Value.Count > 0 && kv.Key is ClawButton.M1 or ClawButton.M2).ToDictionary(
+            kv => kv.Key,
+            kv => kv.Value.Select(s => new MacroStep(
+                KeyCodes.Find(s.Key)?.Code ?? throw new InvalidOperationException($"알 수 없는 키 {s.Key}"),
+                (ushort)Math.Clamp(s.HoldMs, 10, 10000), (ushort)Math.Clamp(s.GapMs, 0, 10000))).ToArray());
+
     public IReadOnlyDictionary<ClawButton, byte[]> ToCodes() =>
         Bindings.Where(kv => kv.Value.Count > 0).ToDictionary(
             kv => kv.Key,
@@ -23,6 +40,7 @@ public sealed class MappingProfile
         Name = Name + " 사본",
         Mode = Mode,
         Bindings = Bindings.ToDictionary(kv => kv.Key, kv => kv.Value.ToList()),
+        Macros = Macros.ToDictionary(kv => kv.Key, kv => kv.Value.Select(s => new MacroStepDef { Key = s.Key, HoldMs = s.HoldMs, GapMs = s.GapMs }).ToList()),
     };
 
 }

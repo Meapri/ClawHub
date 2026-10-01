@@ -1,6 +1,7 @@
 using System.Management;
 using ClawCore;
 using ClawCore.Ec;
+using ClawCore.Ipc;
 
 namespace ClawService;
 
@@ -111,6 +112,22 @@ public sealed class EcManager : IDisposable
             Temporary = null;
             if (Writable) _perf!.Apply(_state.Performance);
         }
+    }
+
+    public Telemetry ReadTelemetry()
+    {
+        var t = new Telemetry();
+        if (_wmi is null) return t;
+        try
+        {
+            var temp = _wmi.GetTemperature(0);
+            t.CpuTemp = temp[0] is > 0 and < 120 ? temp[0] : null;
+            t.GpuTemp = temp[1] is > 0 and < 120 ? temp[1] : null;
+        }
+        catch (Exception) { /* 미지원 */ }
+        try { t.CpuWatts = _wmi.GetData(0xDD); } catch (Exception) { }
+        try { t.FanRaw = _wmi.GetFan(0); } catch (Exception) { }
+        return t;
     }
 
     public void SetChargeLimit(ChargeLimit limit)

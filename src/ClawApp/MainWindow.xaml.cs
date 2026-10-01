@@ -54,6 +54,7 @@ public partial class MainWindow : Window
     {
         if (e.PropertyName == nameof(ShellViewModel.IsWindowVisible)) ApplyWindowVisibility();
         else if (e.PropertyName == nameof(ShellViewModel.IsShellVisible)) ApplyBackdrop();
+        else if (e.PropertyName == nameof(ShellViewModel.CurrentPage)) PlayPageEntrance();
     }
 
     // ── Windows 11 백드롭 ─────────────────────────────────
@@ -254,11 +255,50 @@ public partial class MainWindow : Window
 
     // ── 포커스 ─────────────────────────────────────────────
 
+    /// <summary>페이지별 마지막 포커스 위치(포커스 가능한 요소 중 몇 번째인지). 뒤로 돌아오면 그 자리로.</summary>
+    private readonly Dictionary<INavPage, int> _focusMemory = [];
+
     private void FocusCurrent()
     {
         DependencyObject root = _vm.IsQuickAccessOpen ? QuickPanel : _vm.IsMainMenuOpen ? MainMenu : PageHost;
+
+        if (root == PageHost && _vm.CurrentPage is { } page && _focusMemory.TryGetValue(page, out var index))
+        {
+            var all = new List<UIElement>();
+            CollectFocusable(PageHost, all);
+            if (index < all.Count && Keyboard.Focus(all[index]) == all[index]) return;
+        }
+
         var target = FindFocusable(root, initialOnly: true) ?? FindFocusable(root, initialOnly: false);
         if (target is not null) Keyboard.Focus(target);
+    }
+
+    private void PageHost_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+    {
+        if (_vm.CurrentPage is not { } page || e.NewFocus is not UIElement el) return;
+        var all = new List<UIElement>();
+        CollectFocusable(PageHost, all);
+        var i = all.IndexOf(el);
+        if (i >= 0) _focusMemory[page] = i;
+    }
+
+    private static void CollectFocusable(DependencyObject node, List<UIElement> into)
+    {
+        if (node is UIElement { IsVisible: false }) return;
+        if (node is ButtonBase or Slider or TextBox && node is UIElement { Focusable: true, IsEnabled: true } el) into.Add(el);
+        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(node); i++) CollectFocusable(VisualTreeHelper.GetChild(node, i), into);
+    }
+
+    /// <summary>Windows 11 진입 애니메이션: 살짝 아래에서 떠오르며 나타남 (0.2초).</summary>
+    private void PlayPageEntrance()
+    {
+        var ease = new System.Windows.Media.Animation.CubicEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut };
+        var shift = new TranslateTransform(0, 16);
+        PageHost.RenderTransform = shift;
+        shift.BeginAnimation(TranslateTransform.YProperty,
+            new System.Windows.Media.Animation.DoubleAnimation(16, 0, TimeSpan.FromMilliseconds(220)) { EasingFunction = ease });
+        PageHost.BeginAnimation(OpacityProperty,
+            new System.Windows.Media.Animation.DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(180)));
     }
 
     private static IInputElement? FindFocusable(DependencyObject node, bool initialOnly)

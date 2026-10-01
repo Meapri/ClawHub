@@ -23,6 +23,27 @@
 
             <ScrollViewer Padding="20,20,20,8">
                 <StackPanel>
+                    <!-- 실시간 상태 (2초마다) -->
+                    <Border Style="{StaticResource CardPanel}" Padding="14,10" Margin="0,0,0,14">
+                        <UniformGrid Columns="4">
+                            <StackPanel>
+                                <TextBlock Text="CPU" Style="{StaticResource Caption}"/>
+                                <TextBlock Text="{Binding CpuTempText}" FontSize="16" FontWeight="SemiBold"/>
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock Text="GPU" Style="{StaticResource Caption}"/>
+                                <TextBlock Text="{Binding GpuTempText}" FontSize="16" FontWeight="SemiBold"/>
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock Text="전력" Style="{StaticResource Caption}"/>
+                                <TextBlock Text="{Binding PowerText}" FontSize="16" FontWeight="SemiBold"/>
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock Text="남은 시간" Style="{StaticResource Caption}"/>
+                                <TextBlock Text="{Binding RemainingText}" FontSize="14" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                            </StackPanel>
+                        </UniformGrid>
+                    </Border>
                     <!-- 키 매핑 (게임/앱 실행 중일 때) -->
                     <StackPanel Visibility="{Binding TargetTitle, Converter={StaticResource NullVis}}" Margin="0,0,0,12">
                         <Button Style="{StaticResource NavButton}" Command="{Binding CycleProfileCommand}" local:Nav.InitialFocus="True"
@@ -62,6 +83,32 @@
                             <TextBlock DockPanel.Dock="Right" Text="{Binding Pl2, StringFormat={}{0}W}" Width="36" TextAlignment="Right" VerticalAlignment="Center"/>
                             <Slider Minimum="8" Maximum="45" SmallChange="1" Value="{Binding Pl2}"/>
                         </DockPanel>
+                    </StackPanel>
+
+                    <!-- FPS 제한 / 프레임 생성 (Intel 드라이버) -->
+                    <StackPanel Visibility="{Binding GpuAvailable, Converter={StaticResource Vis}}">
+                        <TextBlock Text="FPS 제한" Style="{StaticResource Section}" Margin="2,16,0,2"/>
+                        <TextBlock Text="{Binding FpsNote}" Style="{StaticResource Caption}" Margin="2,0,0,8"/>
+                        <ItemsControl ItemsSource="{Binding FpsChoices}" Focusable="False">
+                            <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <ToggleButton Style="{StaticResource Chip}" Content="{Binding Label}" MinWidth="48" IsChecked="{Binding IsSelected, Mode=OneWay}"
+                                                  Command="{Binding DataContext.PickFpsCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <TextBlock Text="XeSS 프레임 생성" Style="{StaticResource Section}" Margin="2,10,0,8"/>
+                        <ItemsControl ItemsSource="{Binding FrameGenChoices}" Focusable="False">
+                            <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <ToggleButton Style="{StaticResource Chip}" Content="{Binding Label}" MinWidth="48" IsChecked="{Binding IsSelected, Mode=OneWay}"
+                                                  Command="{Binding DataContext.PickFrameGenCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <TextBlock Text="지원하는 게임(XeSS 2 이상)에서만 동작해요" Style="{StaticResource Caption}" Margin="2,0,0,0"/>
                     </StackPanel>
 
                     <!-- 슬라이더: 아이콘 + 막대 (Windows 빠른 설정과 같은 배치) -->

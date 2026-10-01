@@ -52,6 +52,21 @@ public static class SystemControls
         return new(s.BatteryLifePercent == 255 ? null : s.BatteryLifePercent, s.ACLineStatus == 1);
     }
 
+    /// <summary>배터리 방전 전력(W)과 남은 시간. 충전 중이면 방전 전력은 null.</summary>
+    public static (double? Watts, TimeSpan? Remaining) GetBatteryPower()
+    {
+        double? watts = null;
+        try
+        {
+            using var s = new ManagementObjectSearcher(@"root\WMI", "SELECT DischargeRate FROM BatteryStatus");
+            foreach (ManagementObject o in s.Get())
+                if (Convert.ToInt32(o["DischargeRate"]) is > 0 and var mw) watts = mw / 1000.0;
+        }
+        catch (Exception) { /* 미지원 */ }
+        TimeSpan? remaining = GetSystemPowerStatus(out var st) && st.BatteryLifeTime > 0 ? TimeSpan.FromSeconds(st.BatteryLifeTime) : null;
+        return (watts, remaining);
+    }
+
     public static void Sleep() => SetSuspendState(false, false, false);
     public static void Restart() => Process.Start(new ProcessStartInfo("shutdown", "/r /t 0") { CreateNoWindow = true });
     public static void Shutdown() => Process.Start(new ProcessStartInfo("shutdown", "/s /t 0") { CreateNoWindow = true });

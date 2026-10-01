@@ -20,6 +20,8 @@ public sealed class GameLibrary
         public string? PerformanceMode { get; set; }
         public bool? Hidden { get; set; }
         public string? Title { get; set; }
+        /// <summary>-1 = 기본값 따름을 명시적으로 고른 경우.</summary>
+        public int? FpsLimit { get; set; }
         public string? LaunchTarget { get; set; }
         public string? LaunchArgs { get; set; }
     }
@@ -54,6 +56,7 @@ public sealed class GameLibrary
             g.PerformanceMode = Enum.TryParse<Ec.PerformanceMode>(o.PerformanceMode, out var pm) ? pm : null;
             g.Hidden = o.Hidden ?? g.Hidden;
             g.Title = o.Title ?? g.Title;
+            g.FpsLimit = o.FpsLimit is >= 0 ? o.FpsLimit : null;
             g.LaunchTarget = o.LaunchTarget ?? g.LaunchTarget;
             g.LaunchArgs = o.LaunchArgs ?? g.LaunchArgs;
         }
@@ -74,6 +77,8 @@ public sealed class GameLibrary
 
     public void SetPerformance(GameEntry game, Ec.PerformanceMode? mode) =>
         Update(game, o => o.PerformanceMode = (game.PerformanceMode = mode)?.ToString() ?? "None");
+
+    public void SetFpsLimit(GameEntry game, int? fps) => Update(game, o => o.FpsLimit = (game.FpsLimit = fps) ?? -1);
 
     public void Rename(GameEntry game, string title) => Update(game, o => o.Title = game.Title = title);
 

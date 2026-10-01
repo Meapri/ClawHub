@@ -11,7 +11,7 @@
                                 Command="{Binding DataContext.EditCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                 CommandParameter="{Binding}">
                             <DockPanel>
-                                <TextBlock DockPanel.Dock="Right" Text="&#xE76C;" Style="{StaticResource Icon}" Foreground="{StaticResource TextDim}"/>
+                                <TextBlock DockPanel.Dock="Right" Text="&#xE76C;" Style="{StaticResource Icon}" Foreground="{DynamicResource TextDim}"/>
                                 <StackPanel>
                                     <TextBlock Text="{Binding Profile.Name}" FontSize="18" FontWeight="SemiBold"/>
                                     <TextBlock Text="{Binding Summary}" Style="{StaticResource Caption}" Margin="0,2,0,0"/>

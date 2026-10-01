@@ -32,5 +32,7 @@ public sealed class GameEntry
     public string? MappingProfileId { get; set; }
     /// <summary>게임 중에만 쓸 성능 모드 (null = 사용자 기본값 따름).</summary>
     public Ec.PerformanceMode? PerformanceMode { get; set; }
+    /// <summary>게임 중 FPS 제한 (null = 기본값 따름, 0 = 끔).</summary>
+    public int? FpsLimit { get; set; }
     public bool Hidden { get; set; }
 }

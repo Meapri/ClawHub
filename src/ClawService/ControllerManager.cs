@@ -97,25 +97,31 @@ public sealed class ControllerManager : IDisposable
         File.WriteAllBytes(BaselinePath, _baseline);
     }
 
-    public void ApplyMapping(IReadOnlyDictionary<ClawButton, byte[]> bindings)
+    public void ApplyMapping(IReadOnlyDictionary<ClawButton, byte[]> bindings, IReadOnlyDictionary<ClawButton, MacroStep[]>? macros = null)
     {
         if (bindings.Count > Enum.GetValues<ClawButton>().Length || bindings.Keys.Any(b => !Enum.IsDefined(b)))
             throw new ArgumentException("알 수 없는 버튼");
+        if (macros?.Keys.Any(b => b is not (ClawButton.M1 or ClawButton.M2)) == true)
+            throw new ArgumentException("매크로는 M1/M2만 가능");
         lock (_lock)
         {
             // 검증(이미지 생성)이 성공한 뒤에만 상태를 바꾼다
-            WriteTarget(bindings, Settings);
+            WriteTarget(bindings, macros, Settings);
             _activeBindings = bindings;
+            _activeMacros = macros;
         }
         StatusChanged?.Invoke();
     }
+
+    private IReadOnlyDictionary<ClawButton, MacroStep[]>? _activeMacros;
 
     public void RestoreBaseline()
     {
         lock (_lock)
         {
             _activeBindings = null;
-            WriteTarget(null, Settings);
+            _activeMacros = null;
+            WriteTarget(null, null, Settings);
         }
         StatusChanged?.Invoke();
     }
@@ -126,7 +132,7 @@ public sealed class ControllerManager : IDisposable
         if (!Enum.IsDefined(settings.Light)) throw new ArgumentException("알 수 없는 조명 모드");
         lock (_lock)
         {
-            WriteTarget(_activeBindings, settings);
+            WriteTarget(_activeBindings, _activeMacros, settings);
             Settings = settings;
             JsonStore.Save(SettingsPath, settings);
         }
@@ -144,18 +150,21 @@ public sealed class ControllerManager : IDisposable
         StatusChanged?.Invoke();
     }
 
-    private void WriteTarget() => WriteTarget(_activeBindings, Settings);
+    private void WriteTarget() => WriteTarget(_activeBindings, _activeMacros, Settings);
 
     /// <summary>
     /// baseline + 설정 + 매핑으로 목표 이미지를 만들어 RAM에 쓴다.
     /// 이미지 생성(=입력 검증)은 쓰기 전에 끝나고, 표시 파일은 쓰기 전에 남긴다(중간에 죽어도 다음 시작 때 저장된 baseline 사용).
     /// 쓰기가 실패하면 실제 RAM 상태를 다시 읽어서 다음 복원이 헛돌지 않게 한다.
     /// </summary>
-    private void WriteTarget(IReadOnlyDictionary<ClawButton, byte[]>? bindings, ControllerSettings settings)
+    private void WriteTarget(IReadOnlyDictionary<ClawButton, byte[]>? bindings, IReadOnlyDictionary<ClawButton, MacroStep[]>? macros,
+        ControllerSettings settings)
     {
         if (_ctl is null || _baseline is null || _current is null) return;
 
         var target = bindings is null ? (byte[])_baseline.Clone() : ProfileLayout.Apply(_baseline, bindings);
+        foreach (var (button, steps) in macros ?? new Dictionary<ClawButton, MacroStep[]>())
+            MacroLayout.Apply(target, button, steps);
         SettingsLayout.Apply(target, settings);
 
         var modified = !target.AsSpan().SequenceEqual(_baseline);

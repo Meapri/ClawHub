@@ -9,6 +9,12 @@
     <PackageReference Include="NAudio.Wasapi" Version="3.1.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Resource Include="Assets\ClawHub.ico" />
+    <!-- Xbox 모드 홈 앱 등록(외부 위치 패키지)이 앱 폴더의 로고를 참조 -->
+    <None Include="Assets\*.png" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0-windows</TargetFramework>
@@ -16,6 +22,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\ClawHub.ico</ApplicationIcon>
   </PropertyGroup>
 
 </Project>

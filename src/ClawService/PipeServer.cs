@@ -23,6 +23,8 @@ public sealed class PipeServer(ILogger<PipeServer> log, RequestHandler handler)
                 pipe = NamedPipeServerStreamAcl.Create(Ops.PipeName, PipeDirection.InOut,
                     NamedPipeServerStream.MaxAllowedServerInstances, PipeTransmissionMode.Byte, PipeOptions.Asynchronous,
                     0, 0, CreateSecurity());
+                try { PipeAccess.AllowLowIntegrity(pipe.SafePipeHandle); }
+                catch (Exception ex) { log.LogWarning(ex, "파이프 Low 레이블 설정 실패 — Game Bar 위젯이 접속하지 못할 수 있음"); }
             }
             catch (Exception ex) when (ex is UnauthorizedAccessException or IOException)
             {
@@ -44,6 +46,12 @@ public sealed class PipeServer(ILogger<PipeServer> log, RequestHandler handler)
             catch (Exception ex) when (ex is IOException or ObjectDisposedException)
             {
                 // 연결 직후 끊은 클라이언트(ERROR_NO_DATA 등) — 서비스는 계속
+                await pipe.DisposeAsync();
+                continue;
+            }
+            if (!PipeAccess.IsAllowedClient(pipe, out var who))
+            {
+                log.LogWarning("허용되지 않은 클라이언트 거부: {Who}", who);
                 await pipe.DisposeAsync();
                 continue;
             }
@@ -153,6 +161,8 @@ public sealed class PipeServer(ILogger<PipeServer> log, RequestHandler handler)
         if (WindowsIdentity.GetCurrent().User is { } self)
             sec.AddAccessRule(new PipeAccessRule(self, PipeAccessRights.FullControl, AccessControlType.Allow));
         sec.AddAccessRule(new PipeAccessRule(new SecurityIdentifier(WellKnownSidType.InteractiveSid, null), PipeAccessRights.ReadWrite, AccessControlType.Allow));
+        // Game Bar 위젯(AppContainer). ReadWrite만 — 인스턴스 생성 권한을 주면 서버를 사칭할 수 있다. 어떤 패키지인지는 연결마다 PipeAccess가 확인.
+        sec.AddAccessRule(new PipeAccessRule(new SecurityIdentifier(PipeAccess.AllAppPackagesSid), PipeAccessRights.ReadWrite, AccessControlType.Allow));
         sec.AddAccessRule(new PipeAccessRule(new SecurityIdentifier(WellKnownSidType.NetworkSid, null), PipeAccessRights.FullControl, AccessControlType.Deny));
         return sec;
     }

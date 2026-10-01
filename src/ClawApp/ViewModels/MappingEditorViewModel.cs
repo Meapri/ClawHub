@@ -27,7 +27,7 @@ public sealed partial class MappingEditorViewModel : ObservableObject, INavPage
 {
     private static readonly (ClawButton Button, string Name)[] ButtonNames =
     [
-        (ClawButton.A, "Ⓐ"), (ClawButton.B, "Ⓑ"), (ClawButton.X, "Ⓧ"), (ClawButton.Y, "Ⓨ"),
+        (ClawButton.A, "A"), (ClawButton.B, "B"), (ClawButton.X, "X"), (ClawButton.Y, "Y"),
         (ClawButton.DpadUp, "D-pad ↑"), (ClawButton.DpadDown, "D-pad ↓"), (ClawButton.DpadLeft, "D-pad ←"), (ClawButton.DpadRight, "D-pad →"),
         (ClawButton.LB, "LB"), (ClawButton.RB, "RB"), (ClawButton.LT, "LT"), (ClawButton.RT, "RT"),
         (ClawButton.L3, "L3"), (ClawButton.R3, "R3"),
@@ -86,6 +86,12 @@ public sealed partial class MappingEditorViewModel : ObservableObject, INavPage
     {
         foreach (var row in Rows)
         {
+            if (Profile.Macros.TryGetValue(row.Button, out var macro) && macro.Count > 0)
+            {
+                row.IsMapped = true;
+                row.BindingText = $"매크로 · {macro.Count}단계";
+                continue;
+            }
             var ids = Current(row.Button);
             row.IsMapped = ids.Count > 0;
             row.BindingText = ids.Count > 0
@@ -148,6 +154,20 @@ public sealed partial class MappingEditorViewModel : ObservableObject, INavPage
         key.IsSelected = list.Contains(key.Key.Id);
         ComboText = list.Count > 0 ? string.Join(" + ", list.Select(id => KeyCodes.Find(id)?.Label ?? id)) : "선택한 키 없음";
     }
+
+    public bool EditingIsMKey => EditingRow?.Button is ClawButton.M1 or ClawButton.M2;
+
+    partial void OnEditingRowChanged(ButtonRowViewModel? value) => OnPropertyChanged(nameof(EditingIsMKey));
+
+    [RelayCommand]
+    private void OpenMacro()
+    {
+        if (EditingRow is not { } row) return;
+        IsPickerOpen = false;
+        _shell.Navigate(new MacroEditorViewModel(_shell, Profile, row.Button));
+    }
+
+    public void OnShown() => RefreshRows(); // 매크로 편집에서 돌아왔을 때
 
     [RelayCommand]
     private void ClosePicker()
