@@ -30,6 +30,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
+## Pretendard
+
+UI font, embedded in the app (`src/ClawApp/Fonts/Pretendard-{Regular,Medium,SemiBold,Bold}.otf`).
+
+Source: https://github.com/orioncactus/pretendard (v1.3.9)
+Copyright (c) 2021, Kil Hyung-jin, with Reserved Font Name Pretendard.
+Licensed under the SIL Open Font License, Version 1.1 — full text in `src/ClawApp/Fonts/Pretendard-LICENSE.txt`.
+
 ## Segoe Fluent Icons
 
 In-app icons are rendered from the Windows system font *Segoe Fluent Icons* (not redistributed).

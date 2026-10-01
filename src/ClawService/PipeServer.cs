@@ -20,13 +20,9 @@ public sealed class PipeServer(ILogger<PipeServer> log, RequestHandler handler)
             NamedPipeServerStream pipe;
             try
             {
-                pipe = NamedPipeServerStreamAcl.Create(Ops.PipeName, PipeDirection.InOut,
-                    NamedPipeServerStream.MaxAllowedServerInstances, PipeTransmissionMode.Byte, PipeOptions.Asynchronous,
-                    0, 0, CreateSecurity());
-                try { PipeAccess.AllowLowIntegrity(pipe.SafePipeHandle); }
-                catch (Exception ex) { log.LogWarning(ex, "파이프 Low 레이블 설정 실패 — Game Bar 위젯이 접속하지 못할 수 있음"); }
+                pipe = PipeAccess.Create(Ops.PipeName);
             }
-            catch (Exception ex) when (ex is UnauthorizedAccessException or IOException)
+            catch (Exception ex) when (ex is UnauthorizedAccessException or IOException or System.ComponentModel.Win32Exception)
             {
                 // 파이프 하나가 실패해도 서비스 전체(EC 재적용, 버튼 감시)는 계속 돌아야 한다
                 log.LogError(ex, "파이프 생성 실패, 재시도");
@@ -152,18 +148,4 @@ public sealed class PipeServer(ILogger<PipeServer> log, RequestHandler handler)
         finally { writeLock.Release(); }
     }
 
-    private static PipeSecurity CreateSecurity()
-    {
-        var sec = new PipeSecurity();
-        sec.AddAccessRule(new PipeAccessRule(new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null), PipeAccessRights.FullControl, AccessControlType.Allow));
-        sec.AddAccessRule(new PipeAccessRule(new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null), PipeAccessRights.FullControl, AccessControlType.Allow));
-        // 파이프를 만드는 계정 자신 (서비스면 SYSTEM, 개발용 콘솔 실행이면 현재 사용자) — 추가 인스턴스 생성 권한 필요
-        if (WindowsIdentity.GetCurrent().User is { } self)
-            sec.AddAccessRule(new PipeAccessRule(self, PipeAccessRights.FullControl, AccessControlType.Allow));
-        sec.AddAccessRule(new PipeAccessRule(new SecurityIdentifier(WellKnownSidType.InteractiveSid, null), PipeAccessRights.ReadWrite, AccessControlType.Allow));
-        // Game Bar 위젯(AppContainer). ReadWrite만 — 인스턴스 생성 권한을 주면 서버를 사칭할 수 있다. 어떤 패키지인지는 연결마다 PipeAccess가 확인.
-        sec.AddAccessRule(new PipeAccessRule(new SecurityIdentifier(PipeAccess.AllAppPackagesSid), PipeAccessRights.ReadWrite, AccessControlType.Allow));
-        sec.AddAccessRule(new PipeAccessRule(new SecurityIdentifier(WellKnownSidType.NetworkSid, null), PipeAccessRights.FullControl, AccessControlType.Deny));
-        return sec;
-    }
 }

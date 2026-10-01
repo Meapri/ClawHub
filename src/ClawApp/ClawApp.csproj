@@ -11,6 +11,8 @@
 
   <ItemGroup>
     <Resource Include="Assets\ClawHub.ico" />
+    <!-- Pretendard (SIL OFL 1.1) — 한글·영문을 한 폰트로 (Segoe UI + 맑은 고딕 섞임 방지) -->
+    <Resource Include="Fonts\*.otf" />
     <!-- Xbox 모드 홈 앱 등록(외부 위치 패키지)이 앱 폴더의 로고를 참조 -->
     <None Include="Assets\*.png" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
