@@ -30,6 +30,16 @@ public sealed class Request
     public AppState? AppState { get; set; }
     /// <summary>AppCommand: 위젯 → 런처 앱 명령 (서비스가 구독 중인 앱에 중계). <see cref="AppCommands"/>.</summary>
     public string? Command { get; set; }
+
+    /// <summary>SetEnduranceGaming: "Off" | "On" | "Auto".</summary>
+    public Gpu.EnduranceControl? EnduranceControl { get; set; }
+    /// <summary>SetEnduranceGaming: "Performance" | "Balanced" | "MaxBattery". null이면 지금 값(없으면 Balanced).</summary>
+    public Gpu.EnduranceMode? EnduranceMode { get; set; }
+    /// <summary>
+    /// SetPerformance: 바꿀 칸 "Ac" | "Battery". 생략하면 지금 적용 중인 칸
+    /// (배터리 사용 중이고 배터리 전용 값이 있으면 그 값, 아니면 기본값). "Battery" + Performance null = 배터리 전용 값 지우기.
+    /// </summary>
+    public PowerSourceKind? PowerSource { get; set; }
 }
 
 /// <summary>위젯이 런처 앱에 보내는 명령 (AppCommand.Command 값).</summary>
@@ -53,6 +63,12 @@ public sealed class AppState
     public string? GamePerformanceMode { get; set; }
     /// <summary>게임 전용 FPS 제한 (null = 기본값 따름).</summary>
     public int? GameFpsLimit { get; set; }
+    /// <summary>게임 전용 배터리 성능 모드 (null = 배터리여도 GamePerformanceMode/기본값 따름).</summary>
+    public string? GamePerformanceModeOnBattery { get; set; }
+    /// <summary>게임 전용 배터리 FPS 제한 (null = 배터리여도 GameFpsLimit/기본값 따름, 0 = 끔).</summary>
+    public int? GameFpsLimitOnBattery { get; set; }
+    /// <summary>앱이 본 전원 상태 (true = 배터리 사용 중).</summary>
+    public bool OnBattery { get; set; }
 }
 
 public sealed class ProfileItem
@@ -66,6 +82,8 @@ public sealed class GraphicsState
     public bool Available { get; set; }
     public int FpsLimit { get; set; }
     public int FrameGeneration { get; set; }
+    /// <summary>Intel Endurance Gaming (Auto TDP).</summary>
+    public EnduranceState? Endurance { get; set; }
 }
 
 public sealed class TelemetrySample
@@ -138,6 +156,14 @@ public sealed class ServiceStatus
     public int? Brightness { get; set; }
     public AppState? AppState { get; set; }
 
+    /// <summary>배터리로 돌고 있는지 (서비스가 본 값).</summary>
+    public bool OnBattery { get; set; }
+    /// <summary>전원 연결 때의 사용자 기본 성능 (Performance는 지금 적용 중인 쪽).</summary>
+    public PerformanceState? PerformanceOnAc { get; set; }
+    /// <summary>배터리 전용 사용자 기본 성능 (null = 배터리여도 PerformanceOnAc).</summary>
+    public PerformanceState? PerformanceOnBattery { get; set; }
+    public BatteryHealth? BatteryHealth { get; set; }
+
     public List<string> Warnings { get; set; } = [];
 }
 
@@ -158,6 +184,8 @@ public static class Ops
     public const string SetGraphics = "SetGraphics";
     public const string SetBrightness = "SetBrightness";
     public const string SetAppState = "SetAppState";
+    /// <summary>Intel Endurance Gaming 설정 (EnduranceControl, EnduranceMode). 서비스가 저장하고 시작·절전 복귀 때 재적용.</summary>
+    public const string SetEnduranceGaming = "SetEnduranceGaming";
     public const string AppCommand = "AppCommand";
     public const string Subscribe = "Subscribe";
 

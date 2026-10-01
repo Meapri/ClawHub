@@ -94,6 +94,52 @@ public sealed partial class GameViewModel(ShellViewModel shell, GameTileViewMode
 
     public bool GpuAvailable => ClawCore.Gpu.IntelGraphics.Available;
 
+    // ── 배터리 전용 값 (없으면 위 값 사용) ─────────────────
+
+    public bool OnBattery => shell.OnBattery;
+
+    public string PerformanceOnBatteryText => Tile.Game.PerformanceModeOnBattery switch
+    {
+        ClawCore.Ec.PerformanceMode.Battery => "절전",
+        ClawCore.Ec.PerformanceMode.Balanced => "균형",
+        ClawCore.Ec.PerformanceMode.Performance => "성능",
+        _ => "따로 안 씀 (위 값 사용)",
+    };
+
+    /// <summary>따로 안 씀 → 절전 → 균형 → 성능 → 따로 안 씀.</summary>
+    [RelayCommand]
+    private async Task CyclePerformanceOnBattery()
+    {
+        ClawCore.Ec.PerformanceMode? next = Tile.Game.PerformanceModeOnBattery switch
+        {
+            null => ClawCore.Ec.PerformanceMode.Battery,
+            ClawCore.Ec.PerformanceMode.Battery => ClawCore.Ec.PerformanceMode.Balanced,
+            ClawCore.Ec.PerformanceMode.Balanced => ClawCore.Ec.PerformanceMode.Performance,
+            _ => null,
+        };
+        shell.Library.SetPerformanceOnBattery(Tile.Game, next);
+        OnPropertyChanged(nameof(PerformanceOnBatteryText));
+        if (IsRunning) await shell.SyncControllerAsync();
+    }
+
+    public string FpsOnBatteryText => Tile.Game.FpsLimitOnBattery switch
+    {
+        null => "따로 안 씀 (위 값 사용)",
+        0 => "끔",
+        var f => $"{f} FPS",
+    };
+
+    /// <summary>따로 안 씀 → 끔 → 30 → … → 120 → 따로 안 씀.</summary>
+    [RelayCommand]
+    private async Task CycleFpsOnBattery()
+    {
+        int?[] order = [null, 0, .. ClawCore.Gpu.IntelGraphics.FpsPresets.Select(f => (int?)f)];
+        var i = Array.IndexOf(order, Tile.Game.FpsLimitOnBattery);
+        shell.Library.SetFpsLimitOnBattery(Tile.Game, order[(i + 1) % order.Length]);
+        OnPropertyChanged(nameof(FpsOnBatteryText));
+        if (IsRunning) await shell.SyncControllerAsync();
+    }
+
     /// <summary>TextBox에서 벗어날 때 저장된다.</summary>
     public string GameTitle
     {

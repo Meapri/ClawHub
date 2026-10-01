@@ -26,7 +26,8 @@ public sealed partial class QuickAccessViewModel : ObservableObject
     public QuickAccessViewModel(ShellViewModel shell)
     {
         _shell = shell;
-        _perfDebounce = Debounce(TimeSpan.FromMilliseconds(500), async () => await SendPerformanceAsync());
+        Power = new PowerSettingsViewModel(shell);
+        _perfDebounce =Debounce(TimeSpan.FromMilliseconds(500), async () => await SendPerformanceAsync());
         _brightDebounce = Debounce(TimeSpan.FromMilliseconds(120), () => SystemControls.SetBrightness(Brightness));
 
         FpsChoices = [new ChoiceItem("끔", 0), .. ClawCore.Gpu.IntelGraphics.FpsPresets.Select(f => new ChoiceItem($"{f}", f))];
@@ -54,9 +55,14 @@ public sealed partial class QuickAccessViewModel : ObservableObject
     public IReadOnlyList<ChoiceItem> FpsChoices { get; }
     public IReadOnlyList<ChoiceItem> FrameGenChoices { get; }
 
-    public string FpsNote => _shell.RunningGame?.FpsLimit is { } f
+    /// <summary>Endurance Gaming, 배터리 전용 기본값, 배터리 수명 (설정 화면과 공유).</summary>
+    public PowerSettingsViewModel Power { get; }
+
+    public string FpsNote => _shell.RunningGame?.EffectiveFpsLimit(_shell.OnBattery) is { } f
         ? $"지금은 이 게임 전용 값({(f == 0 ? "끔" : f + " FPS")})이 적용 중 — 게임 페이지에서 바꿀 수 있어요"
-        : "모든 게임에 적용되는 기본값";
+        : _shell.OnBattery && _shell.Settings.FpsLimitOnBattery is not null
+            ? "배터리 사용 중 기본값 (전원을 연결하면 원래 기본값)"
+            : "모든 게임에 적용되는 기본값";
 
     private async Task RefreshTelemetryAsync()
     {
@@ -80,7 +86,12 @@ public sealed partial class QuickAccessViewModel : ObservableObject
     private async Task PickFps(ChoiceItem item)
     {
         var fps = (int)item.Value;
-        if (_shell.RunningGame is { FpsLimit: not null } g)
+        if (_shell.OnBattery && _shell.RunningGame is { FpsLimitOnBattery: not null } gb)
+        {
+            _shell.Library.SetFpsLimitOnBattery(gb, fps); // 배터리 사용 중이면 이 게임의 배터리 전용 값
+            await _shell.SyncControllerAsync();
+        }
+        else if (_shell.RunningGame is { FpsLimit: not null } g)
         {
             _shell.Library.SetFpsLimit(g, fps); // 이 게임 전용 값이 있으면 그걸 바꾼다
             await _shell.SyncControllerAsync();
@@ -116,7 +127,9 @@ public sealed partial class QuickAccessViewModel : ObservableObject
 
     public string? PerfNote => _shell.Status?.TemporaryPerformance is { } t
         ? $"지금은 게임별 설정({t.Mode switch { PerformanceMode.Battery => "절전", PerformanceMode.Performance => "성능", _ => "균형" }})이 적용 중 — 여기서 바꾸면 기본값이 바뀝니다"
-        : null;
+        : _shell.Status is { OnBattery: true, PerformanceOnBattery: not null }
+            ? "배터리 사용 중 기본값 — 여기서 바꾸면 배터리용 값이 바뀌고, 전원을 연결하면 원래 기본값으로 돌아갑니다"
+            : null;
 
     [CommunityToolkit.Mvvm.Input.RelayCommand]
     private void OpenAllSettings() => _shell.OpenSettingsEverywhere();
@@ -169,6 +182,7 @@ public sealed partial class QuickAccessViewModel : ObservableObject
         foreach (var c in FrameGenChoices) c.IsSelected = (int)c.Value == fg;
         _ = RefreshTelemetryAsync();
         _telemetryTimer.Start();
+        Power.Refresh();
     }
 
     /// <summary>밝기(WMI)·볼륨 조회는 수백 ms가 걸려서 패널을 먼저 열고 뒤에서 채운다.</summary>

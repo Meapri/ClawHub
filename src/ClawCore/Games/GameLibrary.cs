@@ -24,6 +24,10 @@ public sealed class GameLibrary
         public int? FpsLimit { get; set; }
         public string? LaunchTarget { get; set; }
         public string? LaunchArgs { get; set; }
+        /// <summary>배터리 전용. "None" = 따로 안 씀.</summary>
+        public string? PerformanceModeOnBattery { get; set; }
+        /// <summary>배터리 전용. -1 = 따로 안 씀.</summary>
+        public int? FpsLimitOnBattery { get; set; }
     }
 
     private static string FilePath => Path.Combine(JsonStore.UserDir, "library.json");
@@ -59,6 +63,8 @@ public sealed class GameLibrary
             g.FpsLimit = o.FpsLimit is >= 0 ? o.FpsLimit : null;
             g.LaunchTarget = o.LaunchTarget ?? g.LaunchTarget;
             g.LaunchArgs = o.LaunchArgs ?? g.LaunchArgs;
+            g.PerformanceModeOnBattery = Enum.TryParse<Ec.PerformanceMode>(o.PerformanceModeOnBattery, out var pmb) ? pmb : null;
+            g.FpsLimitOnBattery = o.FpsLimitOnBattery is >= 0 ? o.FpsLimitOnBattery : null;
         }
 
         foreach (var g in games) ArtFetcher.ApplyCached(g);
@@ -79,6 +85,12 @@ public sealed class GameLibrary
         Update(game, o => o.PerformanceMode = (game.PerformanceMode = mode)?.ToString() ?? "None");
 
     public void SetFpsLimit(GameEntry game, int? fps) => Update(game, o => o.FpsLimit = (game.FpsLimit = fps) ?? -1);
+
+    public void SetPerformanceOnBattery(GameEntry game, Ec.PerformanceMode? mode) =>
+        Update(game, o => o.PerformanceModeOnBattery = (game.PerformanceModeOnBattery = mode)?.ToString() ?? "None");
+
+    public void SetFpsLimitOnBattery(GameEntry game, int? fps) =>
+        Update(game, o => o.FpsLimitOnBattery = (game.FpsLimitOnBattery = fps) ?? -1);
 
     public void Rename(GameEntry game, string title) => Update(game, o => o.Title = game.Title = title);
 

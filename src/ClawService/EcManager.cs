@@ -11,6 +11,8 @@ public sealed class EcManager : IDisposable
     private sealed class SavedState
     {
         public PerformanceState Performance { get; set; } = new(PerformanceMode.Balanced, 17, 37, FanMode.Auto);
+        /// <summary>배터리로 돌 때만 쓸 기본값 (null = 배터리여도 Performance).</summary>
+        public PerformanceState? PerformanceOnBattery { get; set; }
     }
 
     private static string StatePath => Path.Combine(JsonStore.ServiceDir, "ec-state.json");
@@ -23,9 +25,13 @@ public sealed class EcManager : IDisposable
 
     public string? Error { get; }
 
-    public EcManager(ILogger<EcManager> log)
+    private readonly PowerManager _power;
+
+    public EcManager(ILogger<EcManager> log, PowerManager power)
     {
         _log = log;
+        _power = power;
+        power.PowerSourceChanged += OnPowerSourceChanged;
         try
         {
             _wmi = MsiWmi.Open();
@@ -48,7 +54,14 @@ public sealed class EcManager : IDisposable
     public bool Available => _wmi is not null;
     public bool Writable => _wmi?.WritesEnabled == true;
     public string? EcVersion => _wmi?.EcVersion;
-    public PerformanceState Performance => _state.Performance;
+    /// <summary>지금 적용되는 사용자 기본값: 배터리 사용 중이고 배터리 전용 값이 있으면 그것, 아니면 전원 연결 값.</summary>
+    public PerformanceState Performance => Effective(_power.OnBattery);
+    public PerformanceState PerformanceOnAc => _state.Performance;
+    public PerformanceState? PerformanceOnBattery => _state.PerformanceOnBattery;
+    public bool OnBattery => _power.OnBattery;
+
+    private PerformanceState Effective(bool onBattery) =>
+        onBattery && _state.PerformanceOnBattery is { } b ? b : _state.Performance;
 
     public ChargeLimit? ChargeLimit
     {
@@ -72,8 +85,9 @@ public sealed class EcManager : IDisposable
         {
             try
             {
-                _perf!.Apply(Temporary ?? _state.Performance);
-                _log.LogInformation("성능 설정 재적용 ({Reason}): {State}", reason, _state.Performance);
+                var state = Temporary ?? Performance;
+                _perf!.Apply(state);
+                _log.LogInformation("성능 설정 재적용 ({Reason}): {State}", reason, state);
             }
             catch (Exception ex) { _log.LogError(ex, "성능 설정 재적용 실패"); }
         }
@@ -82,15 +96,55 @@ public sealed class EcManager : IDisposable
     /// <summary>게임별 성능 모드가 적용 중이면 그 값 (사용자 기본값은 <see cref="Performance"/>).</summary>
     public PerformanceState? Temporary { get; private set; }
 
-    public void SetPerformance(PerformanceState state)
+    /// <summary>
+    /// 사용자 기본값 저장. <paramref name="slot"/>이 null이면 지금 적용 중인 칸(배터리 + 배터리 전용 값 있음 → 배터리, 아니면 전원 연결).
+    /// 바꾼 칸이 지금 적용되는 칸이면 바로 적용하고 게임별 임시 값은 해제한다 (예전 동작과 같음).
+    /// </summary>
+    public void SetPerformance(PerformanceState state, PowerSourceKind? slot = null)
     {
         if (!Writable) throw new InvalidOperationException(Error ?? "EC 쓰기 불가");
         lock (_ecLock)
         {
-            _perf!.Apply(state);
-            _state.Performance = state;
-            Temporary = null;
+            var onBattery = _power.OnBattery;
+            var target = slot ?? (onBattery && _state.PerformanceOnBattery is not null ? PowerSourceKind.Battery : PowerSourceKind.Ac);
+            var active = target == PowerSourceKind.Battery ? onBattery : !(onBattery && _state.PerformanceOnBattery is not null);
+            if (active)
+            {
+                _perf!.Apply(state);
+                Temporary = null;
+            }
+            if (target == PowerSourceKind.Battery) _state.PerformanceOnBattery = state;
+            else _state.Performance = state;
             JsonStore.Save(StatePath, _state);
+        }
+    }
+
+    /// <summary>배터리 전용 기본값을 지운다 → 배터리여도 전원 연결 값.</summary>
+    public void ClearPerformanceOnBattery()
+    {
+        lock (_ecLock)
+        {
+            if (_state.PerformanceOnBattery is null) return;
+            _state.PerformanceOnBattery = null;
+            JsonStore.Save(StatePath, _state);
+            if (Writable && Temporary is null && _power.OnBattery) _perf!.Apply(_state.Performance);
+        }
+    }
+
+    /// <summary>전원이 바뀌면 배터리 전용 기본값으로(또는 그 반대로). 게임별 임시 값이 있으면 앱이 다시 맞춘다.</summary>
+    private void OnPowerSourceChanged(bool onBattery)
+    {
+        if (!Writable || _state.PerformanceOnBattery is null) return;
+        lock (_ecLock)
+        {
+            if (Temporary is not null) return;
+            try
+            {
+                var state = Effective(onBattery);
+                _perf!.Apply(state);
+                _log.LogInformation("전원 변경으로 성능 기본값 적용 ({Source}): {State}", onBattery ? "배터리" : "전원 연결", state);
+            }
+            catch (Exception ex) { _log.LogError(ex, "전원 변경 성능 적용 실패"); }
         }
     }
 
@@ -110,7 +164,7 @@ public sealed class EcManager : IDisposable
         {
             if (Temporary is null) return;
             Temporary = null;
-            if (Writable) _perf!.Apply(_state.Performance);
+            if (Writable) _perf!.Apply(Performance);
         }
     }
 

@@ -16,6 +16,9 @@ public sealed class AppSettings
     /// <summary>기본 FPS 제한 (null = ClawHub가 관리 안 함, 0 = 끔). 게임별 값이 있으면 게임 중엔 그게 우선.</summary>
     public int? FpsLimit { get; set; }
 
+    /// <summary>배터리로 돌 때의 기본 FPS 제한 (null = 배터리여도 <see cref="FpsLimit"/>, 0 = 끔). 게임별 값이 있으면 그게 우선.</summary>
+    public int? FpsLimitOnBattery { get; set; }
+
     /// <summary>
     /// 시작 방식. Companion = Windows Xbox 모드(전체 화면 환경)처럼 다른 홈 화면이 있을 때
     /// ClawHub는 숨어서 버튼/자동 매핑만 담당한다.

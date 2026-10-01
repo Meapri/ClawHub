@@ -9,8 +9,14 @@ namespace ClawCore.Gpu;
 /// </summary>
 public static class IntelGraphics
 {
-    private const string DllPath = @"C:\Program Files (x86)\MSI\MSI Center M\intelGEDll.dll";
+    internal const string DllPath = @"C:\Program Files (x86)\MSI\MSI Center M\intelGEDll.dll";
     private static readonly Lazy<bool> Loaded = new(() => File.Exists(DllPath) && NativeLibrary.TryLoad(DllPath, out _));
+
+    /// <summary>
+    /// DLL 함수마다 IGCL(ControlLib)을 LoadLibrary → ctlInit → ctlClose → FreeLibrary 하며 전역 모듈 핸들을 공유한다.
+    /// 한 프로세스 안에서 동시에 부르면 서로의 핸들을 해제할 수 있어 모든 호출을 직렬화한다.
+    /// </summary>
+    internal static readonly object DriverLock = new();
 
     public static bool Available => Loaded.Value;
 
@@ -32,7 +38,7 @@ public static class IntelGraphics
     private static int? Call(Func<int> f)
     {
         if (!Available) return null;
-        try { return f(); }
+        try { lock (DriverLock) return f(); }
         catch (Exception ex) when (ex is EntryPointNotFoundException or DllNotFoundException or SEHException) { return null; }
     }
 

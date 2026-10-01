@@ -34,5 +34,16 @@ public sealed class GameEntry
     public Ec.PerformanceMode? PerformanceMode { get; set; }
     /// <summary>게임 중 FPS 제한 (null = 기본값 따름, 0 = 끔).</summary>
     public int? FpsLimit { get; set; }
+    /// <summary>배터리로 돌 때만 쓸 성능 모드 (null = 배터리여도 <see cref="PerformanceMode"/>).</summary>
+    public Ec.PerformanceMode? PerformanceModeOnBattery { get; set; }
+    /// <summary>배터리로 돌 때만 쓸 FPS 제한 (null = 배터리여도 <see cref="FpsLimit"/>, 0 = 끔).</summary>
+    public int? FpsLimitOnBattery { get; set; }
     public bool Hidden { get; set; }
+
+    /// <summary>지금 전원 상태에서 이 게임이 쓸 성능 모드 (null = 사용자 기본값).</summary>
+    public Ec.PerformanceMode? EffectivePerformanceMode(bool onBattery) =>
+        onBattery && PerformanceModeOnBattery is { } b ? b : PerformanceMode;
+
+    /// <summary>지금 전원 상태에서 이 게임이 쓸 FPS 제한 (null = 기본값).</summary>
+    public int? EffectiveFpsLimit(bool onBattery) => onBattery && FpsLimitOnBattery is { } b ? b : FpsLimit;
 }

@@ -45,17 +45,19 @@ public sealed partial class ShellViewModel : ObservableObject
     /// <summary>빠른 설정에서 기본 FPS 제한을 바꿈 → 저장하고 바로 적용 (게임별 값이 있으면 그게 우선).</summary>
     public async Task SetDefaultFpsAsync(int fps)
     {
-        Settings.FpsLimit = fps;
+        // 배터리 사용 중이고 배터리 전용 기본값이 있으면 그쪽을 바꾼다 (지금 적용 중인 값)
+        if (OnBattery && Settings.FpsLimitOnBattery is not null) Settings.FpsLimitOnBattery = fps;
+        else Settings.FpsLimit = fps;
         Settings.Save();
         await SyncControllerAsync();
     }
 
     public int CurrentFps => _appliedFps ?? _fpsBaseline ?? 0;
 
-    /// <summary>FPS 제한: 게임별 값 > 사용자 기본값 > ClawHub 시작 때 드라이버 값.</summary>
+    /// <summary>FPS 제한: 게임별 값 > 사용자 기본값 > ClawHub 시작 때 드라이버 값 (배터리 전용 값은 EffectiveFps 참고).</summary>
     private async Task SyncFpsAsync()
     {
-        var fps = RunningGame?.FpsLimit ?? Settings.FpsLimit ?? _fpsBaseline;
+        var fps = EffectiveFps() ?? _fpsBaseline;
         if (fps is not { } f || f == _appliedFps || !Gpu.Available) return;
         if (await Task.Run(() => Gpu.SetFrameLimit(f))) _appliedFps = f;
     }
@@ -124,6 +126,9 @@ public sealed partial class ShellViewModel : ObservableObject
             Profiles = [.. Profiles.All.Select(p => new ProfileItem { Id = p.Id, Name = p.Name })],
             GamePerformanceMode = game?.PerformanceMode?.ToString(),
             GameFpsLimit = game?.FpsLimit,
+            GamePerformanceModeOnBattery = game?.PerformanceModeOnBattery?.ToString(),
+            GameFpsLimitOnBattery = game?.FpsLimitOnBattery,
+            OnBattery = OnBattery,
         };
         try { await Service.SendAsync(new Request { Op = Ops.SetAppState, AppState = state }, TimeSpan.FromSeconds(3)); }
         catch (Exception) { /* 연결 끊김 — 재연결 때 다시 보냄 */ }
@@ -183,6 +188,7 @@ public sealed partial class ShellViewModel : ObservableObject
             else if (e.Event == Ops.EventAppCommand && e.Command is { } c) OnWidgetCommand(c);
         });
         Service.Start();
+        InitPower();
 
         _clockTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(10) };
         _clockTimer.Tick += (_, _) => UpdateClock();
@@ -729,8 +735,8 @@ public sealed partial class ShellViewModel : ObservableObject
                 _appliedMode = m;
             }
 
-            // 게임별 성능 모드: 게임이 도는 동안만 적용, 끝나면 사용자 기본값으로
-            var perf = RunningGame?.PerformanceMode;
+            // 게임별 성능 모드: 게임이 도는 동안만 적용, 끝나면 사용자 기본값으로 (배터리면 배터리 전용 값 우선)
+            var perf = RunningGame?.EffectivePerformanceMode(OnBattery);
             if (perf != _appliedPerf && Status?.EcWritable == true)
             {
                 var resp = perf is { } pm
