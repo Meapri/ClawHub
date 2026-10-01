@@ -8,16 +8,66 @@
   3. Trusts the certificate (LocalMachine\TrustedPeople) and registers the package for the current user
   4. Adds ClawHub to the empty OEM slot of the Xbox app "My Apps" (HKLM GamingConfiguration\OEMApps)
 
-  Undo: scripts/register-home.ps1 -Remove
+  -SetOemWidget (separate step, after the ClawHub.Widget package is installed):
+     Makes the ClawHub quick settings widget the OEM widget Game Bar features on handhelds
+     (HKLM GamingConfiguration\OEMGameBarWidget). The previous value (MSI Quick Settings) is backed up
+     to HKLM\SOFTWARE\ClawHub\Backup\OEMGameBarWidget. Game Bar picks it up after it restarts (sign out/in).
+
+  Undo: scripts/register-home.ps1 -Remove   (also restores the OEM widget backup)
 #>
 param(
     [string]$AppDir = "$env:ProgramFiles\ClawHub\app",
-    [switch]$Remove
+    [switch]$Remove,
+    [switch]$SetOemWidget
 )
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $sdk = 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64'
 $oemKey = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\GamingConfiguration\OEMApps'
+$gamingKey = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\GamingConfiguration'
+$backupKey = 'HKLM:\SOFTWARE\ClawHub\Backup'
+$widgetFamily = 'ClawHub.Widget_tj9ced57bhrww'
+# Marker stored in the backup when there was no OEMGameBarWidget value at all (restore = delete the value)
+$noValue = '<none>'
+
+function Get-RegValue($key, $name) {
+    $item = Get-ItemProperty $key -Name $name -ErrorAction SilentlyContinue
+    if ($item) { return $item.$name }
+    return $null
+}
+
+function Set-OemWidget {
+    if (-not (Get-AppxPackage -Name ($widgetFamily -split '_')[0] | Where-Object PackageFamilyName -eq $widgetFamily)) {
+        throw "Widget package $widgetFamily is not installed for this user. Install the ClawHub widget first."
+    }
+    $current = Get-RegValue $gamingKey 'OEMGameBarWidget'
+    if ($current -eq $widgetFamily) {
+        Write-Host "OEMGameBarWidget is already $widgetFamily."
+        return
+    }
+    # Back up only once: never overwrite the original (e.g. MSI Quick Settings) with a later value
+    if (-not (Test-Path $backupKey)) { New-Item -Path $backupKey -Force | Out-Null }
+    if ($null -eq (Get-RegValue $backupKey 'OEMGameBarWidget')) {
+        $saved = if ($null -eq $current) { $noValue } else { $current }
+        New-ItemProperty $backupKey -Name OEMGameBarWidget -Value $saved -PropertyType String -Force | Out-Null
+        Write-Host "Backed up OEMGameBarWidget: $saved"
+    }
+    if (-not (Test-Path $gamingKey)) { New-Item -Path $gamingKey -Force | Out-Null }
+    New-ItemProperty $gamingKey -Name OEMGameBarWidget -Value $widgetFamily -PropertyType String -Force | Out-Null
+    Write-Host "OEMGameBarWidget = $widgetFamily (restart Game Bar or sign out/in to apply)"
+}
+
+function Restore-OemWidget {
+    $saved = Get-RegValue $backupKey 'OEMGameBarWidget'
+    if ($null -eq $saved) { return }
+    # Restore only if the value is still ours (someone else may have changed it since)
+    if ((Get-RegValue $gamingKey 'OEMGameBarWidget') -eq $widgetFamily) {
+        if ($saved -eq $noValue) { Remove-ItemProperty $gamingKey -Name OEMGameBarWidget -ErrorAction SilentlyContinue }
+        else { Set-ItemProperty $gamingKey -Name OEMGameBarWidget -Value $saved }
+        Write-Host "OEMGameBarWidget restored: $saved"
+    }
+    Remove-ItemProperty $backupKey -Name OEMGameBarWidget -ErrorAction SilentlyContinue
+}
 
 function Find-OemSlot {
     foreach ($i in 1..3) {
@@ -36,7 +86,13 @@ if ($Remove) {
     Get-AppxPackage -Name ClawHub | Remove-AppxPackage
     $slot = Find-OemSlot
     if ($slot -and $slot.Mine) { Remove-ItemProperty $slot.Key -Name OemAppName, OemAppExePath, OemAppIconPath -ErrorAction SilentlyContinue }
+    Restore-OemWidget
     Write-Host 'ClawHub home app registration removed.'
+    return
+}
+
+if ($SetOemWidget) {
+    Set-OemWidget
     return
 }
 

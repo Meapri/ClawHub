@@ -132,7 +132,7 @@ public sealed partial class QuickAccessViewModel : ObservableObject
     public bool Limit80 { get => ChargeLimit == ClawCore.Ec.ChargeLimit.Balanced; set { if (value) _ = SetChargeLimitAsync(ClawCore.Ec.ChargeLimit.Balanced); } }
     public bool Limit60 { get => ChargeLimit == ClawCore.Ec.ChargeLimit.Battery; set { if (value) _ = SetChargeLimitAsync(ClawCore.Ec.ChargeLimit.Battery); } }
 
-    /// <summary>매핑 대상: 실행 중 게임, 없으면 오버레이 직전에 앞에 있던 앱.</summary>
+    /// <summary>매핑 대상: 실행 중 게임, 없으면 본체 버튼으로 런처를 띄우기 직전에 앞에 있던 앱.</summary>
     public string? TargetTitle => _shell.RunningGame?.Title ?? _shell.ForegroundApp?.Name;
     public string ProfileText => _shell.RunningGame is { } g
         ? _shell.Profiles.Find(g.MappingProfileId)?.Name ?? "사용 안 함 (게임패드 그대로)"

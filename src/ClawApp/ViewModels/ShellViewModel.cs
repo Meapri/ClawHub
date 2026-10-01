@@ -14,7 +14,9 @@ using CommunityToolkit.Mvvm.Input;
 namespace ClawApp.ViewModels;
 
 /// <summary>
-/// 셸 전체 상태: 페이지 이동, 메뉴/퀵 설정 패널, 창 표시, 게임 세션, 컨트롤러 상태 동기화.
+/// 셸 전체 상태: 페이지 이동, 창 표시, 게임 세션, 컨트롤러 상태 동기화.
+/// 본체 버튼은 Windows Xbox 환경으로 넘긴다 — 왼쪽 = 홈(ClawHub 런처, Xbox 모드면 Xbox 앱),
+/// 오른쪽 = Game Bar의 ClawHub 위젯. 게임 위에 자체 오버레이는 띄우지 않는다.
 /// </summary>
 public sealed partial class ShellViewModel : ObservableObject
 {
@@ -59,11 +61,13 @@ public sealed partial class ShellViewModel : ObservableObject
     }
 
     [ObservableProperty] private INavPage? _currentPage;
-    [ObservableProperty] private bool _isMainMenuOpen;
+    /// <summary>
+    /// 앱 안 빠른 설정 패널. Game Bar 위젯이 없을 때만, 런처가 보이는 동안에만 쓰는 대체 경로.
+    /// </summary>
     [ObservableProperty] private bool _isQuickAccessOpen;
-    /// <summary>창 자체가 보이는지 (게임/데스크톱 중이면 false).</summary>
+    /// <summary>창 자체가 보이는지 (게임/데스크톱/Xbox 앱 중이면 false).</summary>
     [ObservableProperty] private bool _isWindowVisible = true;
-    /// <summary>셸 화면(배경+페이지)이 보이는지. false면 게임 위에 패널만 띄운 오버레이 상태.</summary>
+    /// <summary>셸 화면(배경+페이지)이 보이는지. 이제 게임 위 오버레이가 없으므로 창이 보이면 항상 true.</summary>
     [ObservableProperty] private bool _isShellVisible = true;
     [ObservableProperty] private bool _serviceConnected;
     [ObservableProperty] private ServiceStatus? _status;
@@ -80,7 +84,28 @@ public sealed partial class ShellViewModel : ObservableObject
     public void RequestFocus() => FocusRequested?.Invoke();
 
     public GameSession? Session { get; private set; }
-    public bool IsAnyPanelOpen => IsMainMenuOpen || IsQuickAccessOpen;
+    public bool IsAnyPanelOpen => IsQuickAccessOpen;
+
+    /// <summary>
+    /// 왼쪽 메인 메뉴 패널은 없어졌다 (홈 화면이 그 역할). 예전 XAML 바인딩이 남아 있어도
+    /// 바인딩 실패로 패널이 보이는 일이 없도록 항상 false를 돌려준다.
+    /// </summary>
+    public bool IsMainMenuOpen => false;
+
+    // ── 홈의 "지금 플레이 중" 타일용 ───────────────────────────
+
+    public bool IsGameRunning => RunningGame is not null;
+    public string? RunningGameTitle => RunningGame?.Title;
+    /// <summary>실행 중 게임의 아트(커버·히어로·로고). 게임이 없으면 null.</summary>
+    [ObservableProperty] private GameTileViewModel? _runningTile;
+
+    partial void OnRunningGameChanged(GameEntry? value)
+    {
+        RunningTile = value is null ? null : new GameTileViewModel(this, value);
+        OnPropertyChanged(nameof(IsGameRunning));
+        OnPropertyChanged(nameof(RunningGameTitle));
+        UpdateHints(); // 홈 힌트에 "B 게임으로"가 붙었다 떨어진다
+    }
 
     public ShellViewModel()
     {
@@ -130,6 +155,9 @@ public sealed partial class ShellViewModel : ObservableObject
         _watchTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
         _watchTimer.Tick += async (_, _) => await WatchExternalGamesAsync();
         _watchTimer.Start();
+
+        _handoffTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(400) };
+        _handoffTimer.Tick += (_, _) => OnHandoffTick();
     }
 
     /// <summary>커버·배경·로고가 없는 게임의 아트를 받아 오고, 받았으면 화면을 새로 그린다.</summary>
@@ -174,20 +202,24 @@ public sealed partial class ShellViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void OpenXboxApp()
+    private void OpenXboxApp() => OpenXboxHome();
+
+    /// <summary>
+    /// Xbox 앱 홈을 앞으로. ClawHub 창은 숨기되 게임 창을 다시 앞으로 올리지는 않는다
+    /// (Xbox 앱이 앞에 있어야 하므로). Xbox 앱이 앞에 있는 동안은 게임 매핑을 풀어 둔다.
+    /// </summary>
+    private bool OpenXboxHome()
     {
-        try
+        if (!XboxIntegration.TryOpenXboxApp(out var error))
         {
-            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("explorer.exe", AppSettings.XboxAppId));
-        }
-        catch (Exception ex)
-        {
-            ShowToast($"Xbox 앱을 열 수 없습니다: {ex.Message}");
-            return;
+            ShowToast($"Xbox 앱을 열 수 없습니다: {error}");
+            return false;
         }
         _inDesktop = false;
         _returnWindow = IntPtr.Zero;
-        ReturnToBackground();
+        HideWindow();
+        BeginHandoff(Handoff.XboxApp); // 매핑 동기화 포함
+        return true;
     }
 
     private static void Ui(Action a) => Application.Current.Dispatcher.BeginInvoke(a);
@@ -234,7 +266,7 @@ public sealed partial class ShellViewModel : ObservableObject
     [RelayCommand] private void OpenProfiles() { IsShellVisible = true; Navigate(new ProfilesViewModel(this)); }
     [RelayCommand] private void OpenSettings() { IsShellVisible = true; Navigate(new SettingsViewModel(this)); }
 
-    /// <summary>퀵 설정(게임 위 오버레이 포함)에서 전체 설정으로. 셸을 띄우고 매핑은 풀린다.</summary>
+    /// <summary>앱 안 빠른 설정 패널에서 전체 설정으로. 셸을 띄우고 매핑은 풀린다.</summary>
     public void OpenSettingsEverywhere()
     {
         IsShellVisible = true;
@@ -245,43 +277,23 @@ public sealed partial class ShellViewModel : ObservableObject
 
     public void UpdateHints()
     {
-        IReadOnlyList<Hint> hints = IsQuickAccessOpen || IsMainMenuOpen
+        IReadOnlyList<Hint> hints = IsQuickAccessOpen
             ? [new("A", "선택"), new("B", "닫기")]
             : CurrentPage?.Hints ?? [];
         Hints = new ObservableCollection<Hint>(hints);
     }
 
-    // ── 패널 ───────────────────────────────────────────────
+    // ── 앱 안 빠른 설정 패널 (위젯이 없을 때의 대체 경로) ─────────
 
-    public void ToggleMainMenu()
-    {
-        IsQuickAccessOpen = false;
-        IsMainMenuOpen = !IsMainMenuOpen;
-        AfterPanelChange();
-    }
-
-    public void ToggleQuickAccess()
-    {
-        IsMainMenuOpen = false;
-        IsQuickAccessOpen = !IsQuickAccessOpen;
-        if (IsQuickAccessOpen) QuickAccess.Refresh();
-        AfterPanelChange();
-    }
-
-    /// <summary>패널을 닫는다. 게임/데스크톱 위 오버레이였으면 창을 숨기고 원래 창으로 돌려보낸다.</summary>
+    /// <summary>패널을 닫는다. 패널은 런처 위에서만 열리므로 창은 그대로 둔다.</summary>
     [RelayCommand]
     public void ClosePanels()
     {
         CloseMenus();
-        if (!IsShellVisible) ReturnToBackground();
-        else AfterPanelChange();
+        AfterPanelChange();
     }
 
-    private void CloseMenus()
-    {
-        IsMainMenuOpen = false;
-        IsQuickAccessOpen = false;
-    }
+    private void CloseMenus() => IsQuickAccessOpen = false;
 
     private void AfterPanelChange()
     {
@@ -300,7 +312,7 @@ public sealed partial class ShellViewModel : ObservableObject
         "StartMenuExperienceHost", "TextInputHost", "LockApp", "GameBar", "Idle",
     };
 
-    /// <summary>오버레이를 띄우기 직전에 앞에 있던 앱 (라이브러리 밖 게임에 프로필을 붙일 때 사용).</summary>
+    /// <summary>본체 버튼으로 런처를 띄우기 직전에 앞에 있던 앱 (라이브러리 밖 게임에 프로필을 붙일 때 사용).</summary>
     public (string Name, string? Path)? ForegroundApp { get; private set; }
 
     private void CaptureForegroundApp(IntPtr hwnd)
@@ -361,39 +373,188 @@ public sealed partial class ShellViewModel : ObservableObject
         _ = SyncControllerAsync();
     }
 
+    /// <summary>화면의 빠른 설정 버튼(터치/마우스용) — 오른쪽 본체 버튼과 같다.</summary>
+    [RelayCommand]
+    private void OpenQuickSettings() => OnQuickSettingsButton();
+
+    /// <summary>본체 버튼 (서비스 이벤트) 또는 패드 Menu/View, 키보드 F1/F2. 항상 UI 스레드에서 호출된다.</summary>
     public void OnMsiButton(MsiButton button)
     {
+        if (button == MsiButton.MainMenu) OnHomeButton();
+        else OnQuickSettingsButton();
+    }
+
+    /// <summary>
+    /// 왼쪽 버튼 = Xbox 홈 버튼처럼 "홈으로".
+    /// Xbox 모드(동반)면 Xbox 앱 홈, 아니면 ClawHub 런처 홈. 게임은 계속 돌고, 런처가 보이는 동안
+    /// SyncControllerAsync가 매핑을 풀어 둔다. 게임 중 이미 홈이면 한 번 더 눌러 게임으로 돌아간다.
+    /// </summary>
+    private void OnHomeButton()
+    {
+        if (IsCompanion && OpenXboxHome()) return; // 실패하면 ClawHub 홈으로 대신
+
         if (!IsWindowVisible)
         {
             _returnWindow = SystemControls.ForegroundWindow();
             CaptureForegroundApp(_returnWindow);
-            var fullShell = RunningGame is null && button == MsiButton.MainMenu;
-            IsShellVisible = fullShell;
             _inDesktop = false;
-            IsWindowVisible = true;
             CloseMenus();
-            if (!fullShell)
-            {
-                if (button == MsiButton.MainMenu) IsMainMenuOpen = true;
-                else { IsQuickAccessOpen = true; QuickAccess.Refresh(); }
-            }
-            AfterPanelChange();
-            _ = SyncControllerAsync();
+            IsShellVisible = true;  // 창을 띄우기 전에 셸 상태로 (백드롭이 Mica로 시작)
+            IsWindowVisible = true; // 여기서 창이 앞으로 (MainWindow.ApplyWindowVisibility)
+            GoHome();               // 매핑 해제 포함
             return;
         }
 
-        if (button == MsiButton.MainMenu) ToggleMainMenu(); else ToggleQuickAccess();
-        if (!IsAnyPanelOpen && !IsShellVisible) ReturnToBackground();
+        var atHome = CurrentPage == Home && _back.Count == 0;
+        if (atHome && !IsQuickAccessOpen && RunningGame is not null)
+        {
+            ReturnToBackground();
+            return;
+        }
+        GoHome();
     }
 
-    /// <summary>창을 숨기고 게임(또는 데스크톱)으로 돌아간다.</summary>
-    [RelayCommand]
-    public void ReturnToBackground()
+    /// <summary>
+    /// 오른쪽 버튼 = Game Bar의 ClawHub 빠른 설정 위젯.
+    /// 위젯이 없으면 런처가 보일 때만 앱 안 패널로, 런처가 숨어 있으면 Game Bar 자체(OEM 위젯 등)를 연다.
+    /// </summary>
+    private void OnQuickSettingsButton()
+    {
+        // 앱 안 패널이 열려 있으면 같은 버튼으로 닫기
+        if (IsWindowVisible && IsQuickAccessOpen)
+        {
+            ClosePanels();
+            return;
+        }
+
+        // 우리가 연 Game Bar가 앞에 떠 있으면 같은 버튼으로 닫기 (Win+G 토글)
+        if (_handoff == Handoff.GameBar && _handoffSeen && XboxIntegration.IsGameBar(XboxIntegration.ForegroundOwner()))
+        {
+            XboxIntegration.PressWinG(); // 닫히면 OnHandoffTick이 매핑을 되돌린다
+            return;
+        }
+
+        if (XboxIntegration.IsWidgetInstalled() && XboxIntegration.TryOpenWidget())
+        {
+            BeginHandoff(Handoff.GameBar, retryWinG: true);
+            _panelFallback = IsWindowVisible; // Game Bar가 꺼져 있어 끝내 안 뜨면 런처 위 패널로
+            return;
+        }
+
+        if (IsWindowVisible)
+        {
+            OpenQuickPanel();
+            return;
+        }
+
+        // 위젯 없음 + 게임/데스크톱 중: 우리 오버레이 대신 Windows Game Bar를 연다
+        XboxIntegration.PressWinG();
+        BeginHandoff(Handoff.GameBar, retryWinG: false);
+    }
+
+    private void OpenQuickPanel()
+    {
+        IsQuickAccessOpen = true;
+        QuickAccess.Refresh();
+        AfterPanelChange();
+    }
+
+    // ── Xbox 연동: 화면을 Game Bar / Xbox 앱에 넘긴 동안 ───────────
+
+    private enum Handoff { None, GameBar, XboxApp }
+
+    /// <summary>위젯을 런처 위에서 열었는지 — Game Bar가 끝내 안 뜨면 앱 안 패널로 대신한다.</summary>
+    private bool _panelFallback;
+
+    private readonly DispatcherTimer _handoffTimer;
+    private Handoff _handoff;
+    private DateTime _handoffAt;
+    /// <summary>넘긴 화면이 실제로 앞에 뜬 걸 한 번이라도 봤는지 (그 뒤 사라지면 닫힌 것).</summary>
+    private bool _handoffSeen;
+    private bool _handoffRetry;
+
+    /// <summary>
+    /// 화면을 Game Bar/Xbox 앱에 넘긴다. 그쪽이 앞에 있는 동안은 게임 매핑을 풀고 컨트롤러를 XInput으로
+    /// 두어 패드로 조작할 수 있게 하고, 닫히면(다른 창이 앞으로 오면) 다시 동기화한다.
+    /// </summary>
+    private void BeginHandoff(Handoff kind, bool retryWinG = false)
+    {
+        _handoff = kind;
+        _handoffAt = DateTime.UtcNow;
+        _handoffSeen = false;
+        _handoffRetry = retryWinG;
+        _panelFallback = false;
+        _handoffTimer.Start();
+        _ = SyncControllerAsync();
+    }
+
+    private void EndHandoff()
+    {
+        if (_handoff == Handoff.None) return;
+        _handoff = Handoff.None;
+        _handoffTimer.Stop();
+        _ = SyncControllerAsync();
+    }
+
+    private void OnHandoffTick()
+    {
+        var front = XboxIntegration.ForegroundOwner();
+        var holding = _handoff switch
+        {
+            Handoff.GameBar => XboxIntegration.IsGameBar(front),
+            Handoff.XboxApp => XboxIntegration.IsXboxApp(front),
+            _ => false,
+        };
+        if (holding)
+        {
+            _handoffSeen = true;
+            return;
+        }
+        if (_handoffSeen)
+        {
+            // 닫혔거나 다른 창(게임 등)으로 넘어감. 앞 창을 모르면(전환 중) 다음 틱에 판단
+            if (front is not null) EndHandoff();
+            return;
+        }
+
+        var elapsed = DateTime.UtcNow - _handoffAt;
+        // URI만으로 Game Bar가 안 뜨면 MSI 도우미처럼 Win+G로 열고 위젯을 한 번 더 활성화
+        if (_handoff == Handoff.GameBar && _handoffRetry && front is not null && elapsed > TimeSpan.FromSeconds(1.5))
+        {
+            _handoffRetry = false;
+            _ = RetryGameBarAsync();
+            return;
+        }
+        // 끝내 안 뜸 → 원래 상태로 (Xbox 앱은 첫 실행이 느려서 더 기다린다)
+        if (elapsed > (_handoff == Handoff.XboxApp ? TimeSpan.FromSeconds(15) : TimeSpan.FromSeconds(5)))
+        {
+            var fallback = _handoff == Handoff.GameBar && _panelFallback && IsWindowVisible && !IsQuickAccessOpen;
+            EndHandoff();
+            if (fallback) OpenQuickPanel(); // Game Bar가 꺼져 있음 — 런처가 보이는 동안만 앱 안 패널
+        }
+    }
+
+    private async Task RetryGameBarAsync()
+    {
+        XboxIntegration.PressWinG();
+        await Task.Delay(600); // UI 스레드로 돌아옴
+        if (_handoff == Handoff.GameBar && !_handoffSeen) XboxIntegration.TryOpenWidget();
+    }
+
+    /// <summary>창만 숨긴다 (다른 창을 앞으로 올리지 않음).</summary>
+    private void HideWindow()
     {
         CloseMenus();
         OnPropertyChanged(nameof(IsAnyPanelOpen));
         IsWindowVisible = false;
         IsShellVisible = false;
+    }
+
+    /// <summary>창을 숨기고 게임(또는 런처를 띄우기 전 앱)으로 돌아간다. "게임으로 돌아가기".</summary>
+    [RelayCommand]
+    public void ReturnToBackground()
+    {
+        HideWindow();
         var target = _returnWindow;
         if (RunningGame is not null && Session?.FindProcesses().FirstOrDefault(p => p.MainWindowHandle != IntPtr.Zero) is { } p)
             target = p.MainWindowHandle;
@@ -450,26 +611,23 @@ public sealed partial class ShellViewModel : ObservableObject
         RunningGame = null;
 
         // ClawHub에서 실행한 게임이면 셸로 돌아오고, 외부(Xbox 앱 등)에서 실행한 게임이면 그쪽 홈에 맡긴다
-        if (s.LaunchedByUs)
+        if (s.LaunchedByUs && !IsWindowVisible)
         {
+            CloseMenus();
             IsShellVisible = true;
-            IsWindowVisible = true;
-            CloseMenus();
+            IsWindowVisible = true; // 실행했던 화면(홈/게임 상세)으로 돌아온다
             AfterPanelChange();
-        }
-        else if (!IsShellVisible)
-        {
-            CloseMenus();
-            IsWindowVisible = false;
-            OnPropertyChanged(nameof(IsAnyPanelOpen));
         }
         _ = SyncControllerAsync();
     }
 
+    /// <summary>"게임 종료". 홈 타일에서 실수로 누르지 않도록 3초 안에 한 번 더 눌러야 실행.</summary>
     [RelayCommand]
     private void QuitGame()
     {
-        Session?.Kill();
+        if (Session is null || RunningGame is null) return;
+        if (!ConfirmTwice("quit", $"{RunningGame.Title}을(를) 종료합니다")) return;
+        Session.Kill();
         CloseMenus();
         ShowToast("게임을 종료하는 중…");
     }
@@ -478,7 +636,8 @@ public sealed partial class ShellViewModel : ObservableObject
 
     /// <summary>
     /// 현재 화면 상태에서 컨트롤러가 있어야 할 상태를 계산해 맞춘다.
-    /// 게임 중이고 셸이 숨겨져 있을 때만 게임 매핑, 그 외에는 원래 상태(패드).
+    /// 게임 중이고 셸이 숨겨져 있으며 Game Bar/Xbox 앱에 화면을 넘기지 않았을 때만 게임 매핑,
+    /// 그 외에는 원래 상태(패드).
     /// </summary>
     public async Task SyncControllerAsync()
     {
@@ -487,12 +646,14 @@ public sealed partial class ShellViewModel : ObservableObject
         await _syncLock.WaitAsync();
         try
         {
-            MappingProfile? profile = RunningGame is not null && !IsWindowVisible ? Profiles.Find(RunningGame.MappingProfileId) : null;
+            var handedOff = _handoff != Handoff.None;
+            MappingProfile? profile = RunningGame is not null && !IsWindowVisible && !handedOff ? Profiles.Find(RunningGame.MappingProfileId) : null;
 
             // Xbox 모드(동반)는 항상 패드 조작이므로 XInput, "데스크톱으로"를 고른 경우만 Desktop
+            // Game Bar 위젯/Xbox 앱이 앞에 있는 동안도 패드로 조작해야 하므로 XInput
             GamepadMode? mode = profile?.Mode
                 ?? (!Settings.AutoControllerMode ? null
-                    : IsWindowVisible || RunningGame is not null ? GamepadMode.XInput
+                    : IsWindowVisible || handedOff || RunningGame is not null ? GamepadMode.XInput
                     : _inDesktop ? GamepadMode.Desktop
                     : IsCompanion ? GamepadMode.XInput : null);
 
@@ -636,7 +797,6 @@ public sealed partial class ShellViewModel : ObservableObject
     }
 
     partial void OnCurrentPageChanged(INavPage? value) => OnPropertyChanged(nameof(PageTitle));
-    partial void OnIsMainMenuOpenChanged(bool value) => OnPropertyChanged(nameof(IsAnyPanelOpen));
     partial void OnIsQuickAccessOpenChanged(bool value) => OnPropertyChanged(nameof(IsAnyPanelOpen));
     public void OnPropertyChangedPageTitle() => OnPropertyChanged(nameof(PageTitle));
     public string PageTitle => CurrentPage?.Title ?? "";
