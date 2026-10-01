@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    ClawHub 설치/업데이트/제거 프로그램 (단일 파일 ClawHubSetup.exe).
+    - 프레임워크 종속(.NET 10 Desktop 런타임 필요) 단일 파일: 장치에 이미 .NET 10 런타임이 있으므로
+      자체 포함(~+70MB)보다 작고, ClawApp/ClawService도 같은 런타임을 쓴다.
+    - Windows 10 SDK 프로젝션(net10.0-windows10.0.19041.0)은 PackageManager(MSIX 설치·외부 위치 등록)용.
+    - 페이로드(payload.zip)는 build.ps1이 만들어 -p:ClawHubPayload=<경로>로 넘길 때만 리소스로 들어간다.
+      그냥 dotnet build 하면 페이로드 없는 빌드(드라이런·제거만 가능)가 된다.
+  -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>false</SelfContained>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>ClawHubSetup</AssemblyName>
+    <RootNamespace>ClawHubSetup</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>..\..\src\ClawApp\Assets\ClawHub.ico</ApplicationIcon>
+    <Version>1.0.0</Version>
+    <Product>ClawHub</Product>
+    <!-- WPF Fluent 테마(ThemeMode)는 아직 실험적 API -->
+    <NoWarn>$(NoWarn);WPF0001</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.ServiceProcess.ServiceController" Version="10.0.12" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="..\..\src\ClawApp\Assets\ClawHub.ico" Link="Assets\ClawHub.ico" />
+    <Resource Include="..\..\src\ClawApp\Assets\ClawHub-256.png" Link="Assets\ClawHub-256.png" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(ClawHubPayload)' != ''">
+    <EmbeddedResource Include="$(ClawHubPayload)" LogicalName="ClawHub.payload.zip" />
+  </ItemGroup>
+
+  <Target Name="CheckClawHubPayload" BeforeTargets="BeforeBuild" Condition="'$(ClawHubPayload)' != '' And !Exists('$(ClawHubPayload)')">
+    <Error Text="ClawHubPayload 파일이 없습니다: $(ClawHubPayload)" />
+  </Target>
+
+</Project>

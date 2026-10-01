@@ -5,6 +5,7 @@
     <Project Path="src/ClawService/ClawService.csproj" />
   </Folder>
   <Folder Name="/tools/">
+    <Project Path="tools/ClawHubSetup/ClawHubSetup.csproj" />
     <Project Path="tools/ClawProbe/ClawProbe.csproj" />
     <Project Path="tools/IgclProbe/IgclProbe.csproj" />
   </Folder>

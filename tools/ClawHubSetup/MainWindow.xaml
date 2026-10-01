@@ -1,0 +1,138 @@
+<Window x:Class="ClawHubSetup.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="ClawHub 설치" Width="600" Height="700" MinWidth="520" MinHeight="560"
+        WindowStartupLocation="CenterScreen"
+        Icon="pack://application:,,,/Assets/ClawHub.ico">
+    <Window.Resources>
+        <Style x:Key="Caption" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Opacity" Value="0.72"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="Margin" Value="28,2,0,14"/>
+        </Style>
+        <Style x:Key="SectionTitle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0,6,0,10"/>
+        </Style>
+        <Style x:Key="Notice" TargetType="Border">
+            <Setter Property="Background" Value="#26F7B500"/>
+            <Setter Property="BorderBrush" Value="#66F7B500"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="12,10"/>
+            <Setter Property="Margin" Value="28,0,0,14"/>
+        </Style>
+        <Style x:Key="InfoCard" TargetType="Border">
+            <Setter Property="Background" Value="#14808080"/>
+            <Setter Property="BorderBrush" Value="#30808080"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="14,12"/>
+            <Setter Property="Margin" Value="0,0,0,18"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="28,24,28,20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- 머리글 -->
+        <DockPanel>
+            <Image Source="pack://application:,,,/Assets/ClawHub-256.png" Width="52" Height="52" DockPanel.Dock="Left"/>
+            <StackPanel Margin="16,0,0,0" VerticalAlignment="Center">
+                <TextBlock x:Name="HeaderText" Text="ClawHub 설치" FontSize="24" FontWeight="SemiBold"/>
+                <TextBlock x:Name="SubtitleText" Opacity="0.72" TextWrapping="Wrap" Margin="0,2,0,0"/>
+            </StackPanel>
+        </DockPanel>
+
+        <!-- 설치 -->
+        <ScrollViewer x:Name="InstallPage" Grid.Row="1" Margin="0,20,0,0" VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="0,0,8,0">
+                <Border Style="{StaticResource InfoCard}">
+                    <StackPanel>
+                        <TextBlock x:Name="InstallStatusText" TextWrapping="Wrap" FontWeight="SemiBold"/>
+                        <TextBlock x:Name="InstallDetailText" TextWrapping="Wrap" FontSize="12" Opacity="0.72" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <TextBlock Text="설치 항목" Style="{StaticResource SectionTitle}"/>
+
+                <CheckBox x:Name="AutoStartCheck" Content="로그인할 때 ClawHub 자동 실행"/>
+                <TextBlock Style="{StaticResource Caption}" Text="ClawHub 설정 > 일반에서도 바꿀 수 있어요."/>
+
+                <CheckBox x:Name="WidgetCheck" Content="Xbox Game Bar 위젯 설치"/>
+                <TextBlock x:Name="WidgetCaption" Style="{StaticResource Caption}" Text="게임 중 Win+G에서 성능 모드·충전 한도를 바꾸는 ClawHub 위젯."/>
+
+                <CheckBox x:Name="HomeCheck" Content="Xbox 모드 홈 앱으로 등록"/>
+                <TextBlock x:Name="HomeCaption" Style="{StaticResource Caption}"
+                           Text="Xbox 전체 화면 환경의 '홈 앱 선택'과 Xbox 앱 '내 앱'에 ClawHub를 추가해요. 개발자 모드가 필요해요."/>
+                <Border x:Name="DevModeNotice" Style="{StaticResource Notice}" Visibility="Collapsed">
+                    <StackPanel>
+                        <TextBlock TextWrapping="Wrap" FontSize="12"
+                                   Text="개발자 모드가 꺼져 있어 이 단계는 건너뛰어요. Xbox 모드 홈 앱 기능은 서명되지 않은 사용자 지정 기능을 쓰기 때문에 개발자 모드에서만 등록할 수 있어요. 켜고 돌아오면 자동으로 다시 확인해요."/>
+                        <Button x:Name="DevModeButton" Content="개발자 모드 설정 열기" HorizontalAlignment="Left" Margin="0,10,0,0" Click="DevModeButton_Click"/>
+                    </StackPanel>
+                </Border>
+
+                <CheckBox x:Name="OemWidgetCheck" Content="Game Bar 기본 OEM 위젯을 ClawHub로 바꾸기"/>
+                <TextBlock Style="{StaticResource Caption}"
+                           Text="핸드헬드 Game Bar가 기본으로 보여 주는 제조사 위젯(MSI 퀵 설정) 자리를 ClawHub 위젯으로 바꿔요. 원래 값은 백업했다가 제거할 때 되돌려요."/>
+
+                <CheckBox x:Name="MsiCenterCheck" Content="MSI Center M 끄기"/>
+                <TextBlock x:Name="MsiCenterCaption" Style="{StaticResource Caption}"
+                           Text="제거하지 않고 예약 작업·서비스만 꺼서 오버레이가 ClawHub와 겹치지 않게 해요. ClawHub를 제거하면 다시 켜요."/>
+
+                <Border x:Name="UserNotice" Style="{StaticResource Notice}" Margin="0,0,0,14" Visibility="Collapsed">
+                    <TextBlock x:Name="UserNoticeText" TextWrapping="Wrap" FontSize="12"/>
+                </Border>
+
+                <Button x:Name="GoUninstallButton" Content="ClawHub 제거…" HorizontalAlignment="Left" Margin="0,8,0,0"
+                        Visibility="Collapsed" Click="GoUninstallButton_Click"/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- 제거 -->
+        <ScrollViewer x:Name="UninstallPage" Grid.Row="1" Margin="0,20,0,0" VerticalScrollBarVisibility="Auto" Visibility="Collapsed">
+            <StackPanel Margin="0,0,8,0">
+                <Border Style="{StaticResource InfoCard}">
+                    <TextBlock TextWrapping="Wrap"
+                               Text="ClawHub 서비스를 멈추면 컨트롤러가 원래 매핑으로 돌아가요. 그다음 서비스·앱·위젯을 지우고 설치할 때 바꾼 설정을 되돌려요."/>
+                </Border>
+                <TextBlock Text="되돌리는 항목" Style="{StaticResource SectionTitle}"/>
+                <TextBlock x:Name="UninstallPlanText" TextWrapping="Wrap" FontSize="12" Opacity="0.85" Margin="0,0,0,16" LineHeight="20"/>
+                <CheckBox x:Name="PurgeCheck" Content="사용자 데이터도 삭제"/>
+                <TextBlock x:Name="PurgeCaption" Style="{StaticResource Caption}"/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- 진행 -->
+        <Grid x:Name="ProgressPage" Grid.Row="1" Margin="0,20,0,0" Visibility="Collapsed">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <TextBlock x:Name="StepText" FontWeight="SemiBold" TextWrapping="Wrap"/>
+            <ProgressBar x:Name="Progress" Grid.Row="1" Height="4" Margin="0,10,0,14" Minimum="0" Maximum="1"/>
+            <TextBox x:Name="LogBox" Grid.Row="2" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap"
+                     FontFamily="Cascadia Mono, Consolas, Malgun Gothic" FontSize="12"
+                     VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"/>
+        </Grid>
+
+        <!-- 단추 -->
+        <DockPanel Grid.Row="2" Margin="0,16,0,0" LastChildFill="False">
+            <TextBlock x:Name="LogPathText" DockPanel.Dock="Left" VerticalAlignment="Center" FontSize="11" Opacity="0.6"
+                       TextTrimming="CharacterEllipsis" MaxWidth="260"/>
+            <Button x:Name="SecondaryButton" DockPanel.Dock="Right" Content="취소" MinWidth="96" Margin="8,0,0,0" Click="SecondaryButton_Click"/>
+            <Button x:Name="PrimaryButton" DockPanel.Dock="Right" Content="설치" MinWidth="120"
+                    Style="{DynamicResource AccentButtonStyle}" Click="PrimaryButton_Click"/>
+            <Button x:Name="LaunchButton" DockPanel.Dock="Right" Content="ClawHub 실행" MinWidth="110" Margin="0,0,8,0"
+                    Visibility="Collapsed" Click="LaunchButton_Click"/>
+        </DockPanel>
+    </Grid>
+</Window>
