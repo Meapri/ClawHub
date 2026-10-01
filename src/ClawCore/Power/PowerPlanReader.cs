@@ -41,7 +41,7 @@ public static class PowerPlanReader
         {
             if (PowerPlanNative.ActiveScheme() is not { } scheme)
             {
-                state.Error = "활성 전원 구성표를 읽지 못했습니다";
+                state.Error = "활성 전원 구성표를 읽지 못했어요";
                 return state;
             }
             var caps = PowerPlanNative.ReadCapabilities();
@@ -94,7 +94,7 @@ public static class PowerPlanReader
                 state.Settings.Add(s);
             }
             state.Available = state.Settings.Count > 0;
-            if (!state.Available) state.Error = "바꿀 수 있는 전원 설정이 없습니다";
+            if (!state.Available) state.Error = "바꿀 수 있는 전원 설정이 없어요";
         }
         catch (Exception ex)
         {
@@ -111,11 +111,11 @@ public static class PowerPlanReader
     public static void Validate(PowerPlanState state, PowerPlanSetting setting, PowerSourceKind source, int value)
     {
         var s = state.Settings.FirstOrDefault(x => x.PowerSetting == setting)
-            ?? throw new InvalidOperationException("이 기기에서 바꿀 수 없는 전원 설정입니다");
+            ?? throw new InvalidOperationException("이 기기에서 바꿀 수 없는 전원 설정이에요");
         if (source == PowerSourceKind.Ac && !s.AcApplies)
-            throw new ArgumentException("이 설정은 배터리 칸만 있습니다 (PowerSource \"Battery\")");
+            throw new ArgumentException("이 설정은 배터리 칸만 있어요 (PowerSource \"Battery\")");
         if (setting == PowerPlanSetting.Hibernate && !state.HibernateEnabled && value != 0)
-            throw new InvalidOperationException("최대 절전 모드가 꺼져 있습니다 (관리자 명령 프롬프트에서 powercfg /h on)");
+            throw new InvalidOperationException("최대 절전 모드가 꺼져 있어요 (관리자 명령 프롬프트에서 powercfg /h on)");
 
         switch (s.Unit)
         {
@@ -124,11 +124,11 @@ public static class PowerPlanReader
                 break;
             case PowerPlanUnit.Seconds:
                 if (value != 0 && (value % Minute != 0 || value < Minute || value > MaxSeconds))
-                    throw new ArgumentException("시간은 0(사용 안 함) 또는 1분 단위로 최대 24시간입니다");
-                if (value < s.Min || value > s.Max) throw new ArgumentException($"허용 범위({s.Min}~{s.Max}) 밖의 값입니다");
+                    throw new ArgumentException("시간은 0(사용 안 함) 또는 1분 단위로 최대 24시간이에요");
+                if (value < s.Min || value > s.Max) throw new ArgumentException($"허용 범위({s.Min}~{s.Max}) 밖의 값이에요");
                 break;
             case PowerPlanUnit.Percent:
-                if (value < Math.Max(0, s.Min) || value > Math.Min(100, s.Max)) throw new ArgumentException("0~100% 사이여야 합니다");
+                if (value < Math.Max(0, s.Min) || value > Math.Min(100, s.Max)) throw new ArgumentException("0~100% 사이여야 해요");
                 break;
         }
     }

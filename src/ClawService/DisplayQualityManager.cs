@@ -38,7 +38,7 @@ public sealed class DisplayQualityManager(ILogger<DisplayQualityManager> log) : 
         if (change.LowLatency is { } l && !Enum.IsDefined(l)) throw new ArgumentException("잘못된 저지연 모드");
         lock (_lock)
         {
-            var igcl = OpenLocked() ?? throw new InvalidOperationException($"Intel 그래픽 설정을 사용할 수 없습니다 ({_openError})");
+            var igcl = OpenLocked() ?? throw new InvalidOperationException($"Intel 그래픽 설정을 사용할 수 없어요 ({_openError})");
             try
             {
                 igcl.Apply(change);

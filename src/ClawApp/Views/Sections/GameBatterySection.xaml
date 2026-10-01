@@ -27,6 +27,6 @@
         </Button>
 
         <TextBlock Style="{StaticResource Caption}" Margin="2,6,0,0"
-                   Text="'따로 안 씀'이면 배터리여도 위의 값을 씁니다. 전원을 꽂거나 뽑으면 게임 중에도 바로 바뀝니다."/>
+                   Text="'따로 안 씀'이면 배터리여도 위의 값을 써요. 전원을 꽂거나 뽑으면 게임 중에도 바로 바뀌어요."/>
     </StackPanel>
 </UserControl>

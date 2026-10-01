@@ -77,14 +77,14 @@ public static class PowerPlanNative
         var r = ac
             ? PowerWriteACValueIndex(IntPtr.Zero, ref scheme, ref sub, ref setting, value)
             : PowerWriteDCValueIndex(IntPtr.Zero, ref scheme, ref sub, ref setting, value);
-        if (r != ErrorSuccess) throw new InvalidOperationException($"전원 설정을 쓰지 못했습니다 (오류 {r})");
+        if (r != ErrorSuccess) throw new InvalidOperationException($"전원 설정을 쓰지 못했어요 (오류 {r})");
     }
 
     /// <summary>바꾼 값을 바로 반영 (같은 구성표를 다시 활성화).</summary>
     public static void Apply(Guid scheme)
     {
         var r = PowerSetActiveScheme(IntPtr.Zero, ref scheme);
-        if (r != ErrorSuccess) throw new InvalidOperationException($"전원 구성표를 적용하지 못했습니다 (오류 {r})");
+        if (r != ErrorSuccess) throw new InvalidOperationException($"전원 구성표를 적용하지 못했어요 (오류 {r})");
     }
 
     // ── 기기 능력 ───────────────────────────────────────────

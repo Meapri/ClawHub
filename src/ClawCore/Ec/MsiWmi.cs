@@ -50,7 +50,7 @@ public sealed class MsiWmi
         scope.Connect();
         using var searcher = new ManagementObjectSearcher(scope, new ObjectQuery("SELECT * FROM MSI_ACPI"));
         var acpi = searcher.Get().Cast<ManagementObject>().FirstOrDefault()
-            ?? throw new InvalidOperationException("MSI_ACPI 인스턴스가 없습니다 (관리자 권한 또는 MSI 드라이버 확인)");
+            ?? throw new InvalidOperationException("MSI_ACPI 인스턴스가 없어요 (관리자 권한 또는 MSI 드라이버 확인)");
         return new MsiWmi(scope, acpi);
     }
 

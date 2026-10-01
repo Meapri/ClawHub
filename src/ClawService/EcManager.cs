@@ -37,7 +37,7 @@ public sealed class EcManager : IDisposable
             _wmi = MsiWmi.Open();
             _perf = new PerformanceManager(_wmi);
             _log.LogInformation("EC 연결: WMI v{Major}.{Minor}, {Ec}", _wmi.WmiMajor, _wmi.WmiMinor, _wmi.EcVersion);
-            if (!_wmi.WritesEnabled) Error = $"WMI v{_wmi.WmiMajor}는 검증되지 않아 쓰기를 막았습니다";
+            if (!_wmi.WritesEnabled) Error = $"WMI v{_wmi.WmiMajor}는 검증되지 않아 쓰기를 막았어요";
 
             // Win32_PowerManagementEvent EventType 7 = 절전 복귀
             _resumeWatcher = new ManagementEventWatcher(new WqlEventQuery("SELECT * FROM Win32_PowerManagementEvent WHERE EventType = 7"));

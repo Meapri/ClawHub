@@ -54,12 +54,12 @@ public sealed class EnduranceManager(ILogger<EnduranceManager> log)
 
     public void Set(EnduranceControl control, EnduranceMode? mode)
     {
-        if (!EnduranceGaming.Available) throw new InvalidOperationException("Intel 그래픽 드라이버 설정을 사용할 수 없습니다");
+        if (!EnduranceGaming.Available) throw new InvalidOperationException("Intel 그래픽 드라이버 설정을 사용할 수 없어요");
         lock (_lock)
         {
             var m = mode ?? _saved.Mode ?? State.Mode ?? EnduranceMode.Balanced;
             if (!EnduranceGaming.Set(new EnduranceSetting(control, m)))
-                throw new InvalidOperationException("Endurance Gaming을 바꾸지 못했습니다 (드라이버 미지원)");
+                throw new InvalidOperationException("Endurance Gaming을 바꾸지 못했어요 (드라이버 미지원)");
             _saved.Control = control;
             _saved.Mode = m;
             JsonStore.Save(StatePath, _saved);

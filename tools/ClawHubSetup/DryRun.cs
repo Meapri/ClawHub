@@ -36,7 +36,7 @@ internal static class DryRun
         {
             var user = UserContext.Detect();
             using var payload = Payload.Open();
-            W($"ClawHub {(uninstall ? "제거" : "설치")} 드라이런 — 아무것도 바꾸지 않습니다");
+            W($"ClawHub {(uninstall ? "제거" : "설치")} 드라이런 — 아무것도 바꾸지 않아요");
             W($"설치 프로그램: {Environment.ProcessPath} (v{typeof(DryRun).Assembly.GetName().Version})");
             W($"페이로드: {payload?.Describe() ?? "없음 (dotnet build 결과물 — build.ps1로 만든 exe에만 들어 있음)"}");
             W($"설치된 버전: {InstalledDescription()}");

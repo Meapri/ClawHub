@@ -50,9 +50,9 @@ public sealed partial class DisplayQualityViewModel : ObservableObject
     // ── 표시 ───────────────────────────────────────────
 
     public bool Available => State?.Available == true;
-    public string? UnavailableText => !_shell.ServiceConnected ? "ClawHub 서비스에 연결되지 않았습니다"
-        : State is null ? "서비스가 화면 품질 설정을 지원하지 않습니다 (서비스 업데이트 필요)"
-        : !State.Available ? $"Intel 그래픽 설정을 사용할 수 없습니다{(State.Error is { } e ? $" — {e}" : "")}"
+    public string? UnavailableText => !_shell.ServiceConnected ? "ClawHub 서비스에 연결되지 않았어요"
+        : State is null ? "서비스가 화면 품질 설정을 지원하지 않아요 (서비스 업데이트 필요)"
+        : !State.Available ? $"Intel 그래픽 설정을 사용할 수 없어요{(State.Error is { } e ? $" — {e}" : "")}"
         : null;
 
     public bool RetroSupported => State?.RetroScaling is not null;
@@ -67,7 +67,7 @@ public sealed partial class DisplayQualityViewModel : ObservableObject
     public string VrrText => State switch
     {
         null => "",
-        { AdaptiveSyncSupported: not true } => "이 화면은 가변 주사율을 지원하지 않습니다",
+        { AdaptiveSyncSupported: not true } => "이 화면은 가변 주사율을 지원하지 않아요",
         { AdaptiveSync: true } s => $"켜짐 · {Range(s)}{(s.VrrProfile is { } p ? $" · Intel Arc Sync {ProfileName(p)}" : "")}",
         var s => $"꺼짐{(s.VrrProfile is { } p ? $" · Intel Arc Sync {ProfileName(p)}" : "")}",
     };
@@ -124,7 +124,7 @@ public sealed partial class DisplayQualityViewModel : ObservableObject
     partial void OnRetroScalingChanged(bool value)
     {
         OnPropertyChanged(nameof(RetroModeChoice));
-        if (!_loading) _ = SendAsync(new DisplayQualityChange { RetroScaling = value }, "화면이 잠깐 깜빡일 수 있습니다");
+        if (!_loading) _ = SendAsync(new DisplayQualityChange { RetroScaling = value }, "화면이 잠깐 깜빡일 수 있어요");
     }
 
     partial void OnRetroNearestChanged(bool value)

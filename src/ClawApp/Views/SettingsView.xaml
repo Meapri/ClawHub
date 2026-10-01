@@ -70,7 +70,7 @@
                             </WrapPanel>
                             <TextBlock Text="{Binding CompanionText}" Style="{StaticResource Caption}"/>
                             <TextBlock Style="{StaticResource Caption}" Margin="0,2,0,0"
-                                       Text="자동: 켤 때 Xbox 앱이 이미 떠 있으면(Xbox 모드) 숨은 채로 버튼·자동 매핑만 담당합니다."/>
+                                       Text="자동: 켤 때 Xbox 앱이 이미 떠 있으면(Xbox 모드) 숨은 채로 버튼·자동 매핑만 담당해요."/>
                         </StackPanel>
                     </Border>
 
@@ -78,7 +78,7 @@
                     <ToggleButton Style="{StaticResource Switch}" IsChecked="{Binding StartWithWindows}">
                         <StackPanel>
                             <TextBlock Text="Windows 시작 시 ClawHub 실행"/>
-                            <TextBlock Text="로그인하면 자동으로 켜집니다" Style="{StaticResource Caption}"/>
+                            <TextBlock Text="로그인하면 자동으로 켜져요" Style="{StaticResource Caption}"/>
                         </StackPanel>
                     </ToggleButton>
                     <ToggleButton Style="{StaticResource Switch}" IsChecked="{Binding AutoControllerMode}">
@@ -90,7 +90,7 @@
                     <ToggleButton Style="{StaticResource Switch}" IsChecked="{Binding MsiCenterEnabled}" IsEnabled="{Binding MsiCenterKnown}">
                         <StackPanel>
                             <TextBlock Text="MSI Center M 사용"/>
-                            <TextBlock Text="끄면 본체 버튼·성능·조명을 ClawHub만 제어합니다. 삭제하지 않으므로 언제든 다시 켤 수 있어요." Style="{StaticResource Caption}"/>
+                            <TextBlock Text="끄면 본체 버튼·성능·조명을 ClawHub만 제어해요. 삭제하지 않으므로 언제든 다시 켤 수 있어요." Style="{StaticResource Caption}"/>
                         </StackPanel>
                     </ToggleButton>
                     <s:DesktopModeSection Margin="0,20,0,0"/>
@@ -126,7 +126,7 @@
                     </ToggleButton>
                     <ToggleButton Style="{StaticResource Switch}" IsChecked="{Binding DiagonalLock}">
                         <StackPanel>
-                            <TextBlock Text="D-pad 대각선 입력 막기"/>
+                            <TextBlock Text="방향 버튼 대각선 입력 막기"/>
                             <TextBlock Text="격투·퍼즐 게임에서 오입력 방지" Style="{StaticResource Caption}"/>
                         </StackPanel>
                     </ToggleButton>
@@ -144,7 +144,7 @@
                         <StackPanel Orientation="Horizontal"><TextBlock Text="{StaticResource Icon.RotateCcw}" Style="{StaticResource Icon}" Margin="0,0,14,0"/><TextBlock Text="컨트롤러 설정 원래대로"/></StackPanel>
                     </Button>
                     <TextBlock Style="{StaticResource Caption}" Margin="2,0,0,0"
-                               Text="설정은 컨트롤러 메모리에만 쓰고 ClawHub가 켜질 때마다 다시 적용합니다. 펌웨어(플래시)는 건드리지 않아요."/>
+                               Text="설정은 컨트롤러 메모리에만 쓰고 ClawHub가 켜질 때마다 다시 적용해요. 펌웨어(플래시)는 건드리지 않아요."/>
                 </StackPanel>
 
                 <!-- ── 조명 ──────────────────────────────── -->
@@ -227,11 +227,11 @@
                     <ToggleButton Style="{StaticResource Switch}" IsChecked="{Binding CoolerBoost}" IsEnabled="{Binding PerfAvailable}">
                         <StackPanel>
                             <TextBlock Text="쿨러 부스트"/>
-                            <TextBlock Text="팬을 최대로 돌립니다 (소음 증가)" Style="{StaticResource Caption}"/>
+                            <TextBlock Text="팬을 최대로 돌려요 (소음 증가)" Style="{StaticResource Caption}"/>
                         </StackPanel>
                     </ToggleButton>
                     <TextBlock Style="{StaticResource Caption}" Margin="2,8,0,0"
-                               Text="게임마다 다른 성능 모드를 쓰려면 라이브러리 → 게임 → 성능 모드에서 고르세요. 게임이 끝나면 여기 기본값으로 돌아옵니다."/>
+                               Text="게임마다 다른 성능 모드를 쓰려면 라이브러리 → 게임 → 성능 모드에서 고르세요. 게임이 끝나면 여기 기본값으로 돌아와요."/>
                 </StackPanel>
                 <s:EnduranceGamingSection DataContext="{Binding Power}" Margin="0,20,0,0"/>
                 </StackPanel>
@@ -253,7 +253,7 @@
                     <Border Style="{StaticResource CardPanel}">
                         <StackPanel>
                             <TextBlock Text="주사율"/>
-                            <TextBlock Text="낮추면 배터리가 오래 갑니다" Style="{StaticResource Caption}" Margin="0,0,0,10"/>
+                            <TextBlock Text="낮추면 배터리가 오래 가요" Style="{StaticResource Caption}" Margin="0,0,0,10"/>
                             <ItemsControl ItemsSource="{Binding RefreshRates}" Focusable="False">
                                 <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
@@ -311,7 +311,7 @@
                 <!-- ── Windows 설정 ─────────────────────── -->
                 <StackPanel Visibility="{Binding Selected.Key, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=windows}" m:Entrance.Stagger="Items">
                     <TextBlock Style="{StaticResource Caption}" Margin="2,0,0,12"
-                               Text="Windows 설정 화면을 엽니다. 스틱이 마우스로 바뀌고, 왼쪽 MSI 버튼을 누르면 ClawHub로 돌아와요."/>
+                               Text="Windows 설정 화면을 열어요. 스틱이 마우스로 바뀌고, 왼쪽 MSI 버튼을 누르면 ClawHub로 돌아와요."/>
                     <Button Style="{StaticResource NavButton}" Command="{Binding OpenWindowsCommand}" CommandParameter="network-wifi">
                         <StackPanel Orientation="Horizontal"><TextBlock Text="{StaticResource Icon.Wifi}" Style="{StaticResource Icon}" Margin="0,0,16,0"/><TextBlock Text="Wi-Fi"/></StackPanel>
                     </Button>

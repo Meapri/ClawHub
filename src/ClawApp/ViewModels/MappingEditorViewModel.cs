@@ -392,7 +392,7 @@ public sealed partial class MappingEditorViewModel : ObservableObject, INavPage
     {
         var copy = Profile.Clone();
         _shell.Profiles.Upsert(copy);
-        _shell.ShowToast($"'{copy.Name}' 프로필을 만들었습니다");
+        _shell.ShowToast($"'{copy.Name}' 프로필을 만들었어요");
         _shell.GoBack();
         _shell.Navigate(new MappingEditorViewModel(_shell, copy));
     }
@@ -405,7 +405,7 @@ public sealed partial class MappingEditorViewModel : ObservableObject, INavPage
         if (DateTime.UtcNow - _deleteArmedAt > TimeSpan.FromSeconds(3))
         {
             _deleteArmedAt = DateTime.UtcNow;
-            _shell.ShowToast("한 번 더 누르면 이 프로필을 삭제합니다");
+            _shell.ShowToast("한 번 더 누르면 이 프로필을 삭제해요");
             return;
         }
         _shell.Profiles.Delete(Profile.Id);

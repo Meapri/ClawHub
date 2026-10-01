@@ -20,6 +20,6 @@
             </RadioButton>
         </StackPanel>
         <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="2,6,0,0"
-                   Text="데스크톱에서는 스틱이 마우스로 움직입니다. 왼쪽 버튼을 누르면 ClawHub로 돌아옵니다."/>
+                   Text="데스크톱에서는 스틱이 마우스로 움직여요. 왼쪽 버튼을 누르면 ClawHub로 돌아와요."/>
     </StackPanel>
 </UserControl>

@@ -97,7 +97,7 @@ internal sealed class Installer(Payload? payload, SetupOptions options, UserCont
     {
         if (ServiceOps.Status() is System.ServiceProcess.ServiceControllerStatus.Stopped && File.Exists(K.ServiceExe))
         {
-            log.Info("기존 서비스를 다시 시작합니다.");
+            log.Info("기존 서비스를 다시 시작해요.");
             ServiceOps.Start(log);
         }
     }

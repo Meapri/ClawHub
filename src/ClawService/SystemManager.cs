@@ -138,13 +138,13 @@ public sealed class SystemManager(ILogger<SystemManager> log, EcManager ec, Fram
 
     public void SetGraphics(int? fps, int? frameGeneration)
     {
-        if (!IntelGraphics.Available) throw new InvalidOperationException("Intel 그래픽 드라이버 설정을 사용할 수 없습니다");
+        if (!IntelGraphics.Available) throw new InvalidOperationException("Intel 그래픽 드라이버 설정을 사용할 수 없어요");
         lock (_lock)
         {
             if (fps is { } f && !IntelGraphics.SetFrameLimit(Math.Clamp(f, 0, 240)))
-                throw new InvalidOperationException("FPS 제한을 바꾸지 못했습니다");
+                throw new InvalidOperationException("FPS 제한을 바꾸지 못했어요");
             if (frameGeneration is { } g && !IntelGraphics.SetFrameGeneration(Math.Clamp(g, 0, 3)))
-                throw new InvalidOperationException("프레임 생성을 바꾸지 못했습니다 (드라이버 미지원)");
+                throw new InvalidOperationException("프레임 생성을 바꾸지 못했어요 (드라이버 미지원)");
             _graphics = null; // 다음 조회 때 다시 읽기
         }
     }
