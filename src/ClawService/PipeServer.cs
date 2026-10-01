@@ -88,13 +88,24 @@ public sealed class PipeServer(ILogger<PipeServer> log, RequestHandler handler)
             {
                 if (line.Length > MaxLineLength) break; // 비정상 요청 → 연결 종료
                 Request? req;
-                try { req = JsonSerializer.Deserialize<Request>(line, JsonStore.Options); }
-                catch (JsonException) { continue; }
+                Response resp;
+                try
+                {
+                    req = JsonSerializer.Deserialize<Request>(line, JsonStore.Options);
+                }
+                catch (JsonException ex)
+                {
+                    // 잘못된 요청도 반드시 응답한다 (응답이 없으면 클라이언트가 무한 대기)
+                    req = null;
+                    resp = new Response { Id = TryReadId(line), Ok = false, Error = $"잘못된 요청: {ex.Message}" };
+                    await WriteAsync(writer, writeLock, resp, ct);
+                    continue;
+                }
                 if (req is null) continue;
 
                 if (req.Op == Ops.Subscribe) _subscribers[id] = (writer, writeLock);
 
-                var resp = await Task.Run(() => handler.Handle(req), ct);
+                resp = await Task.Run(() => handler.Handle(req), ct);
                 resp.Id = req.Id;
                 await writeLock.WaitAsync(ct);
                 try { await writer.WriteLineAsync(JsonSerializer.Serialize(resp, JsonStore.Options).ReplaceLineEndings("")); }
@@ -114,6 +125,23 @@ public sealed class PipeServer(ILogger<PipeServer> log, RequestHandler handler)
                 catch (Exception ex) { log.LogError(ex, "복원 실패"); }
             }
         }
+    }
+
+    private static int TryReadId(string line)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(line);
+            return doc.RootElement.TryGetProperty("Id", out var id) && id.TryGetInt32(out var v) ? v : 0;
+        }
+        catch (JsonException) { return 0; }
+    }
+
+    private static async Task WriteAsync(StreamWriter writer, SemaphoreSlim writeLock, Response resp, CancellationToken ct)
+    {
+        await writeLock.WaitAsync(ct);
+        try { await writer.WriteLineAsync(JsonSerializer.Serialize(resp, JsonStore.Options).ReplaceLineEndings("")); }
+        finally { writeLock.Release(); }
     }
 
     private static PipeSecurity CreateSecurity()
