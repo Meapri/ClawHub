@@ -11,7 +11,8 @@ public sealed class RequestHandler(ILogger<RequestHandler> log, ControllerManage
     public Action<string>? RelayAppCommand { get; set; }
 
     private static readonly HashSet<string> KnownCommands =
-        [AppCommands.CycleProfile, AppCommands.QuitGame, AppCommands.ShowClawHub];
+        [AppCommands.CycleProfile, AppCommands.QuitGame, AppCommands.ShowClawHub,
+         AppCommands.Screenshot, AppCommands.ToggleRecording, AppCommands.SaveClip];
 
     private static readonly string? Bios =
         Registry.GetValue(@"HKEY_LOCAL_MACHINE\HARDWARE\DESCRIPTION\System\BIOS", "BIOSVersion", null) as string;

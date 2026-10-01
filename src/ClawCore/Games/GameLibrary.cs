@@ -61,8 +61,14 @@ public sealed class GameLibrary
             g.LaunchArgs = o.LaunchArgs ?? g.LaunchArgs;
         }
 
-        foreach (var g in games) ArtFetcher.ApplyCached(g);
-        Games = games.DistinctBy(g => g.Id).OrderBy(g => g.Title, StringComparer.CurrentCulture).ToList();
+        _autoArt.Clear();
+        foreach (var g in games)
+        {
+            ArtFetcher.ApplyCached(g);
+            _autoArt[g.Id] = (g.CoverImage, g.HeroImage, g.LogoImage); // "기본으로 되돌리기"용
+            UserArt.Apply(g); // 사용자가 고른 아트가 런처/자동 아트보다 우선
+        }
+        Games =games.DistinctBy(g => g.Id).OrderBy(g => g.Title, StringComparer.CurrentCulture).ToList();
     }
 
     /// <summary>아트가 없는 게임의 아트를 인터넷에서 받아 온다 (백그라운드에서 호출).</summary>
@@ -81,6 +87,37 @@ public sealed class GameLibrary
     public void SetFpsLimit(GameEntry game, int? fps) => Update(game, o => o.FpsLimit = (game.FpsLimit = fps) ?? -1);
 
     public void Rename(GameEntry game, string title) => Update(game, o => o.Title = game.Title = title);
+
+    // ── 사용자 아트 (아트 캐시 폴더의 user-* 파일, library.json에는 저장하지 않음) ──
+
+    /// <summary>런처/자동으로 받은 아트 (사용자 아트 적용 전). 되돌리기에 쓴다.</summary>
+    private readonly Dictionary<string, (string? Cover, string? Hero, string? Logo)> _autoArt = [];
+
+    /// <summary>받은/고른 이미지를 이 게임의 아트로 저장하고 바로 연결한다.</summary>
+    public void SetUserArt(GameEntry game, ArtKind kind, byte[] image) => AssignArt(game, kind, UserArt.Save(game, kind, image));
+
+    public void SetUserArtFromFile(GameEntry game, ArtKind kind, string path) => AssignArt(game, kind, UserArt.SaveFromFile(game, kind, path));
+
+    public bool HasUserArt(GameEntry game, ArtKind kind) => UserArt.Find(game, kind) is not null;
+
+    /// <summary>사용자 아트를 지우고 런처/자동 아트로 되돌린다.</summary>
+    public void ResetArt(GameEntry game, ArtKind kind)
+    {
+        UserArt.Clear(game, kind);
+        var auto = _autoArt.GetValueOrDefault(game.Id);
+        AssignArt(game, kind, kind switch { ArtKind.Cover => auto.Cover, ArtKind.Hero => auto.Hero, _ => auto.Logo });
+        ArtFetcher.ApplyCached(game); // 그 사이 자동으로 받아 둔 아트가 있으면 연결
+    }
+
+    private static void AssignArt(GameEntry game, ArtKind kind, string? path)
+    {
+        switch (kind)
+        {
+            case ArtKind.Cover: game.CoverImage = path; break;
+            case ArtKind.Hero: game.HeroImage = path; break;
+            default: game.LogoImage = path; break;
+        }
+    }
 
     /// <summary>
     /// 라이브러리에 없는 앱(Xbox 앱 게임, 에뮬레이터 등)에 프로필을 붙인다.

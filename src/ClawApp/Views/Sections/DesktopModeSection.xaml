@@ -1,0 +1,25 @@
+<UserControl x:Class="ClawApp.Views.Sections.DesktopModeSection"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- 데스크톱 모드 설정 (DataContext = SettingsViewModel). -->
+    <StackPanel>
+        <TextBlock Text="데스크톱 모드" Style="{StaticResource Section}" Margin="2,0,0,8"/>
+        <TextBlock Text="'데스크톱으로' 중 오른쪽 버튼" Style="{StaticResource Caption}" Margin="2,0,0,6"/>
+        <StackPanel Orientation="Horizontal">
+            <RadioButton Style="{StaticResource ChipRadio}" GroupName="desktopRight" IsChecked="{Binding DesktopRightKeyboard}" Margin="0,0,8,0">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="{DynamicResource Icon.Keyboard}" FontFamily="{DynamicResource LucideFont}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <TextBlock Text="터치 키보드"/>
+                </StackPanel>
+            </RadioButton>
+            <RadioButton Style="{StaticResource ChipRadio}" GroupName="desktopRight" IsChecked="{Binding DesktopRightGameBar}">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="{DynamicResource Icon.Gamepad2}" FontFamily="{DynamicResource LucideFont}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <TextBlock Text="Game Bar"/>
+                </StackPanel>
+            </RadioButton>
+        </StackPanel>
+        <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="2,6,0,0"
+                   Text="데스크톱에서는 스틱이 마우스로 움직입니다. 왼쪽 버튼을 누르면 ClawHub로 돌아옵니다."/>
+    </StackPanel>
+</UserControl>

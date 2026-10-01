@@ -1,0 +1,108 @@
+<UserControl x:Class="ClawApp.Views.Sections.ArtPickerView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:ClawApp"
+             KeyboardNavigation.DirectionalNavigation="Contained">
+    <!-- 아트 바꾸기 (ArtPickerViewModel). 후보는 패드 방향키로 이동, A로 적용. -->
+    <DockPanel Margin="32,0,22,12">
+
+        <!-- 종류 (LB/RB) + 지금 적용된 아트 -->
+        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,12">
+            <Border DockPanel.Dock="Right" CornerRadius="8" Width="180" Height="96" ClipToBounds="True"
+                    Background="{Binding Tile.Placeholder}" Margin="16,0,0,0">
+                <Grid>
+                    <TextBlock Text="없음" Style="{StaticResource Caption}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                               Visibility="{Binding HasCurrentImage, Converter={StaticResource NotVis}}"/>
+                    <Image Source="{Binding CurrentImage}" Stretch="Uniform"
+                           Visibility="{Binding HasCurrentImage, Converter={StaticResource Vis}}"/>
+                </Grid>
+            </Border>
+            <StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                    <RadioButton Style="{StaticResource ChipRadio}" GroupName="artkind" Content="커버" IsChecked="{Binding IsCover}" Margin="0,0,8,0"/>
+                    <RadioButton Style="{StaticResource ChipRadio}" GroupName="artkind" Content="배경" IsChecked="{Binding IsHero}" Margin="0,0,8,0"/>
+                    <RadioButton Style="{StaticResource ChipRadio}" GroupName="artkind" Content="로고" IsChecked="{Binding IsLogo}"/>
+                </StackPanel>
+
+                <!-- 검색 -->
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}" Command="{Binding SearchCommand}" Margin="10,0,0,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{DynamicResource Icon.Search}" FontFamily="{DynamicResource LucideFont}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBlock Text="검색"/>
+                        </StackPanel>
+                    </Button>
+                    <TextBox Text="{Binding Query}" VerticalAlignment="Center"/>
+                </DockPanel>
+
+                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                    <Button Style="{StaticResource NavButton}" Command="{Binding PickFileCommand}" Margin="0,0,8,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{DynamicResource Icon.Image}" FontFamily="{DynamicResource LucideFont}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <TextBlock Text="이미지 파일에서 선택"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource NavButton}" Command="{Binding ResetToDefaultCommand}"
+                            Visibility="{Binding HasUserArt, Converter={StaticResource Vis}}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{DynamicResource Icon.RefreshCw}" FontFamily="{DynamicResource LucideFont}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <TextBlock Text="기본으로 되돌리기"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </StackPanel>
+        </DockPanel>
+
+        <!-- SteamGridDB 키 + 상태 -->
+        <StackPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+            <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="2,0,0,4"
+                       Text="SteamGridDB API 키 (선택) — steamgriddb.com 로그인 → 환경설정 → API에서 받은 키를 넣으면 커뮤니티 아트도 함께 찾습니다."/>
+            <TextBox Text="{Binding SteamGridDbKey}"/>
+            <TextBlock Text="{Binding StatusText}" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="2,8,0,0"
+                       Visibility="{Binding StatusText, Converter={StaticResource NullVis}}"/>
+        </StackPanel>
+
+        <!-- 후보 -->
+        <Grid>
+            <TextBlock Text="찾는 중…" Style="{StaticResource Caption}" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center"
+                       Visibility="{Binding IsSearching, Converter={StaticResource Vis}}"/>
+            <ScrollViewer Margin="-6,0,0,0">
+                <ItemsControl ItemsSource="{Binding Candidates}" Focusable="False">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Style="{StaticResource TileButton}" local:Nav.InitialFocus="True"
+                                    Command="{Binding DataContext.ChooseCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                    CommandParameter="{Binding}"
+                                    Width="{Binding DataContext.TileWidth, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                    Height="{Binding DataContext.TileHeight, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                    ToolTip="{Binding Title}">
+                                <Grid ClipToBounds="True">
+                                    <Border CornerRadius="8" Background="{DynamicResource SurfaceHi}"/>
+                                    <!-- 미리보기가 없을 때: 제목 + 출처 -->
+                                    <StackPanel VerticalAlignment="Center" Margin="10"
+                                                Visibility="{Binding HasThumb, Converter={StaticResource NotVis}}">
+                                        <TextBlock Text="{Binding Title}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource Text}"
+                                                   TextWrapping="Wrap" TextAlignment="Center"/>
+                                        <TextBlock Text="불러오는 중…" Style="{StaticResource Caption}" HorizontalAlignment="Center"
+                                                   Visibility="{Binding IsLoading, Converter={StaticResource Vis}}"/>
+                                        <TextBlock Text="미리보기 없음" Style="{StaticResource Caption}" HorizontalAlignment="Center"
+                                                   Visibility="{Binding IsLoading, Converter={StaticResource NotVis}}"/>
+                                    </StackPanel>
+                                    <Image Source="{Binding Thumb}" Stretch="Uniform" Margin="2"
+                                           Visibility="{Binding HasThumb, Converter={StaticResource Vis}}"/>
+                                    <Border VerticalAlignment="Bottom" HorizontalAlignment="Left" CornerRadius="4" Margin="6"
+                                            Padding="6,1" Background="#99000000">
+                                        <TextBlock Text="{Binding SourceLabel}" FontSize="11" Foreground="White"/>
+                                    </Border>
+                                </Grid>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Grid>
+    </DockPanel>
+</UserControl>

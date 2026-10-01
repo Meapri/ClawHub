@@ -1,0 +1,11 @@
+<UserControl x:Class="ClawApp.Views.Sections.GameArtSection"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- 게임 상세의 "아트 바꾸기" 버튼 (DataContext = GameViewModel). -->
+    <Button Style="{StaticResource NavButton}" Command="{Binding OpenArtPickerCommand}">
+        <StackPanel Orientation="Horizontal">
+            <TextBlock Text="{DynamicResource Icon.Image}" FontFamily="{DynamicResource LucideFont}" VerticalAlignment="Center" Margin="0,0,14,0"/>
+            <TextBlock Text="아트 바꾸기"/>
+        </StackPanel>
+    </Button>
+</UserControl>

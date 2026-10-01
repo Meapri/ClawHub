@@ -40,6 +40,12 @@ public static class AppCommands
     public const string SetProfilePrefix = "SetProfile:";
     public const string QuitGame = "QuitGame";
     public const string ShowClawHub = "ShowClawHub";
+    /// <summary>Game Bar 스크린샷 (Win+Alt+PrtSc). 런처가 떠 있으면 숨긴 뒤 보낸다.</summary>
+    public const string Screenshot = "Screenshot";
+    /// <summary>Game Bar 녹화 시작/중지 (Win+Alt+R).</summary>
+    public const string ToggleRecording = "ToggleRecording";
+    /// <summary>Game Bar "방금 일어난 일 기록" — 최근 30초 저장 (Win+Alt+G, 백그라운드 녹화가 켜져 있어야 함).</summary>
+    public const string SaveClip = "SaveClip";
 }
 
 /// <summary>런처 앱이 서비스에 맡겨 두는 상태. 위젯은 GetStatus로 읽는다.</summary>
