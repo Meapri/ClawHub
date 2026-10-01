@@ -101,7 +101,7 @@ TriggerKeyProfile (15바이트): `[Index][Flag][Turbo][DeadRange][EdgeDeadRange]
 | `0x24B + n·220` | 애니메이션 n: [키프레임 수][효과=9][속도][밝기] + 8×9 LED RGB | anim0 = 4, 9, 3, 100 |
 | `0x5BD..0x5C0` | ABXY 백라이트 밝기 | 50 |
 
-ClawHub 단색 조명은 애니메이션 슬롯 3을 덮어쓰고 활성 인덱스를 3으로 바꾼 뒤 `09` SyncRGB. ⚠ 조명 반영은 실기 육안 확인 필요.
+ClawHub 단색 조명은 애니메이션 슬롯 3을 덮어쓰고 활성 인덱스를 3으로 바꾼 뒤 `09` SyncRGB. 실기 확인(2026-10-01): 빨간 단색 즉시 반영, RAM 쓰기만으로 동작.
 
 ## 범용 키 매핑 관련 결론
 
