@@ -1,0 +1,74 @@
+using ClawApp.Input;
+using ClawCore.Mapping;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+
+namespace ClawApp.ViewModels;
+
+public sealed partial class GameViewModel(ShellViewModel shell, GameTileViewModel tile) : ObservableObject, INavPage
+{
+    public GameTileViewModel Tile { get; } = tile;
+
+    public string Title => Tile.Title;
+    public IReadOnlyList<Hint> Hints => [new("A", "선택"), new("B", "뒤로"), new("Y", "매핑 편집")];
+
+    public MappingProfile? Profile => shell.Profiles.Find(Tile.Game.MappingProfileId);
+    public string ProfileText => Profile?.Name ?? "사용 안 함 (게임패드 그대로)";
+    public bool IsRunning => shell.RunningGame?.Id == Tile.Game.Id;
+
+    [RelayCommand]
+    private Task Play()
+    {
+        if (!IsRunning) return shell.LaunchAsync(Tile.Game);
+        shell.ReturnToBackground(); // 이미 실행 중이면 게임으로 돌아가기
+        return Task.CompletedTask;
+    }
+
+    /// <summary>A를 누를 때마다 다음 프로필로 (마지막 다음은 "사용 안 함").</summary>
+    [RelayCommand]
+    private void CycleProfile()
+    {
+        var all = shell.Profiles.All;
+        var i = all.ToList().FindIndex(p => p.Id == Tile.Game.MappingProfileId);
+        var next = i + 1 < all.Count ? all[i + 1].Id : null;
+        shell.Library.SetProfile(Tile.Game, next);
+        OnPropertyChanged(nameof(Profile));
+        OnPropertyChanged(nameof(ProfileText));
+    }
+
+    [RelayCommand]
+    private void EditMapping()
+    {
+        var profile = Profile;
+        if (profile is null)
+        {
+            // 프로필이 없으면 이 게임 전용으로 새로 만든다
+            profile = new MappingProfile { Name = Tile.Title };
+            shell.Profiles.Upsert(profile);
+            shell.Library.SetProfile(Tile.Game, profile.Id);
+        }
+        shell.Navigate(new MappingEditorViewModel(shell, profile));
+    }
+
+    [RelayCommand]
+    private void Hide()
+    {
+        shell.Library.SetHidden(Tile.Game, true);
+        shell.ShowToast($"{Tile.Title}을(를) 라이브러리에서 숨겼습니다 (설정 → 숨긴 게임 복원)");
+        shell.GoBack();
+    }
+
+    public void OnShown()
+    {
+        OnPropertyChanged(nameof(Profile));
+        OnPropertyChanged(nameof(ProfileText));
+        OnPropertyChanged(nameof(IsRunning));
+    }
+
+    public bool Handle(NavAction action)
+    {
+        if (action != NavAction.Options) return false;
+        EditMapping();
+        return true;
+    }
+}

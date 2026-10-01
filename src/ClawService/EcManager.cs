@@ -1,0 +1,91 @@
+using System.Management;
+using ClawCore;
+using ClawCore.Ec;
+
+namespace ClawService;
+
+/// <summary>EC 성능/배터리 상태 소유자. 마지막 설정을 저장해 두고 부팅·절전 복귀 시 다시 적용한다.</summary>
+public sealed class EcManager : IDisposable
+{
+    private sealed class SavedState
+    {
+        public PerformanceState Performance { get; set; } = new(PerformanceMode.Balanced, 17, 37, FanMode.Auto);
+    }
+
+    private static string StatePath => Path.Combine(JsonStore.ServiceDir, "ec-state.json");
+
+    private readonly ILogger _log;
+    private readonly SavedState _state = JsonStore.Load<SavedState>(StatePath);
+    private readonly MsiWmi? _wmi;
+    private readonly PerformanceManager? _perf;
+    private readonly ManagementEventWatcher? _resumeWatcher;
+
+    public string? Error { get; }
+
+    public EcManager(ILogger<EcManager> log)
+    {
+        _log = log;
+        try
+        {
+            _wmi = MsiWmi.Open();
+            _perf = new PerformanceManager(_wmi);
+            _log.LogInformation("EC 연결: WMI v{Major}.{Minor}, {Ec}", _wmi.WmiMajor, _wmi.WmiMinor, _wmi.EcVersion);
+            if (!_wmi.WritesEnabled) Error = $"WMI v{_wmi.WmiMajor}는 검증되지 않아 쓰기를 막았습니다";
+
+            // Win32_PowerManagementEvent EventType 7 = 절전 복귀
+            _resumeWatcher = new ManagementEventWatcher(new WqlEventQuery("SELECT * FROM Win32_PowerManagementEvent WHERE EventType = 7"));
+            _resumeWatcher.EventArrived += (_, _) => Task.Delay(3000).ContinueWith(_ => Reapply("절전 복귀"));
+            _resumeWatcher.Start();
+        }
+        catch (Exception ex)
+        {
+            Error = ex.Message;
+            _log.LogError(ex, "EC 초기화 실패");
+        }
+    }
+
+    public bool Available => _wmi is not null;
+    public bool Writable => _wmi?.WritesEnabled == true;
+    public string? EcVersion => _wmi?.EcVersion;
+    public PerformanceState Performance => _state.Performance;
+
+    public ChargeLimit? ChargeLimit
+    {
+        get
+        {
+            try { return _perf?.GetChargeLimit(); }
+            catch (Exception) { return null; }
+        }
+    }
+
+    public void Reapply(string reason)
+    {
+        if (!Writable) return;
+        try
+        {
+            _perf!.Apply(_state.Performance);
+            _log.LogInformation("성능 설정 재적용 ({Reason}): {State}", reason, _state.Performance);
+        }
+        catch (Exception ex) { _log.LogError(ex, "성능 설정 재적용 실패"); }
+    }
+
+    public void SetPerformance(PerformanceState state)
+    {
+        if (!Writable) throw new InvalidOperationException(Error ?? "EC 쓰기 불가");
+        _perf!.Apply(state);
+        _state.Performance = state;
+        JsonStore.Save(StatePath, _state);
+    }
+
+    public void SetChargeLimit(ChargeLimit limit)
+    {
+        if (!Writable) throw new InvalidOperationException(Error ?? "EC 쓰기 불가");
+        _perf!.SetChargeLimit(limit);
+    }
+
+    public void Dispose()
+    {
+        _resumeWatcher?.Stop();
+        _resumeWatcher?.Dispose();
+    }
+}

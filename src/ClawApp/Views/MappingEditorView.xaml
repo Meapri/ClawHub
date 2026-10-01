@@ -1,0 +1,110 @@
+<UserControl x:Class="ClawApp.Views.MappingEditorView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:ClawApp"
+             KeyboardNavigation.DirectionalNavigation="Contained">
+    <Grid Margin="32,0,32,12">
+
+        <!-- ── 버튼 목록 + 프로필 옵션 ───────────────────── -->
+        <Grid Visibility="{Binding IsPickerOpen, Converter={StaticResource NotVis}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="330"/>
+            </Grid.ColumnDefinitions>
+
+            <ScrollViewer>
+                <ItemsControl ItemsSource="{Binding Rows}" Focusable="False">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate><UniformGrid Columns="2"/></ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Style="{StaticResource NavButton}" Margin="0,0,10,10" Padding="16,10"
+                                    Command="{Binding DataContext.EditRowCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    CommandParameter="{Binding}">
+                                <DockPanel>
+                                    <Border DockPanel.Dock="Left" MinWidth="44" Height="34" CornerRadius="8" Background="{StaticResource Bg0}" Margin="0,0,14,0" Padding="8,0">
+                                        <TextBlock Text="{Binding Name}" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center" HorizontalAlignment="Center"
+                                                   TextTrimming="CharacterEllipsis" MaxWidth="120"/>
+                                    </Border>
+                                    <TextBlock x:Name="Binding" Text="{Binding BindingText}" FontSize="16" VerticalAlignment="Center"
+                                               TextTrimming="CharacterEllipsis" Foreground="{StaticResource TextDim}"/>
+                                </DockPanel>
+                            </Button>
+                            <DataTemplate.Triggers>
+                                <DataTrigger Binding="{Binding IsMapped}" Value="True">
+                                    <Setter TargetName="Binding" Property="Foreground" Value="{StaticResource Accent}"/>
+                                    <Setter TargetName="Binding" Property="FontWeight" Value="SemiBold"/>
+                                </DataTrigger>
+                            </DataTemplate.Triggers>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+
+            <ScrollViewer Grid.Column="1" Margin="14,0,0,0">
+                <StackPanel>
+                    <Border Background="{StaticResource Surface}" CornerRadius="12" Padding="18,14" Margin="0,0,0,12">
+                        <StackPanel>
+                            <TextBlock Text="{Binding Profile.Name}" Style="{StaticResource H2}"/>
+                            <TextBlock Style="{StaticResource Caption}" Margin="0,6,0,0"
+                                       Text="스틱은 펌웨어에서 키로 바꿀 수 없어요. 이동은 D-pad를 방향키로 쓰세요. 조합키는 버튼 하나에 최대 5개."/>
+                        </StackPanel>
+                    </Border>
+
+                    <Button Style="{StaticResource NavButton}" Command="{Binding TestCommand}" IsEnabled="{Binding IsTesting, Converter={x:Static local:InvertBool.Instance}}">
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE768;" Style="{StaticResource Icon}" Margin="0,0,14,0"/><TextBlock Text="15초 테스트 적용"/></StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource NavButton}" Command="{Binding ToggleModeCommand}">
+                        <StackPanel>
+                            <TextBlock Text="게임 중 컨트롤러 모드" Style="{StaticResource Caption}"/>
+                            <TextBlock Text="{Binding ModeText}" FontSize="16" FontWeight="SemiBold" Margin="0,2,0,0"/>
+                        </StackPanel>
+                    </Button>
+                    <TextBlock Style="{StaticResource Caption}" Margin="4,0,0,14" FontSize="12"
+                               Text="테스트에서 키가 안 나오면 데스크톱 모드로 바꿔 보세요."/>
+                    <Button Style="{StaticResource NavButton}" Command="{Binding DuplicateCommand}">
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE8C8;" Style="{StaticResource Icon}" Margin="0,0,14,0"/><TextBlock Text="프로필 복제"/></StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource NavButton}" Command="{Binding DeleteCommand}" Foreground="{StaticResource Danger}">
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE74D;" Style="{StaticResource Icon}" Margin="0,0,14,0"/><TextBlock Text="프로필 삭제"/></StackPanel>
+                    </Button>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+
+        <!-- ── 키 선택 ───────────────────────────────────── -->
+        <DockPanel Visibility="{Binding IsPickerOpen, Converter={StaticResource Vis}}">
+            <Border DockPanel.Dock="Top" Background="{StaticResource Surface}" CornerRadius="12" Padding="20,14" Margin="0,0,0,14">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="LB ◀  " Style="{StaticResource Caption}" VerticalAlignment="Center"/>
+                        <Border Background="{StaticResource SurfaceHi}" CornerRadius="14" Padding="14,5">
+                            <TextBlock Text="{Binding CategoryLabel}" FontSize="15" FontWeight="SemiBold"/>
+                        </Border>
+                        <TextBlock Text="  ▶ RB" Style="{StaticResource Caption}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource Caption}"><Run Text="{Binding EditingRow.Name, Mode=OneWay}"/><Run Text=" 버튼을 누르면"/></TextBlock>
+                        <TextBlock Text="{Binding ComboText}" Style="{StaticResource H2}" FontSize="24" Foreground="{StaticResource Accent}" Margin="0,2,0,0"/>
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+
+            <ScrollViewer>
+                <ItemsControl ItemsSource="{Binding Keys}" Focusable="False">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <ToggleButton Style="{StaticResource Chip}" MinWidth="64" Content="{Binding Label}" IsChecked="{Binding IsSelected}"
+                                          Command="{Binding DataContext.ToggleKeyCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                          CommandParameter="{Binding}" local:Nav.InitialFocus="True"/>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </DockPanel>
+    </Grid>
+</UserControl>

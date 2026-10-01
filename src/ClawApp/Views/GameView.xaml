@@ -1,0 +1,61 @@
+<UserControl x:Class="ClawApp.Views.GameView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:ClawApp"
+             KeyboardNavigation.DirectionalNavigation="Contained">
+    <Grid Margin="32,4,32,16">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="220"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- 커버 -->
+        <Border CornerRadius="12" Width="200" Height="300" VerticalAlignment="Top" Background="{Binding Tile.Placeholder}" ClipToBounds="True">
+            <Grid>
+                <Image Source="{Binding Tile.Icon}" Width="72" Height="72"
+                       Visibility="{Binding Tile.HasCover, Converter={StaticResource NotVis}}"/>
+                <Border CornerRadius="12" Visibility="{Binding Tile.HasCover, Converter={StaticResource Vis}}">
+                    <Border.Background><ImageBrush ImageSource="{Binding Tile.Cover}" Stretch="UniformToFill"/></Border.Background>
+                </Border>
+            </Grid>
+        </Border>
+
+        <ScrollViewer Grid.Column="1" Margin="28,0,0,0">
+            <StackPanel MaxWidth="600" HorizontalAlignment="Left">
+                <TextBlock Text="{Binding Tile.SourceLabel}" Style="{StaticResource Caption}"/>
+                <TextBlock Text="{Binding Tile.Title}" Style="{StaticResource H1}" FontSize="38" TextWrapping="Wrap" Margin="0,2,0,4"/>
+                <TextBlock Text="{Binding Tile.LastPlayedLabel}" Style="{StaticResource Caption}" Margin="0,0,0,22"/>
+
+                <Button Style="{StaticResource PrimaryButton}" Command="{Binding PlayCommand}" HorizontalAlignment="Left" MinWidth="220"
+                        local:Nav.InitialFocus="True" Margin="0,0,0,26">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE768;" Style="{StaticResource Icon}" Margin="0,0,10,0"/>
+                        <TextBlock Text="플레이" Visibility="{Binding IsRunning, Converter={StaticResource NotVis}}"/>
+                        <TextBlock Text="게임으로 돌아가기" Visibility="{Binding IsRunning, Converter={StaticResource Vis}}"/>
+                    </StackPanel>
+                </Button>
+
+                <TextBlock Text="컨트롤러 매핑" Style="{StaticResource Section}" Margin="2,0,0,8"/>
+                <Button Style="{StaticResource NavButton}" Command="{Binding CycleProfileCommand}" HorizontalContentAlignment="Stretch">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Right" Text="A로 변경" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                        <StackPanel>
+                            <TextBlock Text="게임 중 사용할 프로필" Style="{StaticResource Caption}"/>
+                            <TextBlock Text="{Binding ProfileText}" FontSize="18" FontWeight="SemiBold" Margin="0,2,0,0"/>
+                        </StackPanel>
+                    </DockPanel>
+                </Button>
+                <Button Style="{StaticResource NavButton}" Command="{Binding EditMappingCommand}">
+                    <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE765;" Style="{StaticResource Icon}" Margin="0,0,14,0"/><TextBlock Text="버튼 → 키 매핑 편집"/></StackPanel>
+                </Button>
+                <TextBlock Style="{StaticResource Caption}" Margin="2,4,0,0"
+                           Text="게임이 실행되면 프로필이 컨트롤러 펌웨어에 적용되어 진짜 키보드 입력으로 나갑니다. 게임을 끄거나 메뉴를 열면 원래 버튼으로 돌아옵니다."/>
+
+                <TextBlock Text="관리" Style="{StaticResource Section}" Margin="2,24,0,8"/>
+                <Button Style="{StaticResource NavButton}" Command="{Binding HideCommand}" Foreground="{StaticResource TextDim}">
+                    <StackPanel Orientation="Horizontal"><TextBlock Text="&#xED1A;" Style="{StaticResource Icon}" Margin="0,0,14,0"/><TextBlock Text="라이브러리에서 숨기기"/></StackPanel>
+                </Button>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

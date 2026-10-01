@@ -1,0 +1,50 @@
+<UserControl x:Class="ClawApp.Views.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:ClawApp"
+             KeyboardNavigation.DirectionalNavigation="Contained">
+    <ScrollViewer Margin="32,0,32,12">
+        <StackPanel MaxWidth="820" HorizontalAlignment="Left">
+            <TextBlock Text="시작 화면" Style="{StaticResource Section}" Margin="2,0,0,8"/>
+            <WrapPanel>
+                <RadioButton Style="{StaticResource ChipRadio}" GroupName="startup" Content="자동" IsChecked="{Binding StartupAuto}" local:Nav.InitialFocus="True"/>
+                <RadioButton Style="{StaticResource ChipRadio}" GroupName="startup" Content="ClawHub 전체 화면" IsChecked="{Binding StartupShell}"/>
+                <RadioButton Style="{StaticResource ChipRadio}" GroupName="startup" Content="Xbox 모드 동반" IsChecked="{Binding StartupCompanion}"/>
+            </WrapPanel>
+            <TextBlock Text="{Binding CompanionText}" Style="{StaticResource Caption}" Margin="2,0,0,0"/>
+            <TextBlock Style="{StaticResource Caption}" FontSize="12" Margin="2,4,0,0"
+                       Text="자동: 켤 때 Xbox 앱이 이미 떠 있으면(Xbox 전체 화면 환경) 숨은 채로 버튼·자동 매핑만 담당합니다."/>
+
+            <TextBlock Text="동작" Style="{StaticResource Section}"/>
+            <ToggleButton Style="{StaticResource Chip}" HorizontalAlignment="Left" IsChecked="{Binding StartWithWindows}" Content="Windows 시작 시 ClawHub 실행"/>
+            <ToggleButton Style="{StaticResource Chip}" HorizontalAlignment="Left" IsChecked="{Binding AutoControllerMode}" Content="컨트롤러 모드 자동 전환 (셸·게임 = XInput, 데스크톱 = 마우스)"/>
+
+            <TextBlock Text="라이브러리" Style="{StaticResource Section}"/>
+            <Button Style="{StaticResource NavButton}" Command="{Binding AddGameCommand}">
+                <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE710;" Style="{StaticResource Icon}" Margin="0,0,14,0"/><TextBlock Text="게임 직접 추가 (exe/바로가기)"/></StackPanel>
+            </Button>
+            <Button Style="{StaticResource NavButton}" Command="{Binding RescanCommand}">
+                <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE72C;" Style="{StaticResource Icon}" Margin="0,0,14,0"/><TextBlock Text="설치된 게임 다시 찾기"/></StackPanel>
+            </Button>
+            <Button Style="{StaticResource NavButton}" Command="{Binding UnhideAllCommand}">
+                <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE7B3;" Style="{StaticResource Icon}" Margin="0,0,14,0"/><TextBlock Text="숨긴 게임 다시 표시"/></StackPanel>
+            </Button>
+
+            <TextBlock Text="상태" Style="{StaticResource Section}"/>
+            <Border Background="{StaticResource Surface}" CornerRadius="12" Padding="18,14">
+                <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="140"/><ColumnDefinition/></Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions><RowDefinition/><RowDefinition/><RowDefinition/><RowDefinition/></Grid.RowDefinitions>
+                    <TextBlock Text="서비스" Style="{StaticResource Caption}" Margin="0,3"/>
+                    <TextBlock Grid.Column="1" Text="{Binding ServiceText}" Margin="0,3"/>
+                    <TextBlock Grid.Row="1" Text="컨트롤러" Style="{StaticResource Caption}" Margin="0,3"/>
+                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding ControllerText}" Margin="0,3"/>
+                    <TextBlock Grid.Row="2" Text="EC (성능·배터리)" Style="{StaticResource Caption}" Margin="0,3"/>
+                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding EcText}" Margin="0,3"/>
+                    <TextBlock Grid.Row="3" Grid.ColumnSpan="2" Text="{Binding Warnings}" Foreground="{StaticResource Warn}" TextWrapping="Wrap" Margin="0,6,0,0"
+                               Visibility="{Binding Warnings, Converter={StaticResource NullVis}}"/>
+                </Grid>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
