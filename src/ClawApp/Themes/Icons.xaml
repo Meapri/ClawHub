@@ -74,4 +74,12 @@
     <sys:String x:Key="Icon.Clock">&#xE087;</sys:String>
     <sys:String x:Key="Icon.ArrowRight">&#xE049;</sys:String>
     <sys:String x:Key="Icon.Undo2">&#xE2A1;</sys:String>
+    <!-- 상단 상태 표시줄 -->
+    <sys:String x:Key="Icon.BatteryWarning">&#xE3AC;</sys:String>
+    <sys:String x:Key="Icon.PlugZap">&#xE45C;</sys:String>
+    <sys:String x:Key="Icon.WifiOff">&#xE1AF;</sys:String>
+    <sys:String x:Key="Icon.EthernetPort">&#xE620;</sys:String>
+    <sys:String x:Key="Icon.Volume1">&#xE1AA;</sys:String>
+    <sys:String x:Key="Icon.VolumeX">&#xE1AC;</sys:String>
+    <sys:String x:Key="Icon.BluetoothOff">&#xE1B9;</sys:String>
 </ResourceDictionary>

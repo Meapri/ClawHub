@@ -10,6 +10,7 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="Theme.xaml"/>
+                <ResourceDictionary Source="Views/Sections/Pages.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
             <local:BoolToVisibility x:Key="Vis"/>

@@ -878,15 +878,8 @@ public sealed partial class ShellViewModel : ObservableObject
     {
         _ = PushAppStateAsync(); // 위젯 표시용 상태: 10초마다 갱신 (프로필 이름 변경 등도 반영)
         Clock = DateTime.Now.ToString("tt h:mm");
-        var b = SystemControls.GetBattery();
-        BatteryText = b.Percent is { } p ? $"{p}%" : "";
-        // Segoe Fluent Icons: Battery0~9 = E850~E859, 10 = E83F / 충전 중 0~9 = E85A~E863, 10 = E83E
-        BatteryGlyph = b.Percent is not { } pct ? ""
-            : pct >= 95 ? (b.Charging ? "" : "")
-            : ((char)((b.Charging ? 0xE85A : 0xE850) + pct / 10)).ToString();
+        _ = RefreshStatusBarAsync();
     }
-
-    [ObservableProperty] private string _batteryGlyph = "";
 
     private string? _pendingPower;
     private DateTime _pendingPowerAt;

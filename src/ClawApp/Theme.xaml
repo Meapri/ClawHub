@@ -19,8 +19,6 @@
     <!-- Pretendard 내장 (Fonts/*.otf, SIL OFL 1.1). 한글·영문이 한 폰트라 글꼴이 섞여 보이지 않는다 -->
     <FontFamily x:Key="UiFont">pack://application:,,,/Fonts/#Pretendard, Segoe UI, Malgun Gothic</FontFamily>
     <FontFamily x:Key="DisplayFont">pack://application:,,,/Fonts/#Pretendard, Segoe UI, Malgun Gothic</FontFamily>
-    <!-- 시스템 아이콘 글꼴: 상단 배터리 표시만 (ShellViewModel.BatteryGlyph가 Segoe 코드포인트를 준다) -->
-    <FontFamily x:Key="IconFont">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
 
     <!-- 메트로: 직각 -->
     <CornerRadius x:Key="ControlRadius">0</CornerRadius>
@@ -80,6 +78,24 @@
         <Setter Property="FontFamily" Value="{StaticResource LucideFont}"/>
         <Setter Property="FontSize" Value="18"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+
+    <!-- ── 상단 상태 표시줄: 모든 항목이 같은 높이·아이콘 크기·글자 크기 ── -->
+    <Style x:Key="StatusItem" TargetType="StackPanel">
+        <Setter Property="Orientation" Value="Horizontal"/>
+        <Setter Property="Height" Value="32"/>
+        <Setter Property="Margin" Value="20,0,0,0"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+    <Style x:Key="StatusIcon" TargetType="TextBlock" BasedOn="{StaticResource Icon}">
+        <Setter Property="FontSize" Value="18"/>
+    </Style>
+    <Style x:Key="StatusText" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="16"/>
+        <Setter Property="FontWeight" Value="Medium"/>
+        <Setter Property="Margin" Value="8,0,0,0"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
     </Style>
 
     <!-- ── 포커스 테두리 (모든 컨트롤 공통) ───────────────── -->
@@ -488,11 +504,10 @@
                                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0">
                                     <TextBlock x:Name="State" Text="끔" FontSize="15" Margin="0,0,14,0" VerticalAlignment="Center"
                                                Foreground="{DynamicResource TextDim}"/>
-                                    <Grid Width="48" Height="22">
-                                        <Border BorderThickness="2" BorderBrush="{DynamicResource StrokeStrong}"/>
-                                        <Border x:Name="Fill" Margin="4" Background="Transparent"/>
-                                        <Border x:Name="Knob" Width="12" Height="26" Margin="0,-2" HorizontalAlignment="Left"
-                                                Background="{DynamicResource Text}"/>
+                                    <Grid Width="44" Height="22">
+                                        <Border x:Name="Track" BorderThickness="2" BorderBrush="{DynamicResource StrokeStrong}" Background="Transparent"/>
+                                        <Border x:Name="Knob" Width="10" Height="10" Margin="6,0" HorizontalAlignment="Left" VerticalAlignment="Center"
+                                                Background="{DynamicResource TextDim}"/>
                                     </Grid>
                                 </StackPanel>
                                 <ContentPresenter VerticalAlignment="Center"/>
@@ -506,7 +521,9 @@
                             <Setter TargetName="Bd" Property="Background" Value="{DynamicResource TileFillHover}"/>
                         </Trigger>
                         <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="Fill" Property="Background" Value="{DynamicResource Accent}"/>
+                            <Setter TargetName="Track" Property="Background" Value="{DynamicResource Accent}"/>
+                            <Setter TargetName="Track" Property="BorderBrush" Value="{DynamicResource Accent}"/>
+                            <Setter TargetName="Knob" Property="Background" Value="{DynamicResource AccentText}"/>
                             <Setter TargetName="Knob" Property="HorizontalAlignment" Value="Right"/>
                             <Setter TargetName="State" Property="Text" Value="켬"/>
                             <Setter TargetName="State" Property="Foreground" Value="{DynamicResource Text}"/>

@@ -4,6 +4,7 @@
              xmlns:local="clr-namespace:ClawApp"
              xmlns:m="clr-namespace:ClawApp.Motion"
              xmlns:v="clr-namespace:ClawApp.Views"
+             xmlns:s="clr-namespace:ClawApp.Views.Sections"
              KeyboardNavigation.DirectionalNavigation="Contained">
     <!-- 메트로 설정: 왼쪽 분류(글자 위주, 선택 시 강조색 막대) + 오른쪽 내용. 분류가 바뀌면 내용이 계단식으로 다시 들어온다 -->
     <UserControl.Resources>
@@ -27,7 +28,7 @@
 
         <!-- ── 분류 ─────────────────────────────────────── -->
         <ScrollViewer>
-            <ItemsControl ItemsSource="{Binding Categories}" Focusable="False" Margin="4,4,4,0" m:Entrance.Stagger="Items" m:Entrance.Offset="-32">
+            <ItemsControl x:Name="CategoryList" ItemsSource="{Binding Categories}" Focusable="False" Margin="4,4,4,0" m:Entrance.Stagger="Items" m:Entrance.Offset="-32">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
                         <Button x:Name="Cat" Style="{StaticResource NavItem}" Tag="{Binding IsSelected}"
@@ -48,7 +49,7 @@
             </ItemsControl>
         </ScrollViewer>
 
-        <ScrollViewer Grid.Column="1" Margin="28,0,0,0">
+        <ScrollViewer x:Name="ContentHost" Grid.Column="1" Margin="28,0,0,0">
             <StackPanel MaxWidth="760" HorizontalAlignment="Left" Margin="6,4,6,16">
 
                 <!-- ── 일반 ──────────────────────────────── -->
@@ -86,6 +87,7 @@
                             <TextBlock Text="끄면 본체 버튼·성능·조명을 ClawHub만 제어합니다. 삭제하지 않으므로 언제든 다시 켤 수 있어요." Style="{StaticResource Caption}"/>
                         </StackPanel>
                     </ToggleButton>
+                    <s:DesktopModeSection Margin="0,20,0,0"/>
                 </StackPanel>
 
                 <!-- ── 컨트롤러 ──────────────────────────── -->
@@ -225,6 +227,7 @@
                     <TextBlock Style="{StaticResource Caption}" Margin="2,8,0,0"
                                Text="게임마다 다른 성능 모드를 쓰려면 라이브러리 → 게임 → 성능 모드에서 고르세요. 게임이 끝나면 여기 기본값으로 돌아옵니다."/>
                 </StackPanel>
+                <s:EnduranceGamingSection DataContext="{Binding Power}" Margin="0,20,0,0"/>
                 </StackPanel>
 
                 <!-- ── 디스플레이·사운드 ────────────────── -->
@@ -270,6 +273,7 @@
                             </ItemsControl>
                         </StackPanel>
                     </Border>
+                    <s:DisplayQualitySection DataContext="{Binding DisplayQuality}" Margin="0,20,0,0"/>
                 </StackPanel>
 
                 <!-- ── 배터리 ────────────────────────────── -->
@@ -293,6 +297,8 @@
                         </StackPanel>
                     </Border>
                 </StackPanel>
+                <s:BatteryPowerSection DataContext="{Binding Power}" Margin="0,20,0,0"/>
+                <s:BatteryHealthSection DataContext="{Binding Power}" Margin="0,20,0,0"/>
                 </StackPanel>
 
                 <!-- ── Windows 설정 ─────────────────────── -->

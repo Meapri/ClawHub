@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:ClawApp"
              xmlns:m="clr-namespace:ClawApp.Motion"
+             xmlns:s="clr-namespace:ClawApp.Views.Sections"
              KeyboardNavigation.DirectionalNavigation="Contained">
     <!-- 메트로 참(charms) 바: 오른쪽 가장자리에 붙은 직각 패널. 토글 타일 → 슬라이더 → 하단 바 -->
     <Border Background="{DynamicResource Bg1}" BorderBrush="{DynamicResource Accent}" BorderThickness="3,0,0,0">
@@ -132,6 +133,9 @@
                         <RadioButton Style="{StaticResource ChipRadio}" GroupName="limit" Content="80%" IsChecked="{Binding Limit80}"/>
                         <RadioButton Style="{StaticResource ChipRadio}" GroupName="limit" Content="60%" IsChecked="{Binding Limit60}"/>
                     </WrapPanel>
+
+                    <s:EnduranceGamingSection DataContext="{Binding Power}" Margin="0,16,0,0"/>
+                    <s:CaptureSection DataContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Window}}" Margin="0,16,0,0"/>
                 </StackPanel>
             </ScrollViewer>
         </DockPanel>
