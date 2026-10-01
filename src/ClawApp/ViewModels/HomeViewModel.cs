@@ -18,7 +18,10 @@ public sealed partial class HomeViewModel : ObservableObject, INavPage
     }
 
     public string Title => "홈";
-    public IReadOnlyList<Hint> Hints => [new("A", "선택"), new("☰", "메뉴"), new("…", "퀵 설정")];
+    /// <summary>게임 중이면 B(또는 왼쪽 버튼 한 번 더)로 게임에 돌아간다. "…" = 오른쪽 버튼 → Game Bar 빠른 설정.</summary>
+    public IReadOnlyList<Hint> Hints => _shell.IsGameRunning
+        ? [new("A", "선택"), new("B", "게임으로"), new("…", "빠른 설정")]
+        : [new("A", "선택"), new("…", "빠른 설정")];
     public bool IsEmpty => Hero is null;
 
     /// <summary>히어로 = 가장 최근 게임 (없으면 첫 게임), 아래 줄 = 최근 + 나머지 순.</summary>
@@ -34,5 +37,11 @@ public sealed partial class HomeViewModel : ObservableObject, INavPage
 
     public void OnShown() => Reload();
 
-    public bool Handle(NavAction action) => action == NavAction.Back; // 홈에서 B는 아무것도 하지 않음
+    /// <summary>홈에서 B: 게임 중이면 게임으로 돌아가고, 아니면 아무것도 하지 않음.</summary>
+    public bool Handle(NavAction action)
+    {
+        if (action != NavAction.Back) return false;
+        if (_shell.IsGameRunning) _shell.ReturnToBackground();
+        return true;
+    }
 }

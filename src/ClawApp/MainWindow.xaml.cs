@@ -16,8 +16,9 @@ using ClawCore.Ec;
 namespace ClawApp;
 
 /// <summary>
-/// 단일 전체 화면 창. 셸 화면/게임 위 오버레이를 모두 이 창이 담당한다.
-/// 입력(패드·키보드)을 공통 내비게이션 액션으로 바꿔 포커스 이동/실행을 처리한다.
+/// 단일 전체 화면 창 (ClawHub 런처). 게임 위 오버레이는 띄우지 않는다 — 빠른 설정은 Game Bar 위젯,
+/// 홈 버튼은 이 창(또는 Xbox 앱)으로. 입력(패드·키보드)을 공통 내비게이션 액션으로 바꿔 포커스 이동/실행을 처리한다.
+/// Menu/F1 = 왼쪽 본체 버튼(홈), View/F2 = 오른쪽 본체 버튼(빠른 설정)과 같은 경로.
 /// </summary>
 public partial class MainWindow : Window
 {
@@ -76,7 +77,7 @@ public partial class MainWindow : Window
         ApplyBackdrop();
     }
 
-    /// <summary>셸 화면 = Mica(바탕화면 색이 은은히 비침), 게임 위 오버레이 = Acrylic(뒤 화면을 흐림).</summary>
+    /// <summary>셸 화면 = Mica(바탕화면 색이 은은히 비침). 창이 보이면 항상 셸이므로 Acrylic은 예비용.</summary>
     private void ApplyBackdrop()
     {
         var hwnd = new WindowInteropHelper(this).Handle;
@@ -196,7 +197,7 @@ public partial class MainWindow : Window
             case NavAction.Back:
                 if (_vm.IsAnyPanelOpen) _vm.ClosePanels();
                 else if (!(_vm.CurrentPage?.Handle(a) ?? false) && !_vm.GoBack() && _vm.RunningGame is not null)
-                    _vm.ReturnToBackground(); // 게임 중 홈에서 B → 게임으로
+                    _vm.ReturnToBackground(); // 게임 중 첫 화면에서 B → 게임으로 (홈은 HomeViewModel.Handle이 처리)
                 return;
             case NavAction.Up or NavAction.Down or NavAction.Left or NavAction.Right:
                 MoveFocus(a);
@@ -260,7 +261,8 @@ public partial class MainWindow : Window
 
     private void FocusCurrent()
     {
-        DependencyObject root = _vm.IsQuickAccessOpen ? QuickPanel : _vm.IsMainMenuOpen ? MainMenu : PageHost;
+        // 앱 안 빠른 설정 패널(위젯이 없을 때의 대체 경로). XAML 재구성과 무관하게 이름으로 찾는다.
+        DependencyObject root = _vm.IsQuickAccessOpen && FindName("QuickPanel") is DependencyObject quick ? quick : PageHost;
 
         if (root == PageHost && _vm.CurrentPage is { } page && _focusMemory.TryGetValue(page, out var index))
         {
