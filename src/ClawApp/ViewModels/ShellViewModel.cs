@@ -825,12 +825,13 @@ public sealed partial class ShellViewModel : ObservableObject
     }
 
     /// <summary>편집 중인 매핑을 잠깐 실제로 적용해 본다. 시간이 지나면 자동으로 원래대로.</summary>
-    public async Task TestMappingAsync(MappingProfile profile, TimeSpan duration)
+    /// <summary>매핑을 잠깐 실제로 적용한다. 취소하거나 시간이 지나면 원래대로 동기화.</summary>
+    public async Task TestMappingAsync(MappingProfile profile, TimeSpan duration, CancellationToken cancel = default)
     {
         if (!await SendAsync(new Request { Op = Ops.ApplyMapping, Bindings = profile.ToCodes().ToDictionary(), Macros = profile.ToMacros() })) return;
         _appliedProfileId = "__test__"; // 다음 동기화 때 반드시 복원되도록
-        ShowToast($"{duration.TotalSeconds:0}초 동안 테스트 중 — 메모장 등에서 눌러 보세요");
-        await Task.Delay(duration);
+        try { await Task.Delay(duration, cancel); }
+        catch (OperationCanceledException) { /* 사용자가 끝냄 */ }
         await SyncControllerAsync();
         ShowToast("테스트 끝 — 원래 버튼으로 돌아왔습니다");
     }

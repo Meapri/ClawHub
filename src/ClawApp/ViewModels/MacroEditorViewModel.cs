@@ -168,7 +168,10 @@ public sealed partial class MacroEditorViewModel : ObservableObject, INavPage
         switch (action)
         {
             case NavAction.Secondary: DeleteSelected(); return true;
-            case NavAction.Options: _ = _shell.TestMappingAsync(_profile, TimeSpan.FromSeconds(15)); return true;
+            case NavAction.Options:
+                _shell.ShowToast("15초 동안 테스트 중 — 메모장 등에서 눌러 보세요");
+                _ = _shell.TestMappingAsync(_profile, TimeSpan.FromSeconds(15));
+                return true;
         }
         return false;
     }

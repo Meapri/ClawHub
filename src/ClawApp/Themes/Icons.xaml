@@ -74,6 +74,15 @@
     <sys:String x:Key="Icon.Clock">&#xE087;</sys:String>
     <sys:String x:Key="Icon.ArrowRight">&#xE049;</sys:String>
     <sys:String x:Key="Icon.Undo2">&#xE2A1;</sys:String>
+    <!-- 매핑 편집 -->
+    <sys:String x:Key="Icon.Layers">&#xE529;</sys:String>
+    <sys:String x:Key="Icon.Move">&#xE121;</sys:String>
+    <sys:String x:Key="Icon.Eraser">&#xE28F;</sys:String>
+    <sys:String x:Key="Icon.ListPlus">&#xE23F;</sys:String>
+    <sys:String x:Key="Icon.WandSparkles">&#xE357;</sys:String>
+    <sys:String x:Key="Icon.Pause">&#xE12E;</sys:String>
+    <sys:String x:Key="Icon.SkipBack">&#xE15F;</sys:String>
+    <sys:String x:Key="Icon.SkipForward">&#xE160;</sys:String>
     <!-- 상단 상태 표시줄 -->
     <sys:String x:Key="Icon.BatteryWarning">&#xE3AC;</sys:String>
     <sys:String x:Key="Icon.PlugZap">&#xE45C;</sys:String>

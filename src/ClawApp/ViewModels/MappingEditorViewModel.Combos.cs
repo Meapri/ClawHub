@@ -11,32 +11,27 @@ public sealed partial class KeyComboViewModel(KeyCombo combo) : ObservableObject
     [ObservableProperty] private bool _isSelected;
 }
 
-/// <summary>키 선택 패널의 조합키 프리셋 (Game Bar 녹화 등). UI는 Views/Sections/ComboPresetsSection.xaml.</summary>
+/// <summary>키 선택판 "조합·미디어" 탭의 조합키 프리셋 (Game Bar 녹화 등).</summary>
 public sealed partial class MappingEditorViewModel
 {
     private IReadOnlyList<KeyComboViewModel>? _comboPresets;
 
-    /// <summary>키 선택 패널에 함께 보여 줄 조합키 프리셋. A = 이 버튼을 그 조합으로 (다시 누르면 해제).</summary>
     public IReadOnlyList<KeyComboViewModel> ComboPresets => _comboPresets ??= [.. KeyCombos.All.Select(c => new KeyComboViewModel(c))];
 
-    private void RefreshComboSelection()
-    {
-        IReadOnlyList<string> current = EditingRow is null ? [] : Current(EditingRow.Button);
-        foreach (var c in ComboPresets) c.IsSelected = current.SequenceEqual(c.Combo.Keys);
-    }
-
+    /// <summary>이 버튼을 그 조합으로 지정하고 목록으로 돌아간다. 같은 조합을 다시 고르면 해제.</summary>
     [RelayCommand]
     private void ApplyCombo(KeyComboViewModel combo)
     {
-        if (EditingRow is null) return;
-        var button = EditingRow.Button;
-        if (Current(button).SequenceEqual(combo.Combo.Keys)) Profile.Bindings.Remove(button); // 같은 조합 → 해제
-        else Profile.Bindings[button] = [.. combo.Combo.Keys];
+        if (EditingRow is not { } row) return;
+        if (Current(row.Button).SequenceEqual(combo.Combo.Keys))
+        {
+            ClearEditing();
+            return;
+        }
+        Profile.Bindings[row.Button] = [.. combo.Combo.Keys];
+        Profile.Macros.Remove(row.Button);
         Save();
-        LoadKeys(); // 개별 키 선택 표시 + ComboText 갱신
-        RefreshComboSelection();
+        _shell.ShowToast($"{row.Name} → {combo.Label}");
+        ClosePicker();
     }
-
-    // 개별 키를 켜고 끌 때도 ComboText가 바뀌므로 여기서 프리셋 선택 표시를 맞춘다
-    partial void OnComboTextChanged(string value) => RefreshComboSelection();
 }

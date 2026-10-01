@@ -43,6 +43,10 @@ public partial class MainWindow : Window
         _pad.Start();
 
         PreviewKeyDown += OnKey;
+        PreviewKeyUp += OnKeyUp;
+        PreviewMouseDown += OnMouseButton;
+        PreviewMouseUp += OnMouseButton;
+        PreviewMouseWheel += OnMouseWheelCapture;
         Activated += (_, _) => _pad.Enabled = true;
         Deactivated += (_, _) => _pad.Enabled = false;
 
@@ -134,8 +138,47 @@ public partial class MainWindow : Window
 
     // ── 입력 ───────────────────────────────────────────────
 
+    /// <summary>매핑 테스트 중이면 키·마우스 입력을 화면 이동 대신 그 페이지에 넘긴다.</summary>
+    private IKeyCapture? Capture => _vm.CurrentPage is IKeyCapture { IsCapturing: true } c && !_vm.IsAnyPanelOpen ? c : null;
+
+    private void OnKeyUp(object sender, KeyEventArgs e)
+    {
+        if (Capture is not { } cap) return;
+        if (Input.KeyIds.From(e) is { } id) cap.OnCapturedKey(id, false);
+        e.Handled = true;
+    }
+
+    private void OnMouseButton(object sender, MouseButtonEventArgs e)
+    {
+        if (Capture is not { } cap || Input.KeyIds.From(e.ChangedButton) is not { } id) return;
+        // 터치·마우스로 "테스트 끝내기"를 누르는 건 입력 기록이 아니라 클릭으로
+        for (var d = e.OriginalSource as DependencyObject; d is not null; d = d is Visual ? VisualTreeHelper.GetParent(d) : LogicalTreeHelper.GetParent(d))
+            if (d is UIElement { Uid: "CaptureBypass" }) return;
+        cap.OnCapturedKey(id, e.ButtonState == MouseButtonState.Pressed);
+        e.Handled = true;
+    }
+
+    private void OnMouseWheelCapture(object sender, MouseWheelEventArgs e)
+    {
+        if (Capture is not { } cap) return;
+        var id = e.Delta > 0 ? "MS_WHEELUP" : "MS_WHEELDOWN";
+        cap.OnCapturedKey(id, true);
+        // 휠은 떼는 신호가 없다 — 잠깐 밝혔다가 끈다
+        var off = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
+        off.Tick += (_, _) => { off.Stop(); cap.OnCapturedKey(id, false); };
+        off.Start();
+        e.Handled = true;
+    }
+
     private void OnKey(object sender, KeyEventArgs e)
     {
+        if (Capture is { } cap)
+        {
+            if (Input.KeyIds.From(e) is { } id) cap.OnCapturedKey(id, true);
+            e.Handled = true;
+            return;
+        }
+
         // 글자 입력 중에는 Enter/Esc(=입력 끝, 저장)와 위/아래 이동만 가로채고 나머지는 TextBox로
         if (Keyboard.FocusedElement is TextBox box)
         {
@@ -169,6 +212,11 @@ public partial class MainWindow : Window
     private void Route(NavAction a)
     {
         if (_vm.BusyText is not null) return;
+        if (Capture is not null)
+        {
+            _vm.CurrentPage?.Handle(a); // 테스트 중: B만 의미 있음 (끝내기)
+            return;
+        }
 
         // 글자 입력칸: A = 터치 키보드, B = 입력 끝(저장)
         if (Keyboard.FocusedElement is TextBox box)

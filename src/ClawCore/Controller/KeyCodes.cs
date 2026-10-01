@@ -30,7 +30,7 @@ public static class KeyCodes
         string[] pad = ["", "PAD_UP", "PAD_DOWN", "PAD_LEFT", "PAD_RIGHT", "PAD_LB", "PAD_RB", "PAD_L3", "PAD_R3",
             "PAD_A", "PAD_B", "PAD_X", "PAD_Y", "PAD_HOME", "PAD_VIEW", "PAD_MENU", "PAD_CAMERA", "PAD_M1", "PAD_M2", "PAD_LT", "PAD_RT"];
         string[] padLabel = ["", "패드 ↑", "패드 ↓", "패드 ←", "패드 →", "LB", "RB", "L3", "R3",
-            "Ⓐ", "Ⓑ", "Ⓧ", "Ⓨ", "Home", "View", "Menu", "Camera", "M1", "M2", "LT", "RT"];
+            "패드 A", "패드 B", "패드 X", "패드 Y", "Home", "View", "Menu", "Camera", "M1", "M2", "LT", "RT"];
         for (var i = 1; i < pad.Length; i++) Add(i, pad[i], padLabel[i], KeyCategory.Gamepad);
 
         Kb(50, "ESC", "Esc");

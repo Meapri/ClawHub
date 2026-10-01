@@ -14,6 +14,7 @@
     <!-- Lucide 아이콘 글꼴 + Icon.* 글자 (단색 선 아이콘, shadcn 느낌) -->
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="Themes/Icons.xaml"/>
+        <ResourceDictionary Source="Themes/Art.xaml"/>
     </ResourceDictionary.MergedDictionaries>
 
     <!-- Pretendard 내장 (Fonts/*.otf, SIL OFL 1.1). 한글·영문이 한 폰트라 글꼴이 섞여 보이지 않는다 -->

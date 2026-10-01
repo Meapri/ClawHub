@@ -43,6 +43,9 @@ public sealed class ButtonGlyph : Grid
         ["M1"] = "elite_paddle_bottom_left", ["M2"] = "elite_paddle_bottom_right",
         ["☰"] = "button_menu", ["Menu"] = "button_menu", ["…"] = "button_view", ["View"] = "button_view",
         ["Guide"] = "guide",
+        ["MouseLeft"] = "mouse_left", ["MouseRight"] = "mouse_right", ["MouseMiddle"] = "mouse_scroll",
+        ["MouseWheelUp"] = "mouse_scroll_up", ["MouseWheelDown"] = "mouse_scroll_down",
+        ["MouseBack"] = "mouse_side_back", ["MouseForward"] = "mouse_side_forward",
     };
 
     private static readonly Dictionary<string, ImageSource> Cache = [];
