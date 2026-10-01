@@ -62,7 +62,7 @@
                         </StackPanel>
                     </Button>
                     <TextBlock Style="{StaticResource Caption}" Margin="4,0,0,14" FontSize="12"
-                               Text="테스트에서 키가 안 나오면 데스크톱 모드로 바꿔 보세요."/>
+                               Text="XInput 모드에서 키 출력이 확인됐어요. 스틱을 마우스로 쓰고 싶을 때만 데스크톱 모드로 바꾸세요."/>
                     <Button Style="{StaticResource NavButton}" Command="{Binding DuplicateCommand}">
                         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE8C8;" Style="{StaticResource Icon}" Margin="0,0,14,0"/><TextBlock Text="프로필 복제"/></StackPanel>
                     </Button>

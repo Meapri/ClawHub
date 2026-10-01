@@ -83,7 +83,9 @@ TriggerKeyProfile (15바이트): `[Index][Flag][Turbo][DeadRange][EdgeDeadRange]
 - 프로필 길이 1478 확인 → 신형 레이아웃. 16개 버튼 오프셋 전부 일치 (기본 코드 1~20).
 - Flag: 기본 버튼 `0x00`, 키보드로 매핑된 M1/M2 `0x04` → **bit2(0x04)가 재매핑 활성 비트** (LSB 기준). 트리거 Flag `0x02`.
 - 1T91 기본값 확인: M1 = F22(157), M2 = LCtrl+1(116, 64).
-- 아직 미검증: RAM 쓰기(`21`) 후 실제 키 출력, XInput 모드에서 비-M 버튼 키 출력 여부.
+- RAM 쓰기(`21`) + 재읽기 검증 정상: 적용 ~220ms, 복원 ~140ms.
+- **XInput 모드에서 키 출력 확인** (`tools/keytest.ps1`): A→Z, X→LCtrl, M1→1 모두 저수준 훅에서 `injected=False`(하드웨어 입력). 매핑된 버튼은 XInput 버튼 신호를 내지 않음(중복 입력 없음).
+- Desktop 모드는 같은 테스트에서 이벤트 0건 — 미입력인지 미지원인지 미확정. 기본값은 XInput 유지.
 
 ## 범용 키 매핑 관련 결론
 
