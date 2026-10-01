@@ -124,6 +124,7 @@ public sealed partial class ShellViewModel : ObservableObject
             Profiles = [.. Profiles.All.Select(p => new ProfileItem { Id = p.Id, Name = p.Name })],
             GamePerformanceMode = game?.PerformanceMode?.ToString(),
             GameFpsLimit = game?.FpsLimit,
+            RunningGamePid = game is null ? null : await Task.Run(() => GameProcessPicker.Pick(Session)), // FPS 측정 대상
         };
         try { await Service.SendAsync(new Request { Op = Ops.SetAppState, AppState = state }, TimeSpan.FromSeconds(3)); }
         catch (Exception) { /* 연결 끊김 — 재연결 때 다시 보냄 */ }

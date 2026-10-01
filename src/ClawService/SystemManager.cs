@@ -8,7 +8,7 @@ namespace ClawService;
 /// Game Bar 위젯(샌드박스라 드라이버 DLL·WMI를 직접 못 씀)을 위해 서비스가 대신 해 주는 것들:
 /// Intel 그래픽(FPS 제한·프레임 생성), 화면 밝기, 2초 간격 측정값 기록(그래프용), 런처 앱 상태 보관.
 /// </summary>
-public sealed class SystemManager(ILogger<SystemManager> log, EcManager ec) : IDisposable
+public sealed class SystemManager(ILogger<SystemManager> log, EcManager ec, FrameMonitor frames) : IDisposable
 {
     private const int HistoryLength = 60; // 2초 × 60 = 2분
     private readonly object _lock = new();
@@ -18,10 +18,23 @@ public sealed class SystemManager(ILogger<SystemManager> log, EcManager ec) : ID
     private DateTime _graphicsReadAt;
     private Timer? _timer;
 
-    /// <summary>런처 앱이 SetAppState로 알려 준 상태. 앱이 끊기면 null.</summary>
-    public AppState? AppState { get; set; }
+    /// <summary>런처 앱이 SetAppState로 알려 준 상태. 앱이 끊기면 null. 게임 PID가 오면 FPS 측정 대상으로 넘긴다.</summary>
+    public AppState? AppState
+    {
+        get => _appState;
+        set
+        {
+            _appState = value;
+            frames.SetTarget(value?.RunningGamePid);
+        }
+    }
+    private AppState? _appState;
 
-    public void Start() => _timer = new Timer(_ => Sample(), null, TimeSpan.Zero, TimeSpan.FromSeconds(2));
+    public void Start()
+    {
+        _timer = new Timer(_ => Sample(), null, TimeSpan.Zero, TimeSpan.FromSeconds(2));
+        frames.Start();
+    }
 
     // ── 측정값 ──────────────────────────────────────────
 
@@ -37,6 +50,7 @@ public sealed class SystemManager(ILogger<SystemManager> log, EcManager ec) : ID
                 CpuTemp = t.CpuTemp,
                 CpuWatts = t.CpuWatts,
                 BatteryWatts = t.BatteryWatts,
+                Fps = frames.Current?.Fps,
             };
             lock (_lock)
             {
@@ -53,10 +67,15 @@ public sealed class SystemManager(ILogger<SystemManager> log, EcManager ec) : ID
 
     public Telemetry GetTelemetry()
     {
+        frames.NotePoll(); // 누가 보고 있을 때만 PresentMon을 돌린다
+        var fps = frames.Current;
         lock (_lock)
         {
             return new Telemetry
             {
+                Fps = fps?.Fps,
+                FrameTimeMs = fps?.FrameTimeMs,
+                FpsLow1 = fps?.FpsLow1,
                 CpuTemp = _latest.CpuTemp,
                 CpuWatts = _latest.CpuWatts,
                 BatteryPercent = _latest.BatteryPercent,
