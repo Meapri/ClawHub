@@ -19,6 +19,62 @@ public sealed class Request
     public ControllerSettings? ControllerSettings { get; set; }
     /// <summary>SetMsiCenter: true = 켜기, false = 끄기.</summary>
     public bool? Enabled { get; set; }
+
+    /// <summary>SetGraphics: FPS 제한 (0 = 끔). null이면 그대로.</summary>
+    public int? FpsLimit { get; set; }
+    /// <summary>SetGraphics: XeSS 프레임 생성 0 끔, 1 = 2배, 2 = 3배, 3 = 4배. null이면 그대로.</summary>
+    public int? FrameGeneration { get; set; }
+    /// <summary>SetBrightness: 0–100.</summary>
+    public int? Brightness { get; set; }
+    /// <summary>SetAppState: 런처 앱이 알려 주는 현재 게임·매핑 정보 (위젯 표시용).</summary>
+    public AppState? AppState { get; set; }
+    /// <summary>AppCommand: 위젯 → 런처 앱 명령 (서비스가 구독 중인 앱에 중계). <see cref="AppCommands"/>.</summary>
+    public string? Command { get; set; }
+}
+
+/// <summary>위젯이 런처 앱에 보내는 명령 (AppCommand.Command 값).</summary>
+public static class AppCommands
+{
+    public const string CycleProfile = "CycleProfile";
+    /// <summary>"SetProfile:&lt;프로필 Id&gt;" — 빈 Id면 매핑 사용 안 함.</summary>
+    public const string SetProfilePrefix = "SetProfile:";
+    public const string QuitGame = "QuitGame";
+    public const string ShowClawHub = "ShowClawHub";
+}
+
+/// <summary>런처 앱이 서비스에 맡겨 두는 상태. 위젯은 GetStatus로 읽는다.</summary>
+public sealed class AppState
+{
+    public string? RunningGameTitle { get; set; }
+    public string? ProfileId { get; set; }
+    public string? ProfileName { get; set; }
+    public List<ProfileItem> Profiles { get; set; } = [];
+    /// <summary>게임 전용 성능 모드 이름 (null = 기본값 따름).</summary>
+    public string? GamePerformanceMode { get; set; }
+    /// <summary>게임 전용 FPS 제한 (null = 기본값 따름).</summary>
+    public int? GameFpsLimit { get; set; }
+}
+
+public sealed class ProfileItem
+{
+    public string Id { get; set; } = "";
+    public string Name { get; set; } = "";
+}
+
+public sealed class GraphicsState
+{
+    public bool Available { get; set; }
+    public int FpsLimit { get; set; }
+    public int FrameGeneration { get; set; }
+}
+
+public sealed class TelemetrySample
+{
+    /// <summary>수집 시각 (Unix 초).</summary>
+    public long Time { get; set; }
+    public int? CpuTemp { get; set; }
+    public int? CpuWatts { get; set; }
+    public double? BatteryWatts { get; set; }
 }
 
 /// <summary>서비스 → 앱. Id가 있으면 응답, 0이면 푸시 이벤트.</summary>
@@ -32,6 +88,8 @@ public sealed class Response
     public MsiButton? Button { get; set; }
     public ServiceStatus? Status { get; set; }
     public Telemetry? Telemetry { get; set; }
+    /// <summary>Event = AppCommand 일 때 명령 문자열.</summary>
+    public string? Command { get; set; }
 }
 
 /// <summary>EC 실시간 값 (읽기 전용). 출처: MSI OSD 코드 정적 분석, 값의 의미는 실기 확인 필요.</summary>
@@ -43,6 +101,14 @@ public sealed class Telemetry
     public int? CpuWatts { get; set; }
     /// <summary>Get_Fan(0) 원시값 — RPM 변환식 검증 전.</summary>
     public byte[]? FanRaw { get; set; }
+
+    public int? BatteryPercent { get; set; }
+    public bool Charging { get; set; }
+    /// <summary>방전 전력 (W). 충전 중이면 null.</summary>
+    public double? BatteryWatts { get; set; }
+    public int? RemainingMinutes { get; set; }
+    /// <summary>최근 2분 (2초 간격, 오래된 것부터). 그래프용.</summary>
+    public List<TelemetrySample> History { get; set; } = [];
 }
 
 public sealed class ServiceStatus
@@ -68,6 +134,10 @@ public sealed class ServiceStatus
     public PerformanceState? Performance { get; set; }
     public ChargeLimit? ChargeLimit { get; set; }
 
+    public GraphicsState? Graphics { get; set; }
+    public int? Brightness { get; set; }
+    public AppState? AppState { get; set; }
+
     public List<string> Warnings { get; set; } = [];
 }
 
@@ -85,10 +155,15 @@ public static class Ops
     public const string RestorePerformance = "RestorePerformance";
     public const string SetMsiCenter = "SetMsiCenter";
     public const string GetTelemetry = "GetTelemetry";
+    public const string SetGraphics = "SetGraphics";
+    public const string SetBrightness = "SetBrightness";
+    public const string SetAppState = "SetAppState";
+    public const string AppCommand = "AppCommand";
     public const string Subscribe = "Subscribe";
 
     public const string EventButton = "Button";
     public const string EventStatus = "Status";
+    public const string EventAppCommand = "AppCommand";
 
     public const string PipeName = "ClawHub.Service";
 }

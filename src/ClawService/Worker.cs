@@ -3,16 +3,20 @@ using ClawCore.Ipc;
 
 namespace ClawService;
 
-public sealed class Worker(ILogger<Worker> log, PipeServer pipe, RequestHandler handler, ControllerManager controller, EcManager ec)
-    : BackgroundService
+public sealed class Worker(ILogger<Worker> log, PipeServer pipe, RequestHandler handler, ControllerManager controller, EcManager ec,
+    SystemManager system) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
         if (File.Exists(Path.Combine(ClawCore.JsonStore.ServiceDir, "ec-state.json"))) ec.Reapply("서비스 시작");
+        system.Start();
 
         controller.StatusChanged += () => pipe.Broadcast(new Response { Event = Ops.EventStatus, Status = handler.BuildStatus() });
+        // Game Bar 위젯의 명령(프로필 변경·게임 종료·ClawHub 열기)을 구독 중인 런처 앱에 전달
+        handler.RelayAppCommand = cmd => pipe.Broadcast(new Response { Event = Ops.EventAppCommand, Command = cmd });
         pipe.LastSubscriberGone += () =>
         {
+            system.AppState = null; // 런처 앱이 없으면 위젯은 게임·매핑 정보를 숨긴다
             controller.RestoreBaseline();
             ec.RestoreDefault();
         };

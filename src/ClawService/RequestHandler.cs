@@ -4,8 +4,15 @@ using Microsoft.Win32;
 
 namespace ClawService;
 
-public sealed class RequestHandler(ILogger<RequestHandler> log, ControllerManager controller, EcManager ec, MsiCenterManager msi)
+public sealed class RequestHandler(ILogger<RequestHandler> log, ControllerManager controller, EcManager ec, MsiCenterManager msi,
+    SystemManager system)
 {
+    /// <summary>위젯의 AppCommand를 런처 앱(구독자)에게 보내는 통로 — PipeServer가 연결한다.</summary>
+    public Action<string>? RelayAppCommand { get; set; }
+
+    private static readonly HashSet<string> KnownCommands =
+        [AppCommands.CycleProfile, AppCommands.QuitGame, AppCommands.ShowClawHub];
+
     private static readonly string? Bios =
         Registry.GetValue(@"HKEY_LOCAL_MACHINE\HARDWARE\DESCRIPTION\System\BIOS", "BIOSVersion", null) as string;
 
@@ -16,6 +23,10 @@ public sealed class RequestHandler(ILogger<RequestHandler> log, ControllerManage
             throw new ArgumentException("잘못된 성능 설정");
         if (req.ControllerMode is { } m && m is not (GamepadMode.XInput or GamepadMode.Desktop))
             throw new ArgumentException("허용되지 않은 컨트롤러 모드");
+        if (req.Brightness is < 0 or > 100) throw new ArgumentException("밝기는 0~100");
+        if (req.FpsLimit is < 0 or > 240) throw new ArgumentException("FPS 제한은 0~240");
+        if (req.FrameGeneration is < 0 or > 3) throw new ArgumentException("프레임 생성은 0~3");
+        if (req.AppState is { Profiles.Count: > 100 }) throw new ArgumentException("프로필이 너무 많습니다");
     }
 
     public Response Handle(Request req)
@@ -53,7 +64,23 @@ public sealed class RequestHandler(ILogger<RequestHandler> log, ControllerManage
                     controller.SetSettings(req.ControllerSettings ?? throw new ArgumentException("ControllerSettings 누락"));
                     break;
                 case Ops.GetTelemetry:
-                    return new Response { Telemetry = ec.ReadTelemetry() }; // 자주 불리므로 상태는 생략
+                    return new Response { Telemetry = system.GetTelemetry() }; // 자주 불리므로 상태는 생략
+                case Ops.SetGraphics:
+                    system.SetGraphics(req.FpsLimit, req.FrameGeneration);
+                    break;
+                case Ops.SetBrightness:
+                    system.SetBrightness(req.Brightness ?? throw new ArgumentException("Brightness 누락"));
+                    break;
+                case Ops.SetAppState:
+                    system.AppState = req.AppState;
+                    break;
+                case Ops.AppCommand:
+                    var cmd = req.Command ?? throw new ArgumentException("Command 누락");
+                    if (!KnownCommands.Contains(cmd) && !cmd.StartsWith(AppCommands.SetProfilePrefix, StringComparison.Ordinal))
+                        throw new ArgumentException($"알 수 없는 명령 {cmd}");
+                    if (RelayAppCommand is null || system.AppState is null) throw new InvalidOperationException("ClawHub 앱이 실행 중이 아닙니다");
+                    RelayAppCommand(cmd);
+                    break;
                 case Ops.SetMsiCenter:
                     msi.Set(req.Enabled ?? throw new ArgumentException("Enabled 누락"));
                     break;
@@ -87,6 +114,9 @@ public sealed class RequestHandler(ILogger<RequestHandler> log, ControllerManage
             ChargeLimit = ec.ChargeLimit,
             MsiCenterEnabled = msi.IsEnabled,
             BiosVersion = Bios,
+            Graphics = system.Graphics,
+            Brightness = system.Brightness,
+            AppState = system.AppState,
         };
         if (ec.Error is not null) s.Warnings.Add($"EC: {ec.Error}");
         if (!controller.Connected) s.Warnings.Add("컨트롤러가 연결되지 않았습니다");

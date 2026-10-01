@@ -7,6 +7,7 @@ builder.Services.Configure<HostOptions>(o => o.BackgroundServiceExceptionBehavio
 builder.Services.AddSingleton<ControllerManager>();
 builder.Services.AddSingleton<EcManager>();
 builder.Services.AddSingleton<MsiCenterManager>();
+builder.Services.AddSingleton<SystemManager>();
 builder.Services.AddSingleton<RequestHandler>();
 builder.Services.AddSingleton<PipeServer>();
 builder.Services.AddHostedService<Worker>();
