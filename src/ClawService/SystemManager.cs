@@ -132,21 +132,30 @@ public sealed class SystemManager(ILogger<SystemManager> log, EcManager ec) : ID
 
     // ── 밝기 ────────────────────────────────────────────
 
+    private int? _brightness;
+    private DateTime _brightnessReadAt;
+
+    /// <summary>위젯이 4초마다 상태를 물으므로 WMI 조회는 5초 캐시.</summary>
     public int? Brightness
     {
         get
         {
+            if (DateTime.UtcNow - _brightnessReadAt < TimeSpan.FromSeconds(5)) return _brightness;
             try
             {
                 using var s = new ManagementObjectSearcher(@"root\WMI", "SELECT CurrentBrightness FROM WmiMonitorBrightness");
-                return s.Get().Cast<ManagementObject>().Select(o => (int?)Convert.ToInt32(o["CurrentBrightness"])).FirstOrDefault();
+                _brightness = s.Get().Cast<ManagementObject>().Select(o => (int?)Convert.ToInt32(o["CurrentBrightness"])).FirstOrDefault();
             }
-            catch (Exception) { return null; }
+            catch (Exception) { _brightness = null; }
+            _brightnessReadAt = DateTime.UtcNow;
+            return _brightness;
         }
     }
 
     public void SetBrightness(int percent)
     {
+        _brightness = Math.Clamp(percent, 0, 100);
+        _brightnessReadAt = DateTime.UtcNow;
         using var s = new ManagementObjectSearcher(@"root\WMI", "SELECT * FROM WmiMonitorBrightnessMethods");
         foreach (ManagementObject o in s.Get())
             o.InvokeMethod("WmiSetBrightness", [1u, (byte)Math.Clamp(percent, 0, 100)]);
