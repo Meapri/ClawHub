@@ -25,6 +25,11 @@ public sealed class ArtFetcher
     {
         var dir = CacheDir(g);
         string? Hit(string name) => File.Exists(Path.Combine(dir, name)) ? Path.Combine(dir, name) : null;
+        // 직접 추가한 게임은 library.json에 예전 경로(지운 사용자 아트 등)가 남을 수 있다
+        static string? Existing(string? p) => p is not null && !p.Contains("://") && !File.Exists(p) ? null : p;
+        g.CoverImage = Existing(g.CoverImage);
+        g.HeroImage = Existing(g.HeroImage);
+        g.LogoImage = Existing(g.LogoImage);
         g.CoverImage ??= Hit("cover.jpg");
         g.HeroImage ??= Hit("hero.jpg");
         g.LogoImage ??= Hit("logo.png");

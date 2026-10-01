@@ -108,6 +108,10 @@ public sealed partial class GameViewModel(ShellViewModel shell, GameTileViewMode
         }
     }
 
+    /// <summary>"아트 바꾸기" — 커버·배경·로고를 검색/파일에서 직접 고른다.</summary>
+    [RelayCommand]
+    private void OpenArtPicker() => shell.Navigate(new ArtPickerViewModel(shell, Tile));
+
     [RelayCommand]
     private void Hide()
     {

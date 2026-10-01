@@ -103,6 +103,36 @@ TriggerKeyProfile (15바이트): `[Index][Flag][Turbo][DeadRange][EdgeDeadRange]
 
 ClawHub 단색 조명은 애니메이션 슬롯 3을 덮어쓰고 활성 인덱스를 3으로 바꾼 뒤 `09` SyncRGB. 실기 확인(2026-10-01): 빨간 단색 즉시 반영, RAM 쓰기만으로 동작.
 
+### 스틱 블록 (`0x22A` 왼쪽 / `0x23A` 오른쪽, 16바이트)
+
+MSI `StickKeyProfile` 직렬화 순서 (API_ControlMode·GamePadFwVersion 디컴파일 동일):
+
+| +off | 필드 | MSI가 쓰는 값 |
+|---|---|---|
+| 0 | StickEn | XInput 모드에서 1 |
+| 1 / 2 | DeadzoneEn / Deadzone | 1 / 사용자 값 (기본 10) |
+| 3 | MapEn | 스틱 바꾸기(좌↔우) 켬 여부 |
+| 4 / 5 | FlipX / FlipY | 건드리지 않음 |
+| 6 | MapValue | 바꾸기 시 왼쪽 2, 오른쪽 1, 아니면 0 |
+| 7 / 8 | TargetEn / TargetValue | **건드리지 않음** |
+| 9 / 10 | EdgeDeadzoneEn / EdgeDeadzone | 1 / 사용자 값 (기본 100) |
+| 11..15 | Linear×5 (LinearValue, Original1, Target1, Original2, Target2) | **건드리지 않음** |
+
+**데스크톱 모드 스틱→마우스 속도: 확인된 필드 없음 (2026-10-02 조사).**
+- MSI Center M은 Desktop 모드용으로 별도 `desktopSticks` 설정을 갖지만 내용은 데드존/바깥 데드존뿐이고,
+  모드를 바꿀 때 같은 스틱 블록(+1/+2, +9/+10)에 덮어쓴다. 마우스 속도·감도 UI/필드는 없다.
+- `TargetEn/TargetValue`와 `LinearModule`은 파싱/직렬화만 되고 어느 코드도 값을 바꾸지 않아 의미 불명
+  (응답 곡선일 가능성이 높지만 미검증). 감도 관련 코드는 자이로 `SensorModule`(IsOutputAsMouse,
+  Sensitivity=4일 때 `TargetData1 = 감도% × 254/100`)뿐 — 자이로→마우스이지 스틱이 아니다.
+- 따라서 ClawHub는 마우스 속도 설정을 넣지 않았다. 실기에서 Desktop 모드 + `TargetValue`/Linear 값을
+  RAM에만 바꿔 커서 속도 변화를 측정해야 확정 가능 (쓰기 실험은 별도 승인 후).
+
+### 키 코드에 없는 키
+
+MSI `KeyMapDefine` 표에 PrintScreen·ScrollLock·Pause·Win 오른쪽·메뉴 키는 없다 → 펌웨어 매핑으로
+Win+Alt+PrtSc(Game Bar 스크린샷)는 만들 수 없다. Win+Alt+R(녹화)·Win+Alt+G(최근 30초)는 가능
+(Win 117, LAlt 118, R 81, G 96) — `KeyCombos`.
+
 ## 범용 키 매핑 관련 결론
 
 - **펌웨어 키보드 매핑 가능 버튼**: D-pad 4방향, LB/RB, LT/RT, L3/R3, A/B/X/Y, M1/M2 (+ Home/View/Menu/Camera 슬롯 존재 ⚠).

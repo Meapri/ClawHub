@@ -5,6 +5,9 @@ namespace ClawApp.Services;
 
 public enum StartupMode { Auto, Shell, Companion }
 
+/// <summary>"데스크톱으로" 중 오른쪽 본체 버튼이 할 일.</summary>
+public enum DesktopRightButton { TouchKeyboard, GameBar }
+
 public sealed class AppSettings
 {
     private static string FilePath => Path.Combine(JsonStore.UserDir, "settings.json");
@@ -22,7 +25,13 @@ public sealed class AppSettings
     /// </summary>
     public StartupMode StartupMode { get; set; } = StartupMode.Auto;
 
-    public const string XboxAppId = @"shell:AppsFolder\Microsoft.GamingApp_8wekyb3d8bbwe!Microsoft.Xbox.App";
+    /// <summary>데스크톱 모드(스틱 = 마우스)에서 오른쪽 버튼: 터치 키보드 토글(기본) 또는 Game Bar.</summary>
+    public DesktopRightButton DesktopRightButton { get; set; } = DesktopRightButton.TouchKeyboard;
+
+    /// <summary>SteamGridDB API 키 (아트 고르기에서 사용, 없으면 Steam 검색만).</summary>
+    public string? SteamGridDbKey { get; set; }
+
+    public const string XboxAppId =@"shell:AppsFolder\Microsoft.GamingApp_8wekyb3d8bbwe!Microsoft.Xbox.App";
 
     /// <summary>Auto일 때: 시작 시점에 Xbox 앱이 이미 떠 있으면 Xbox 모드로 부팅한 것으로 본다.</summary>
     public bool ResolveCompanion() => (App.StartupOverride ?? StartupMode) switch

@@ -28,6 +28,24 @@ public static class ArtCache
         catch (Exception) { return Cache[path] = null; }
     }
 
+    /// <summary>받은 이미지 바이트 → 미리보기 (캐시하지 않음, 다른 스레드에서 불러도 됨).</summary>
+    public static ImageSource? FromBytes(byte[] bytes, int decodeWidth = 320)
+    {
+        try
+        {
+            using var stream = new MemoryStream(bytes);
+            var bmp = new BitmapImage();
+            bmp.BeginInit();
+            bmp.CacheOption = BitmapCacheOption.OnLoad;
+            bmp.StreamSource = stream;
+            bmp.DecodePixelWidth = decodeWidth;
+            bmp.EndInit();
+            bmp.Freeze();
+            return bmp;
+        }
+        catch (Exception) { return null; } // 디코더 없음(WebP 등)/손상
+    }
+
     public static ImageSource? LoadIcon(string? exe)
     {
         if (string.IsNullOrEmpty(exe) || !File.Exists(exe)) return null;

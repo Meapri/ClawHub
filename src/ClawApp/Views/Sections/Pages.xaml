@@ -1,0 +1,10 @@
+<!--
+    편의 기능 페이지의 DataTemplate. App.xaml의 MergedDictionaries에 추가해야 페이지가 보인다:
+    <ResourceDictionary Source="Views/Sections/Pages.xaml"/>
+-->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:vm="clr-namespace:ClawApp.ViewModels"
+                    xmlns:s="clr-namespace:ClawApp.Views.Sections">
+    <DataTemplate DataType="{x:Type vm:ArtPickerViewModel}"><s:ArtPickerView/></DataTemplate>
+</ResourceDictionary>

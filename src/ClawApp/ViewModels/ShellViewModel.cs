@@ -144,6 +144,15 @@ public sealed partial class ShellViewModel : ObservableObject
             case AppCommands.ShowClawHub:
                 ShowFromOutside();
                 break;
+            case AppCommands.Screenshot:
+                _ = CaptureAsync(CaptureAction.Screenshot);
+                break;
+            case AppCommands.ToggleRecording:
+                _ = CaptureAsync(CaptureAction.ToggleRecording);
+                break;
+            case AppCommands.SaveClip:
+                _ = CaptureAsync(CaptureAction.SaveClip);
+                break;
             case var c when c.StartsWith(AppCommands.SetProfilePrefix, StringComparison.Ordinal):
                 var id = c[AppCommands.SetProfilePrefix.Length..];
                 var profileId = string.IsNullOrEmpty(id) ? null : Profiles.Find(id)?.Id;
@@ -492,6 +501,9 @@ public sealed partial class ShellViewModel : ObservableObject
             XboxIntegration.PressWinG(); // 닫히면 OnHandoffTick이 매핑을 되돌린다
             return;
         }
+
+        // "데스크톱으로" 중(스틱 = 마우스): 기본은 터치 키보드 토글 (설정에서 Game Bar로 바꿀 수 있음)
+        if (TryDesktopRightButton()) return;
 
         if (XboxIntegration.IsWidgetInstalled() && XboxIntegration.TryOpenWidget())
         {
