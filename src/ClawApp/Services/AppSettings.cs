@@ -31,6 +31,12 @@ public sealed class AppSettings
     /// <summary>데스크톱 모드(스틱 = 마우스)에서 오른쪽 버튼: 터치 키보드 토글(기본) 또는 Game Bar.</summary>
     public DesktopRightButton DesktopRightButton { get; set; } = DesktopRightButton.TouchKeyboard;
 
+    /// <summary>
+    /// 게임 중(런처가 숨어 있을 때) 화면 꺼짐·절전 방지. 패드 입력은 Windows 유휴 타이머를 항상 되돌리지는 않아서
+    /// 게임 도중 화면이 꺼지는 것을 막는다. 게임이 끝나거나 런처로 돌아오면 풀린다.
+    /// </summary>
+    public bool KeepAwakeWhileGaming { get; set; } = true;
+
     /// <summary>SteamGridDB API 키 (아트 고르기에서 사용, 없으면 Steam 검색만).</summary>
     public string? SteamGridDbKey { get; set; }
 

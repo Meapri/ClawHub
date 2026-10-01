@@ -5,7 +5,8 @@ using Microsoft.Win32;
 namespace ClawService;
 
 public sealed class RequestHandler(ILogger<RequestHandler> log, ControllerManager controller, EcManager ec, MsiCenterManager msi,
-    SystemManager system, EnduranceManager endurance, PowerManager power, DisplayQualityManager displayQuality)
+    SystemManager system, EnduranceManager endurance, PowerManager power, DisplayQualityManager displayQuality,
+    PowerPlanManager powerPlan)
 {
     /// <summary>위젯의 AppCommand를 런처 앱(구독자)에게 보내는 통로 — PipeServer가 연결한다.</summary>
     public Action<string>? RelayAppCommand { get; set; }
@@ -31,6 +32,7 @@ public sealed class RequestHandler(ILogger<RequestHandler> log, ControllerManage
         if (req.EnduranceControl is { } egc && !Enum.IsDefined(egc)) throw new ArgumentException("잘못된 Endurance Gaming 설정");
         if (req.EnduranceMode is { } egm && !Enum.IsDefined(egm)) throw new ArgumentException("잘못된 Endurance Gaming 모드");
         if (req.PowerSource is { } src && !Enum.IsDefined(src)) throw new ArgumentException("잘못된 전원 구분");
+        if (req.PowerSetting is { } ps && !Enum.IsDefined(ps)) throw new ArgumentException("잘못된 전원 설정 항목");
     }
 
     public Response Handle(Request req)
@@ -49,6 +51,13 @@ public sealed class RequestHandler(ILogger<RequestHandler> log, ControllerManage
                     break;
                 case Ops.SetEnduranceGaming:
                     endurance.Set(req.EnduranceControl ?? throw new ArgumentException("EnduranceControl 누락"), req.EnduranceMode);
+                    break;
+                case Ops.GetPowerPlan:
+                    powerPlan.Refresh();
+                    break;
+                case Ops.SetPowerPlanSetting:
+                    powerPlan.Set(req.PowerSetting ?? throw new ArgumentException("PowerSetting 누락"), req.PowerSource,
+                        req.Value ?? throw new ArgumentException("Value 누락"));
                     break;
                 case Ops.ApplyTemporaryPerformance:
                     ec.ApplyTemporary(req.Performance ?? throw new ArgumentException("Performance 누락"));
@@ -133,6 +142,7 @@ public sealed class RequestHandler(ILogger<RequestHandler> log, ControllerManage
             PerformanceOnAc = ec.PerformanceOnAc,
             PerformanceOnBattery = ec.PerformanceOnBattery,
             BatteryHealth = power.BatteryHealth,
+            PowerPlan = powerPlan.State,
         };
         if (s.Graphics is { } g) g.Endurance = endurance.State;
         if (ec.Error is not null) s.Warnings.Add($"EC: {ec.Error}");

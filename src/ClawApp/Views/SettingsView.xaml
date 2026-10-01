@@ -298,6 +298,7 @@
                     </Border>
                 </StackPanel>
                 <s:BatteryPowerSection DataContext="{Binding Power}" Margin="0,20,0,0"/>
+                <s:PowerPlanSection DataContext="{Binding PowerPlan}" Margin="0,20,0,0"/>
                 <s:BatteryHealthSection DataContext="{Binding Power}" Margin="0,20,0,0"/>
                 </StackPanel>
 

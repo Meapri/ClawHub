@@ -6,6 +6,7 @@ builder.Services.AddWindowsService(o => o.ServiceName = "ClawHub");
 builder.Services.Configure<HostOptions>(o => o.BackgroundServiceExceptionBehavior = BackgroundServiceExceptionBehavior.Ignore);
 builder.Services.AddSingleton<PowerManager>();
 builder.Services.AddSingleton<EnduranceManager>();
+builder.Services.AddSingleton<PowerPlanManager>();
 builder.Services.AddSingleton<ControllerManager>();
 builder.Services.AddSingleton<EcManager>();
 builder.Services.AddSingleton<MsiCenterManager>();

@@ -135,6 +135,7 @@
                     </WrapPanel>
 
                     <s:EnduranceGamingSection DataContext="{Binding Power}" Margin="0,16,0,0"/>
+                    <s:SleepQuickSection DataContext="{Binding PowerPlan}" Margin="0,16,0,0"/>
                     <s:CaptureSection DataContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Window}}" Margin="0,16,0,0"/>
                 </StackPanel>
             </ScrollViewer>
