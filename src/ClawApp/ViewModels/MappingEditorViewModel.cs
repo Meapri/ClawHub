@@ -62,6 +62,21 @@ public sealed partial class MappingEditorViewModel : ObservableObject, INavPage
         ? [new("A", "키 추가/빼기"), new("B", "완료"), new("LB", "이전 분류"), new("RB", "다음 분류"), new("X", "모두 지우기")]
         : [new("A", "키 지정"), new("B", "뒤로"), new("X", "원래대로"), new("Y", "15초 테스트")];
 
+    /// <summary>TextBox에서 벗어날 때 저장된다.</summary>
+    public string ProfileName
+    {
+        get => Profile.Name;
+        set
+        {
+            if (string.IsNullOrWhiteSpace(value) || value == Profile.Name) return;
+            Profile.Name = value.Trim();
+            Save();
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(Title));
+            _shell.OnPropertyChangedPageTitle();
+        }
+    }
+
     public string ModeText => Profile.Mode == GamepadMode.Desktop ? "데스크톱 모드" : "XInput 모드 (기본)";
     public string CategoryLabel => Categories[CategoryIndex].Label;
 

@@ -97,6 +97,17 @@ public partial class MainWindow : Window
 
     private void OnKey(object sender, KeyEventArgs e)
     {
+        // 글자 입력 중에는 Enter/Esc(=입력 끝, 저장)와 위/아래 이동만 가로채고 나머지는 TextBox로
+        if (Keyboard.FocusedElement is TextBox box)
+        {
+            if (e.Key is Key.Enter or Key.Escape or Key.Down or Key.Up)
+            {
+                e.Handled = true;
+                box.MoveFocus(new TraversalRequest(e.Key == Key.Up ? FocusNavigationDirection.Up : FocusNavigationDirection.Down));
+            }
+            return;
+        }
+
         NavAction? a = e.Key switch
         {
             Key.Up => NavAction.Up,
@@ -119,6 +130,22 @@ public partial class MainWindow : Window
     private void Route(NavAction a)
     {
         if (_vm.BusyText is not null) return;
+
+        // 글자 입력칸: A = 터치 키보드, B = 입력 끝(저장)
+        if (Keyboard.FocusedElement is TextBox box)
+        {
+            if (a == NavAction.Accept)
+            {
+                box.SelectAll();
+                Services.SystemControls.ShowTouchKeyboard();
+                return;
+            }
+            if (a == NavAction.Back)
+            {
+                box.MoveFocus(new TraversalRequest(FocusNavigationDirection.Down));
+                return;
+            }
+        }
 
         switch (a)
         {

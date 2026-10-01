@@ -16,7 +16,10 @@ public sealed class GameLibrary
     {
         public DateTime? LastPlayed { get; set; }
         public string? MappingProfileId { get; set; }
+        /// <summary>"None" = 기본값 따름을 명시적으로 고른 경우.</summary>
+        public string? PerformanceMode { get; set; }
         public bool? Hidden { get; set; }
+        public string? Title { get; set; }
         public string? LaunchTarget { get; set; }
         public string? LaunchArgs { get; set; }
     }
@@ -48,7 +51,9 @@ public sealed class GameLibrary
             if (!_data.Overrides.TryGetValue(g.Id, out var o)) continue;
             g.LastPlayed = o.LastPlayed ?? g.LastPlayed;
             g.MappingProfileId = o.MappingProfileId ?? g.MappingProfileId;
+            g.PerformanceMode = Enum.TryParse<Ec.PerformanceMode>(o.PerformanceMode, out var pm) ? pm : null;
             g.Hidden = o.Hidden ?? g.Hidden;
+            g.Title = o.Title ?? g.Title;
             g.LaunchTarget = o.LaunchTarget ?? g.LaunchTarget;
             g.LaunchArgs = o.LaunchArgs ?? g.LaunchArgs;
         }
@@ -62,6 +67,11 @@ public sealed class GameLibrary
         Update(game, o => o.MappingProfileId = game.MappingProfileId = profileId);
 
     public void SetHidden(GameEntry game, bool hidden) => Update(game, o => o.Hidden = game.Hidden = hidden);
+
+    public void SetPerformance(GameEntry game, Ec.PerformanceMode? mode) =>
+        Update(game, o => o.PerformanceMode = (game.PerformanceMode = mode)?.ToString() ?? "None");
+
+    public void Rename(GameEntry game, string title) => Update(game, o => o.Title = game.Title = title);
 
     /// <summary>
     /// 라이브러리에 없는 앱(Xbox 앱 게임, 에뮬레이터 등)에 프로필을 붙인다.

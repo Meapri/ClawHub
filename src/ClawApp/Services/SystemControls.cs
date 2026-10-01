@@ -56,6 +56,36 @@ public static class SystemControls
     public static void Restart() => Process.Start(new ProcessStartInfo("shutdown", "/r /t 0") { CreateNoWindow = true });
     public static void Shutdown() => Process.Start(new ProcessStartInfo("shutdown", "/s /t 0") { CreateNoWindow = true });
 
+    /// <summary>Windows 설정 앱의 특정 페이지 열기 (예: "network-wifi", "bluetooth").</summary>
+    public static void OpenWindowsSettings(string page) =>
+        Process.Start(new ProcessStartInfo($"ms-settings:{page}") { UseShellExecute = true });
+
+    /// <summary>
+    /// Windows 터치 키보드 토글 (한글 입력 가능). 문서화되지 않은 ITipInvocation이라 실패하면 osk로 대체.
+    /// </summary>
+    public static void ShowTouchKeyboard()
+    {
+        try
+        {
+            var type = Type.GetTypeFromCLSID(new Guid("4ce576fa-83dc-4F88-951c-9d0782b4e376"))!;
+            var tip = (ITipInvocation)Activator.CreateInstance(type)!;
+            tip.Toggle(GetDesktopWindow());
+        }
+        catch (Exception)
+        {
+            try { Process.Start(new ProcessStartInfo("osk.exe") { UseShellExecute = true }); }
+            catch (Exception) { /* 키보드 없음 */ }
+        }
+    }
+
+    [ComImport, Guid("37c994e7-432b-4834-a2f7-dce1f13b834b"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    private interface ITipInvocation
+    {
+        void Toggle(IntPtr hwnd);
+    }
+
+    [DllImport("user32.dll")] private static extern IntPtr GetDesktopWindow();
+
     public static IntPtr ForegroundWindow() => GetForegroundWindow();
 
     public static void Activate(IntPtr hwnd)

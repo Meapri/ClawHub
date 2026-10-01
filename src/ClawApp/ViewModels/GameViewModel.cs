@@ -9,7 +9,7 @@ public sealed partial class GameViewModel(ShellViewModel shell, GameTileViewMode
 {
     public GameTileViewModel Tile { get; } = tile;
 
-    public string Title => Tile.Title;
+    public string Title => Tile.Game.Title;
     public IReadOnlyList<Hint> Hints => [new("A", "선택"), new("B", "뒤로"), new("Y", "매핑 편집")];
 
     public MappingProfile? Profile => shell.Profiles.Find(Tile.Game.MappingProfileId);
@@ -48,6 +48,44 @@ public sealed partial class GameViewModel(ShellViewModel shell, GameTileViewMode
             shell.Library.SetProfile(Tile.Game, profile.Id);
         }
         shell.Navigate(new MappingEditorViewModel(shell, profile));
+    }
+
+    public string PerformanceText => Tile.Game.PerformanceMode switch
+    {
+        ClawCore.Ec.PerformanceMode.Battery => "절전",
+        ClawCore.Ec.PerformanceMode.Balanced => "균형",
+        ClawCore.Ec.PerformanceMode.Performance => "성능",
+        _ => "기본값 따름",
+    };
+
+    /// <summary>기본값 따름 → 절전 → 균형 → 성능 → 기본값 따름.</summary>
+    [RelayCommand]
+    private async Task CyclePerformance()
+    {
+        ClawCore.Ec.PerformanceMode? next = Tile.Game.PerformanceMode switch
+        {
+            null => ClawCore.Ec.PerformanceMode.Battery,
+            ClawCore.Ec.PerformanceMode.Battery => ClawCore.Ec.PerformanceMode.Balanced,
+            ClawCore.Ec.PerformanceMode.Balanced => ClawCore.Ec.PerformanceMode.Performance,
+            _ => null,
+        };
+        shell.Library.SetPerformance(Tile.Game, next);
+        OnPropertyChanged(nameof(PerformanceText));
+        if (IsRunning) await shell.SyncControllerAsync(); // 실행 중이면 바로 반영
+    }
+
+    /// <summary>TextBox에서 벗어날 때 저장된다.</summary>
+    public string GameTitle
+    {
+        get => Tile.Game.Title;
+        set
+        {
+            if (string.IsNullOrWhiteSpace(value) || value == Tile.Game.Title) return;
+            shell.Library.Rename(Tile.Game, value.Trim());
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(Title));
+            shell.OnPropertyChangedPageTitle();
+        }
     }
 
     [RelayCommand]

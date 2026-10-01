@@ -16,10 +16,12 @@ public static class ControllerProtocol
     public const byte CmdSwitchMode = 0x24;
     public const byte CmdReadMode = 0x26;
     public const byte CmdModeAck = 0x27;
+    /// <summary>RAM의 조명 프로필을 LED에 반영 (MSI가 조명 변경 후 보냄, 응답 없음).</summary>
+    public const byte CmdSyncRgb = 0x09;
 
     /// <summary>ClawHub가 보낼 수 있는 명령. 나머지(F0 DFU, 28 Reset, 22 Flash 등)는 전송 자체를 막는다.</summary>
     public static readonly HashSet<byte> AllowedCommands =
-        [CmdReadProfile, CmdWriteProfileRam, CmdSwitchMode, CmdReadMode];
+        [CmdReadProfile, CmdWriteProfileRam, CmdSwitchMode, CmdReadMode, CmdSyncRgb];
 
     /// <summary>응답이 명령 ack로 취급되면 안 되는 비동기 리포트.</summary>
     public static readonly HashSet<byte> UnsolicitedReports = [0xF4, 0x0A, 0x27, 0x30];

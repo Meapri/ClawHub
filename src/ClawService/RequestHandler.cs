@@ -1,10 +1,14 @@
 using ClawCore.Controller;
 using ClawCore.Ipc;
+using Microsoft.Win32;
 
 namespace ClawService;
 
-public sealed class RequestHandler(ILogger<RequestHandler> log, ControllerManager controller, EcManager ec)
+public sealed class RequestHandler(ILogger<RequestHandler> log, ControllerManager controller, EcManager ec, MsiCenterManager msi)
 {
+    private static readonly string? Bios =
+        Registry.GetValue(@"HKEY_LOCAL_MACHINE\HARDWARE\DESCRIPTION\System\BIOS", "BIOSVersion", null) as string;
+
     public Response Handle(Request req)
     {
         try
@@ -17,6 +21,12 @@ public sealed class RequestHandler(ILogger<RequestHandler> log, ControllerManage
                 case Ops.SetPerformance:
                     ec.SetPerformance(req.Performance ?? throw new ArgumentException("Performance 누락"));
                     break;
+                case Ops.ApplyTemporaryPerformance:
+                    ec.ApplyTemporary(req.Performance ?? throw new ArgumentException("Performance 누락"));
+                    break;
+                case Ops.RestorePerformance:
+                    ec.RestoreDefault();
+                    break;
                 case Ops.SetChargeLimit:
                     ec.SetChargeLimit(req.ChargeLimit ?? throw new ArgumentException("ChargeLimit 누락"));
                     break;
@@ -28,6 +38,12 @@ public sealed class RequestHandler(ILogger<RequestHandler> log, ControllerManage
                     break;
                 case Ops.SetControllerMode:
                     controller.SetMode(req.ControllerMode ?? GamepadMode.XInput);
+                    break;
+                case Ops.SetControllerSettings:
+                    controller.SetSettings(req.ControllerSettings ?? throw new ArgumentException("ControllerSettings 누락"));
+                    break;
+                case Ops.SetMsiCenter:
+                    msi.Set(req.Enabled ?? throw new ArgumentException("Enabled 누락"));
                     break;
                 default:
                     return new Response { Ok = false, Error = $"알 수 없는 요청 {req.Op}" };
@@ -49,11 +65,16 @@ public sealed class RequestHandler(ILogger<RequestHandler> log, ControllerManage
             ControllerFirmware = controller.Firmware,
             ControllerMode = controller.Mode,
             MappingActive = controller.MappingActive,
+            ControllerSettings = controller.Settings,
+            ControllerDefaults = controller.Defaults,
             EcAvailable = ec.Available,
             EcWritable = ec.Writable,
             EcVersion = ec.EcVersion,
             Performance = ec.Performance,
+            TemporaryPerformance = ec.Temporary,
             ChargeLimit = ec.ChargeLimit,
+            MsiCenterEnabled = msi.IsEnabled,
+            BiosVersion = Bios,
         };
         if (ec.Error is not null) s.Warnings.Add($"EC: {ec.Error}");
         if (!controller.Connected) s.Warnings.Add("컨트롤러가 연결되지 않았습니다");

@@ -5,13 +5,15 @@ using HidSharp;
 namespace ClawService;
 
 /// <summary>
-/// 컨트롤러 소유자. baseline(원래 프로필)을 보관하고, 게임 매핑을 RAM에만 덮어쓰고, 언제든 되돌린다.
+/// 컨트롤러 소유자. 컨트롤러 RAM 상태 = baseline(원래 프로필) + 사용자 설정 + (게임 중이면) 매핑.
+/// 플래시에는 쓰지 않으므로 재연결·재부팅마다 다시 적용한다.
 /// </summary>
 public sealed class ControllerManager : IDisposable
 {
     private static string BaselinePath => Path.Combine(JsonStore.ServiceDir, "controller-baseline.bin");
-    /// <summary>이 파일이 있으면 매핑이 적용된 상태로 서비스가 죽었다는 뜻 → 시작 시 baseline으로 복원.</summary>
-    private static string ActiveMarkerPath => Path.Combine(JsonStore.ServiceDir, "mapping-active");
+    private static string SettingsPath => Path.Combine(JsonStore.ServiceDir, "controller-settings.json");
+    /// <summary>이 파일이 있으면 RAM이 baseline과 다른 상태 → 서비스 재시작 시 현재 RAM을 baseline으로 착각하지 않도록 저장본 사용.</summary>
+    private static string ModifiedMarkerPath => Path.Combine(JsonStore.ServiceDir, "mapping-active");
 
     private readonly ILogger _log;
     private readonly object _lock = new();
@@ -25,10 +27,13 @@ public sealed class ControllerManager : IDisposable
     public ControllerManager(ILogger<ControllerManager> log)
     {
         _log = log;
+        Settings = JsonStore.Load<ControllerSettings>(SettingsPath);
         DeviceList.Local.Changed += (_, _) => Task.Run(Reconnect);
         Reconnect();
     }
 
+    public ControllerSettings Settings { get; private set; }
+    public ControllerSettings? Defaults => _baseline is null ? null : SettingsLayout.ReadDefaults(_baseline);
     public bool Connected => _ctl is not null;
     public string? Firmware => _ctl?.FirmwareVersion;
     public bool MappingActive => _activeBindings is not null;
@@ -62,8 +67,7 @@ public sealed class ControllerManager : IDisposable
             {
                 _current = _ctl.ReadProfile();
                 LoadOrCaptureBaseline();
-                // 재연결(모드 전환 재열거 등) 후 적용 중이던 매핑을 다시 쓴다
-                if (_activeBindings is not null) WriteBindings(_activeBindings);
+                WriteTarget(); // 설정(+진행 중인 매핑) 재적용
                 _log.LogInformation("컨트롤러 연결: 펌웨어 {Fw}", _ctl.FirmwareVersion);
             }
             catch (Exception ex)
@@ -78,18 +82,17 @@ public sealed class ControllerManager : IDisposable
 
     private void LoadOrCaptureBaseline()
     {
+        if (_baseline is not null) return; // 재연결: 이미 알고 있음
+
         var saved = File.Exists(BaselinePath) ? File.ReadAllBytes(BaselinePath) : null;
-        if (saved is { Length: ProfileLayout.ImageLength } && File.Exists(ActiveMarkerPath))
+        if (saved is { Length: ProfileLayout.ImageLength } && File.Exists(ModifiedMarkerPath))
         {
-            _log.LogWarning("이전 세션의 매핑이 남아 있음 → baseline으로 복원");
+            _log.LogInformation("RAM이 수정된 상태로 재시작됨 → 저장된 baseline 사용");
             _baseline = saved;
-            _ctl!.WriteProfileRam(_current!, _baseline);
-            _current = (byte[])_baseline.Clone();
-            File.Delete(ActiveMarkerPath);
             return;
         }
 
-        // 매핑이 적용되지 않은 상태의 현재 프로필이 곧 사용자의 원래 설정이다 (MSI에서 바꾼 M1/M2 포함)
+        // 아무것도 덮어쓰지 않은 상태의 현재 프로필이 곧 사용자의 원래 설정 (MSI에서 바꾼 M1/M2 포함)
         _baseline = (byte[])_current!.Clone();
         File.WriteAllBytes(BaselinePath, _baseline);
     }
@@ -98,9 +101,8 @@ public sealed class ControllerManager : IDisposable
     {
         lock (_lock)
         {
-            WriteBindings(bindings);
             _activeBindings = bindings;
-            File.WriteAllText(ActiveMarkerPath, DateTime.Now.ToString("O"));
+            WriteTarget();
         }
         StatusChanged?.Invoke();
     }
@@ -110,12 +112,18 @@ public sealed class ControllerManager : IDisposable
         lock (_lock)
         {
             _activeBindings = null;
-            if (_ctl is not null && _baseline is not null && _current is not null)
-            {
-                _ctl.WriteProfileRam(_current, _baseline);
-                _current = (byte[])_baseline.Clone();
-            }
-            File.Delete(ActiveMarkerPath);
+            WriteTarget();
+        }
+        StatusChanged?.Invoke();
+    }
+
+    public void SetSettings(ControllerSettings settings)
+    {
+        lock (_lock)
+        {
+            Settings = settings;
+            JsonStore.Save(SettingsPath, settings);
+            WriteTarget();
         }
         StatusChanged?.Invoke();
     }
@@ -131,16 +139,24 @@ public sealed class ControllerManager : IDisposable
         StatusChanged?.Invoke();
     }
 
-    private void WriteBindings(IReadOnlyDictionary<ClawButton, byte[]> bindings)
+    private void WriteTarget()
     {
-        var ctl = _ctl ?? throw new InvalidOperationException("컨트롤러 미연결");
-        var target = ProfileLayout.Apply(_baseline!, bindings);
-        ctl.WriteProfileRam(_current!, target);
+        if (_ctl is null || _baseline is null || _current is null) return;
+
+        var target = _activeBindings is null ? (byte[])_baseline.Clone() : ProfileLayout.Apply(_baseline, _activeBindings);
+        SettingsLayout.Apply(target, Settings);
+
+        if (_ctl.WriteProfileRam(_current, target) is { } range && SettingsLayout.TouchesLight(range.First, range.Last))
+            _ctl.SyncRgb();
         _current = target;
+
+        if (target.AsSpan().SequenceEqual(_baseline)) File.Delete(ModifiedMarkerPath);
+        else File.WriteAllText(ModifiedMarkerPath, DateTime.Now.ToString("O"));
     }
 
     public void Dispose()
     {
+        // 서비스 종료 시 매핑만 풀고 사용자 설정은 유지
         try { RestoreBaseline(); } catch (Exception) { /* 종료 중 */ }
         _ctl?.Dispose();
     }

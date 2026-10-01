@@ -35,6 +35,13 @@ public sealed partial class QuickAccessViewModel : ObservableObject
         ? (_shell.Status?.Warnings.FirstOrDefault() ?? "EC를 사용할 수 없습니다")
         : "ClawHub 서비스가 실행되지 않아 성능 설정을 바꿀 수 없습니다";
     public bool IsManual => Mode == PerformanceMode.Manual;
+
+    public string? PerfNote => _shell.Status?.TemporaryPerformance is { } t
+        ? $"지금은 게임별 설정({t.Mode switch { PerformanceMode.Battery => "절전", PerformanceMode.Performance => "성능", _ => "균형" }})이 적용 중 — 여기서 바꾸면 기본값이 바뀝니다"
+        : null;
+
+    [CommunityToolkit.Mvvm.Input.RelayCommand]
+    private void OpenAllSettings() => _shell.OpenSettingsEverywhere();
     public string TdpText => $"{Pl1}W / 최대 {Pl2}W";
     public bool ChargeLimitAvailable => ChargeLimit is not null;
 

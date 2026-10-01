@@ -3,48 +3,291 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:ClawApp"
              KeyboardNavigation.DirectionalNavigation="Contained">
-    <ScrollViewer Margin="32,0,32,12">
-        <StackPanel MaxWidth="820" HorizontalAlignment="Left">
-            <TextBlock Text="시작 화면" Style="{StaticResource Section}" Margin="2,0,0,8"/>
-            <WrapPanel>
-                <RadioButton Style="{StaticResource ChipRadio}" GroupName="startup" Content="자동" IsChecked="{Binding StartupAuto}" local:Nav.InitialFocus="True"/>
-                <RadioButton Style="{StaticResource ChipRadio}" GroupName="startup" Content="ClawHub 전체 화면" IsChecked="{Binding StartupShell}"/>
-                <RadioButton Style="{StaticResource ChipRadio}" GroupName="startup" Content="Xbox 모드 동반" IsChecked="{Binding StartupCompanion}"/>
-            </WrapPanel>
-            <TextBlock Text="{Binding CompanionText}" Style="{StaticResource Caption}" Margin="2,0,0,0"/>
-            <TextBlock Style="{StaticResource Caption}" FontSize="12" Margin="2,4,0,0"
-                       Text="자동: 켤 때 Xbox 앱이 이미 떠 있으면(Xbox 전체 화면 환경) 숨은 채로 버튼·자동 매핑만 담당합니다."/>
+    <UserControl.Resources>
+        <Style x:Key="Row" TargetType="DockPanel">
+            <Setter Property="Margin" Value="0,0,0,4"/>
+        </Style>
+        <Style x:Key="Value" TargetType="TextBlock">
+            <Setter Property="Width" Value="48"/>
+            <Setter Property="TextAlignment" Value="Right"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="FontSize" Value="15"/>
+        </Style>
+        <Style x:Key="Label" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="Margin" Value="2,10,0,2"/>
+        </Style>
+    </UserControl.Resources>
 
-            <TextBlock Text="동작" Style="{StaticResource Section}"/>
-            <ToggleButton Style="{StaticResource Chip}" HorizontalAlignment="Left" IsChecked="{Binding StartWithWindows}" Content="Windows 시작 시 ClawHub 실행"/>
-            <ToggleButton Style="{StaticResource Chip}" HorizontalAlignment="Left" IsChecked="{Binding AutoControllerMode}" Content="컨트롤러 모드 자동 전환 (셸·게임 = XInput, 데스크톱 = 마우스)"/>
+    <Grid Margin="32,0,32,8">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="250"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
 
-            <TextBlock Text="라이브러리" Style="{StaticResource Section}"/>
-            <Button Style="{StaticResource NavButton}" Command="{Binding AddGameCommand}">
-                <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE710;" Style="{StaticResource Icon}" Margin="0,0,14,0"/><TextBlock Text="게임 직접 추가 (exe/바로가기)"/></StackPanel>
-            </Button>
-            <Button Style="{StaticResource NavButton}" Command="{Binding RescanCommand}">
-                <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE72C;" Style="{StaticResource Icon}" Margin="0,0,14,0"/><TextBlock Text="설치된 게임 다시 찾기"/></StackPanel>
-            </Button>
-            <Button Style="{StaticResource NavButton}" Command="{Binding UnhideAllCommand}">
-                <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE7B3;" Style="{StaticResource Icon}" Margin="0,0,14,0"/><TextBlock Text="숨긴 게임 다시 표시"/></StackPanel>
-            </Button>
+        <!-- ── 분류 ─────────────────────────────────────── -->
+        <ScrollViewer>
+            <ItemsControl ItemsSource="{Binding Categories}" Focusable="False">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Button x:Name="Cat" Style="{StaticResource NavButton}" Padding="14,10" Margin="0,0,0,6"
+                                Command="{Binding DataContext.SelectCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                CommandParameter="{Binding}" GotKeyboardFocus="Category_GotFocus">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{Binding Icon}" Style="{StaticResource Icon}" FontSize="18" Margin="0,0,12,0"/>
+                                <TextBlock Text="{Binding Label}" FontSize="16"/>
+                            </StackPanel>
+                        </Button>
+                        <DataTemplate.Triggers>
+                            <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                <Setter TargetName="Cat" Property="Background" Value="{StaticResource SurfaceHi}"/>
+                                <Setter TargetName="Cat" Property="Foreground" Value="{StaticResource Accent}"/>
+                                <Setter TargetName="Cat" Property="local:Nav.InitialFocus" Value="True"/>
+                            </DataTrigger>
+                        </DataTemplate.Triggers>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
 
-            <TextBlock Text="상태" Style="{StaticResource Section}"/>
-            <Border Background="{StaticResource Surface}" CornerRadius="12" Padding="18,14">
-                <Grid>
-                    <Grid.ColumnDefinitions><ColumnDefinition Width="140"/><ColumnDefinition/></Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions><RowDefinition/><RowDefinition/><RowDefinition/><RowDefinition/></Grid.RowDefinitions>
-                    <TextBlock Text="서비스" Style="{StaticResource Caption}" Margin="0,3"/>
-                    <TextBlock Grid.Column="1" Text="{Binding ServiceText}" Margin="0,3"/>
-                    <TextBlock Grid.Row="1" Text="컨트롤러" Style="{StaticResource Caption}" Margin="0,3"/>
-                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding ControllerText}" Margin="0,3"/>
-                    <TextBlock Grid.Row="2" Text="EC (성능·배터리)" Style="{StaticResource Caption}" Margin="0,3"/>
-                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding EcText}" Margin="0,3"/>
-                    <TextBlock Grid.Row="3" Grid.ColumnSpan="2" Text="{Binding Warnings}" Foreground="{StaticResource Warn}" TextWrapping="Wrap" Margin="0,6,0,0"
-                               Visibility="{Binding Warnings, Converter={StaticResource NullVis}}"/>
-                </Grid>
-            </Border>
-        </StackPanel>
-    </ScrollViewer>
+        <ScrollViewer Grid.Column="1" Margin="24,0,0,0">
+            <StackPanel MaxWidth="640" HorizontalAlignment="Left">
+
+                <!-- ── 일반 ──────────────────────────────── -->
+                <StackPanel Visibility="{Binding Selected.Key, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=general}">
+                    <TextBlock Text="시작 화면" Style="{StaticResource Section}" Margin="2,0,0,8"/>
+                    <WrapPanel>
+                        <RadioButton Style="{StaticResource ChipRadio}" GroupName="startup" Content="자동" IsChecked="{Binding StartupAuto}"/>
+                        <RadioButton Style="{StaticResource ChipRadio}" GroupName="startup" Content="ClawHub 전체 화면" IsChecked="{Binding StartupShell}"/>
+                        <RadioButton Style="{StaticResource ChipRadio}" GroupName="startup" Content="Xbox 모드 동반" IsChecked="{Binding StartupCompanion}"/>
+                    </WrapPanel>
+                    <TextBlock Text="{Binding CompanionText}" Style="{StaticResource Caption}"/>
+                    <TextBlock Style="{StaticResource Caption}" FontSize="12" Margin="0,4,0,0"
+                               Text="자동: 켤 때 Xbox 앱이 이미 떠 있으면(Xbox 전체 화면 환경) 숨은 채로 버튼·자동 매핑만 담당합니다."/>
+
+                    <TextBlock Text="동작" Style="{StaticResource Section}"/>
+                    <ToggleButton Style="{StaticResource Chip}" HorizontalAlignment="Left" IsChecked="{Binding StartWithWindows}" Content="Windows 시작 시 ClawHub 실행"/>
+                    <ToggleButton Style="{StaticResource Chip}" HorizontalAlignment="Left" IsChecked="{Binding AutoControllerMode}" Content="컨트롤러 모드 자동 전환 (런처·게임 = 게임패드, 데스크톱 = 마우스)"/>
+
+                    <TextBlock Text="MSI Center M" Style="{StaticResource Section}"/>
+                    <ToggleButton Style="{StaticResource Chip}" HorizontalAlignment="Left" IsChecked="{Binding MsiCenterEnabled}" IsEnabled="{Binding MsiCenterKnown}"
+                                  Content="MSI Center M 사용"/>
+                    <TextBlock Style="{StaticResource Caption}" Margin="2,0,0,0"
+                               Text="끄면 본체 버튼·성능·조명을 ClawHub만 제어합니다. 삭제는 하지 않으므로 언제든 다시 켤 수 있어요."/>
+                </StackPanel>
+
+                <!-- ── 컨트롤러 ──────────────────────────── -->
+                <StackPanel Visibility="{Binding Selected.Key, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=controller}"
+                            IsEnabled="{Binding ControllerAvailable}">
+                    <TextBlock Style="{StaticResource Label}" Text="진동 세기" Margin="2,0,0,2"/>
+                    <DockPanel Style="{StaticResource Row}">
+                        <TextBlock DockPanel.Dock="Right" Text="{Binding Vibration}" Style="{StaticResource Value}"/>
+                        <Slider Minimum="0" Maximum="100" SmallChange="10" TickFrequency="10" Value="{Binding Vibration}"/>
+                    </DockPanel>
+                    <TextBlock Style="{StaticResource Label}" Text="왼쪽 스틱 데드존"/>
+                    <DockPanel Style="{StaticResource Row}">
+                        <TextBlock DockPanel.Dock="Right" Text="{Binding LeftDeadzone}" Style="{StaticResource Value}"/>
+                        <Slider Minimum="0" Maximum="30" SmallChange="1" Value="{Binding LeftDeadzone}"/>
+                    </DockPanel>
+                    <TextBlock Style="{StaticResource Label}" Text="오른쪽 스틱 데드존"/>
+                    <DockPanel Style="{StaticResource Row}">
+                        <TextBlock DockPanel.Dock="Right" Text="{Binding RightDeadzone}" Style="{StaticResource Value}"/>
+                        <Slider Minimum="0" Maximum="30" SmallChange="1" Value="{Binding RightDeadzone}"/>
+                    </DockPanel>
+                    <TextBlock Style="{StaticResource Label}" Text="트리거 데드존 (LT·RT)"/>
+                    <DockPanel Style="{StaticResource Row}">
+                        <TextBlock DockPanel.Dock="Right" Text="{Binding TriggerDeadzone}" Style="{StaticResource Value}"/>
+                        <Slider Minimum="0" Maximum="40" SmallChange="1" Value="{Binding TriggerDeadzone}"/>
+                    </DockPanel>
+
+                    <TextBlock Text="버튼" Style="{StaticResource Section}"/>
+                    <ToggleButton Style="{StaticResource Chip}" HorizontalAlignment="Left" IsChecked="{Binding SwapAbxy}" Content="A↔B, X↔Y 위치 바꾸기 (닌텐도 배치)"/>
+                    <ToggleButton Style="{StaticResource Chip}" HorizontalAlignment="Left" IsChecked="{Binding DiagonalLock}" Content="D-pad 대각선 입력 막기"/>
+
+                    <TextBlock Text="키 매핑" Style="{StaticResource Section}"/>
+                    <Button Style="{StaticResource NavButton}" Command="{Binding OpenProfilesCommand}">
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE765;" Style="{StaticResource Icon}" Margin="0,0,14,0"/><TextBlock Text="매핑 프로필 관리"/></StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource NavButton}" Command="{Binding ResetControllerCommand}" Foreground="{StaticResource TextDim}" Margin="0,12,0,0">
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE777;" Style="{StaticResource Icon}" Margin="0,0,14,0"/><TextBlock Text="컨트롤러 설정 원래대로"/></StackPanel>
+                    </Button>
+                    <TextBlock Style="{StaticResource Caption}" FontSize="12" Margin="2,0,0,0"
+                               Text="설정은 컨트롤러 메모리에만 쓰고 ClawHub가 켜질 때마다 다시 적용합니다. 펌웨어(플래시)는 건드리지 않아요."/>
+                </StackPanel>
+
+                <!-- ── 조명 ──────────────────────────────── -->
+                <StackPanel Visibility="{Binding Selected.Key, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=light}"
+                            IsEnabled="{Binding ControllerAvailable}">
+                    <TextBlock Text="스틱 조명" Style="{StaticResource Section}" Margin="2,0,0,8"/>
+                    <WrapPanel>
+                        <RadioButton Style="{StaticResource ChipRadio}" GroupName="light" Content="기본 효과" IsChecked="{Binding LightDefault}"/>
+                        <RadioButton Style="{StaticResource ChipRadio}" GroupName="light" Content="단색" IsChecked="{Binding LightStatic}"/>
+                        <RadioButton Style="{StaticResource ChipRadio}" GroupName="light" Content="끄기" IsChecked="{Binding LightOff}"/>
+                    </WrapPanel>
+                    <TextBlock Style="{StaticResource Label}" Text="밝기"/>
+                    <DockPanel Style="{StaticResource Row}">
+                        <TextBlock DockPanel.Dock="Right" Text="{Binding LightBrightness}" Style="{StaticResource Value}"/>
+                        <Slider Minimum="0" Maximum="100" SmallChange="10" TickFrequency="10" Value="{Binding LightBrightness}"/>
+                    </DockPanel>
+                    <TextBlock Style="{StaticResource Label}" Text="색 (단색)"/>
+                    <ItemsControl ItemsSource="{Binding LightColors}" Focusable="False">
+                        <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <ToggleButton Style="{StaticResource Chip}" IsChecked="{Binding IsSelected, Mode=OneWay}"
+                                              Command="{Binding DataContext.PickColorCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                              CommandParameter="{Binding}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Ellipse Width="14" Height="14" Fill="{Binding Swatch}" Margin="0,0,8,0" Stroke="#40000000"/>
+                                        <TextBlock Text="{Binding Label}"/>
+                                    </StackPanel>
+                                </ToggleButton>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock Style="{StaticResource Label}" Text="ABXY 버튼 밝기"/>
+                    <DockPanel Style="{StaticResource Row}">
+                        <TextBlock DockPanel.Dock="Right" Text="{Binding AbxyBrightness}" Style="{StaticResource Value}"/>
+                        <Slider Minimum="0" Maximum="100" SmallChange="10" TickFrequency="10" Value="{Binding AbxyBrightness}"/>
+                    </DockPanel>
+                </StackPanel>
+
+                <!-- ── 성능 (퀵 설정과 공유) ─────────────── -->
+                <StackPanel Visibility="{Binding Selected.Key, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=performance}">
+                <StackPanel DataContext="{Binding Quick}">
+                    <TextBlock Text="기본 성능 모드" Style="{StaticResource Section}" Margin="2,0,0,8"/>
+                    <TextBlock Text="{Binding PerfUnavailableText}" Style="{StaticResource Caption}" Foreground="{StaticResource Warn}" Margin="0,0,0,8"
+                               Visibility="{Binding PerfAvailable, Converter={StaticResource NotVis}}"/>
+                    <WrapPanel IsEnabled="{Binding PerfAvailable}">
+                        <RadioButton Style="{StaticResource ChipRadio}" GroupName="sperf" Content="절전" IsChecked="{Binding IsBattery}"/>
+                        <RadioButton Style="{StaticResource ChipRadio}" GroupName="sperf" Content="균형" IsChecked="{Binding IsBalanced}"/>
+                        <RadioButton Style="{StaticResource ChipRadio}" GroupName="sperf" Content="성능" IsChecked="{Binding IsPerformance}"/>
+                        <RadioButton Style="{StaticResource ChipRadio}" GroupName="sperf" Content="수동" IsChecked="{Binding IsManualMode}"/>
+                    </WrapPanel>
+                    <TextBlock Style="{StaticResource Caption}"><Run Text="TDP "/><Run Text="{Binding TdpText, Mode=OneWay}"/></TextBlock>
+                    <StackPanel Visibility="{Binding IsManual, Converter={StaticResource Vis}}" IsEnabled="{Binding PerfAvailable}">
+                        <TextBlock Style="{StaticResource Label}" Text="지속 전력 (PL1)"/>
+                        <Slider Minimum="8" Maximum="45" SmallChange="1" Value="{Binding Pl1}"/>
+                        <TextBlock Style="{StaticResource Label}" Text="최대 전력 (PL2)"/>
+                        <Slider Minimum="8" Maximum="45" SmallChange="1" Value="{Binding Pl2}"/>
+                    </StackPanel>
+                    <ToggleButton Style="{StaticResource Chip}" IsChecked="{Binding CoolerBoost}" IsEnabled="{Binding PerfAvailable}" HorizontalAlignment="Left" Margin="0,12,0,0"
+                                  Content="쿨러 부스트 (팬 최대)"/>
+                    <TextBlock Style="{StaticResource Caption}" Margin="2,10,0,0"
+                               Text="게임마다 다른 성능 모드를 쓰려면 라이브러리 → 게임 → 성능 모드에서 고르세요. 게임이 끝나면 여기 기본값으로 돌아옵니다."/>
+                </StackPanel>
+                </StackPanel>
+
+                <!-- ── 디스플레이·사운드 ────────────────── -->
+                <StackPanel Visibility="{Binding Selected.Key, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=display}">
+                    <TextBlock Text="밝기" Style="{StaticResource Section}" Margin="2,0,0,8"/>
+                    <DockPanel Style="{StaticResource Row}" DataContext="{Binding Quick}">
+                        <TextBlock DockPanel.Dock="Right" Text="{Binding Brightness}" Style="{StaticResource Value}"/>
+                        <Slider Minimum="0" Maximum="100" SmallChange="5" Value="{Binding Brightness}"/>
+                    </DockPanel>
+                    <TextBlock Text="볼륨" Style="{StaticResource Section}"/>
+                    <DockPanel Style="{StaticResource Row}" DataContext="{Binding Quick}">
+                        <TextBlock DockPanel.Dock="Right" Text="{Binding Volume}" Style="{StaticResource Value}"/>
+                        <Slider Minimum="0" Maximum="100" SmallChange="5" Value="{Binding Volume}"/>
+                    </DockPanel>
+                    <TextBlock Text="주사율" Style="{StaticResource Section}"/>
+                    <ItemsControl ItemsSource="{Binding RefreshRates}" Focusable="False">
+                        <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <ToggleButton Style="{StaticResource Chip}" Content="{Binding Label}" IsChecked="{Binding IsSelected, Mode=OneWay}"
+                                              Command="{Binding DataContext.ApplyDisplayCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock Style="{StaticResource Caption}" FontSize="12" Text="주사율을 낮추면 배터리가 오래 갑니다."/>
+                    <TextBlock Text="해상도" Style="{StaticResource Section}"/>
+                    <ItemsControl ItemsSource="{Binding Resolutions}" Focusable="False">
+                        <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <ToggleButton Style="{StaticResource Chip}" Content="{Binding Label}" IsChecked="{Binding IsSelected, Mode=OneWay}"
+                                              Command="{Binding DataContext.ApplyDisplayCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+
+                <!-- ── 배터리 ────────────────────────────── -->
+                <StackPanel Visibility="{Binding Selected.Key, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=battery}">
+                <StackPanel DataContext="{Binding Quick}">
+                    <TextBlock Text="{Binding BatteryText}" Style="{StaticResource H2}" Margin="2,0,0,8"/>
+                    <TextBlock Text="충전 한도" Style="{StaticResource Section}"/>
+                    <WrapPanel IsEnabled="{Binding ChargeLimitAvailable}">
+                        <RadioButton Style="{StaticResource ChipRadio}" GroupName="slimit" Content="100% (이동용)" IsChecked="{Binding Limit100}"/>
+                        <RadioButton Style="{StaticResource ChipRadio}" GroupName="slimit" Content="80% (균형)" IsChecked="{Binding Limit80}"/>
+                        <RadioButton Style="{StaticResource ChipRadio}" GroupName="slimit" Content="60% (배터리 수명)" IsChecked="{Binding Limit60}"/>
+                    </WrapPanel>
+                    <TextBlock Style="{StaticResource Caption}" Text="충전기에 오래 꽂아 두고 쓴다면 80% 이하가 배터리 수명에 좋아요."/>
+                </StackPanel>
+                </StackPanel>
+
+                <!-- ── Windows 설정 ─────────────────────── -->
+                <StackPanel Visibility="{Binding Selected.Key, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=windows}">
+                    <TextBlock Style="{StaticResource Caption}" Margin="2,0,0,12"
+                               Text="Windows 설정 화면을 엽니다. 스틱이 마우스로 바뀌고, 왼쪽 MSI 버튼을 누르면 ClawHub로 돌아와요."/>
+                    <Button Style="{StaticResource NavButton}" Command="{Binding OpenWindowsCommand}" CommandParameter="network-wifi">
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE701;" Style="{StaticResource Icon}" Margin="0,0,14,0"/><TextBlock Text="Wi-Fi"/></StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource NavButton}" Command="{Binding OpenWindowsCommand}" CommandParameter="bluetooth">
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE702;" Style="{StaticResource Icon}" Margin="0,0,14,0"/><TextBlock Text="블루투스 · 장치"/></StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource NavButton}" Command="{Binding OpenWindowsCommand}" CommandParameter="sound">
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE767;" Style="{StaticResource Icon}" Margin="0,0,14,0"/><TextBlock Text="사운드 출력 장치"/></StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource NavButton}" Command="{Binding OpenWindowsCommand}" CommandParameter="display">
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE7F4;" Style="{StaticResource Icon}" Margin="0,0,14,0"/><TextBlock Text="디스플레이 (배율·HDR)"/></StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource NavButton}" Command="{Binding OpenWindowsCommand}" CommandParameter="storagesense">
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="&#xEDA2;" Style="{StaticResource Icon}" Margin="0,0,14,0"/><TextBlock Text="저장 공간"/></StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource NavButton}" Command="{Binding OpenWindowsCommand}" CommandParameter="windowsupdate">
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE895;" Style="{StaticResource Icon}" Margin="0,0,14,0"/><TextBlock Text="Windows 업데이트"/></StackPanel>
+                    </Button>
+                </StackPanel>
+
+                <!-- ── 라이브러리 ────────────────────────── -->
+                <StackPanel Visibility="{Binding Selected.Key, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=library}">
+                    <Button Style="{StaticResource NavButton}" Command="{Binding AddGameCommand}">
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE710;" Style="{StaticResource Icon}" Margin="0,0,14,0"/><TextBlock Text="게임 직접 추가 (exe·바로가기)"/></StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource NavButton}" Command="{Binding RescanCommand}">
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE72C;" Style="{StaticResource Icon}" Margin="0,0,14,0"/><TextBlock Text="설치된 게임 다시 찾기"/></StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource NavButton}" Command="{Binding UnhideAllCommand}">
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE7B3;" Style="{StaticResource Icon}" Margin="0,0,14,0"/><TextBlock Text="숨긴 게임 다시 표시"/></StackPanel>
+                    </Button>
+                    <TextBlock Style="{StaticResource Caption}" Margin="2,8,0,0"
+                               Text="자동 감지: Steam · Epic · GOG · 넥슨·엔씨·스마일게이트·블리자드·라이엇 등 설치된 게임. 라이브러리에 없는 게임도 실행 중에 퀵 설정에서 매핑 프로필을 지정하면 자동으로 등록돼요."/>
+                </StackPanel>
+
+                <!-- ── 정보 ──────────────────────────────── -->
+                <StackPanel Visibility="{Binding Selected.Key, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=about}">
+                    <Border Background="{StaticResource Surface}" CornerRadius="12" Padding="18,14">
+                        <Grid>
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition/></Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions><RowDefinition/><RowDefinition/><RowDefinition/><RowDefinition/><RowDefinition/><RowDefinition/></Grid.RowDefinitions>
+                            <TextBlock Text="ClawHub" Style="{StaticResource Caption}" Margin="0,4"/>
+                            <TextBlock Grid.Column="1" Text="{Binding AppVersion}" Margin="0,4"/>
+                            <TextBlock Grid.Row="1" Text="서비스" Style="{StaticResource Caption}" Margin="0,4"/>
+                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding ServiceText}" Margin="0,4" TextWrapping="Wrap"/>
+                            <TextBlock Grid.Row="2" Text="컨트롤러" Style="{StaticResource Caption}" Margin="0,4"/>
+                            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding ControllerText}" Margin="0,4" TextWrapping="Wrap"/>
+                            <TextBlock Grid.Row="3" Text="EC" Style="{StaticResource Caption}" Margin="0,4"/>
+                            <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding EcText}" Margin="0,4" TextWrapping="Wrap"/>
+                            <TextBlock Grid.Row="4" Text="BIOS" Style="{StaticResource Caption}" Margin="0,4"/>
+                            <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding BiosText}" Margin="0,4"/>
+                            <TextBlock Grid.Row="5" Grid.ColumnSpan="2" Text="{Binding Warnings}" Foreground="{StaticResource Warn}" TextWrapping="Wrap" Margin="0,8,0,0"
+                                       Visibility="{Binding Warnings, Converter={StaticResource NullVis}}"/>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
 </UserControl>

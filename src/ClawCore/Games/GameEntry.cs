@@ -25,5 +25,7 @@ public sealed class GameEntry
     // 사용자 데이터 (library.json에 저장)
     public DateTime? LastPlayed { get; set; }
     public string? MappingProfileId { get; set; }
+    /// <summary>게임 중에만 쓸 성능 모드 (null = 사용자 기본값 따름).</summary>
+    public Ec.PerformanceMode? PerformanceMode { get; set; }
     public bool Hidden { get; set; }
 }

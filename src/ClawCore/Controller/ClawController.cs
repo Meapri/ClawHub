@@ -73,6 +73,11 @@ public sealed class ClawController : IDisposable
         }
     }
 
+    public void SyncRgb()
+    {
+        lock (_lock) _stream.Write(ControllerProtocol.BuildPacket(ControllerProtocol.CmdSyncRgb, []));
+    }
+
     public byte[] ReadProfile()
     {
         lock (_lock)
@@ -94,7 +99,8 @@ public sealed class ClawController : IDisposable
     /// <paramref name="current"/>와 <paramref name="target"/>이 다른 바이트 구간만 RAM에 쓴다.
     /// 쓰기 후 다시 읽어 검증하고, 불일치면 예외.
     /// </summary>
-    public void WriteProfileRam(ReadOnlySpan<byte> current, ReadOnlySpan<byte> target)
+    /// <returns>실제로 쓴 바이트 범위 (변경 없으면 null).</returns>
+    public (int First, int Last)? WriteProfileRam(ReadOnlySpan<byte> current, ReadOnlySpan<byte> target)
     {
         if (current.Length != ProfileLayout.ImageLength || target.Length != ProfileLayout.ImageLength)
             throw new ArgumentException("프로필 길이 불일치");
@@ -106,7 +112,7 @@ public sealed class ClawController : IDisposable
             if (first < 0) first = i;
             last = i;
         }
-        if (first < 0) return;
+        if (first < 0) return null;
 
         var targetCopy = target.ToArray();
         lock (_lock)
@@ -122,6 +128,7 @@ public sealed class ClawController : IDisposable
         var readBack = ReadProfile();
         if (!readBack.AsSpan(first, last - first + 1).SequenceEqual(targetCopy.AsSpan(first, last - first + 1)))
             throw new IOException("컨트롤러 프로필 쓰기 검증 실패");
+        return (first, last);
     }
 
     private byte[] Transact(byte[] packet, Func<byte[], bool> isAck)

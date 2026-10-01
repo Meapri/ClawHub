@@ -24,6 +24,15 @@ public sealed class NullToVisibility : IValueConverter
         throw new NotSupportedException();
 }
 
+/// <summary>값.ToString() == ConverterParameter 이면 Visible.</summary>
+public sealed class EqualsToVisibility : IValueConverter
+{
+    public static readonly EqualsToVisibility Instance = new();
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        value?.ToString() == parameter?.ToString() ? Visibility.Visible : Visibility.Collapsed;
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotSupportedException();
+}
+
 public sealed class InvertBool : IValueConverter
 {
     public static readonly InvertBool Instance = new();

@@ -63,18 +63,36 @@ public sealed class EcManager : IDisposable
         if (!Writable) return;
         try
         {
-            _perf!.Apply(_state.Performance);
+            _perf!.Apply(Temporary ?? _state.Performance);
             _log.LogInformation("성능 설정 재적용 ({Reason}): {State}", reason, _state.Performance);
         }
         catch (Exception ex) { _log.LogError(ex, "성능 설정 재적용 실패"); }
     }
+
+    /// <summary>게임별 성능 모드가 적용 중이면 그 값 (사용자 기본값은 <see cref="Performance"/>).</summary>
+    public PerformanceState? Temporary { get; private set; }
 
     public void SetPerformance(PerformanceState state)
     {
         if (!Writable) throw new InvalidOperationException(Error ?? "EC 쓰기 불가");
         _perf!.Apply(state);
         _state.Performance = state;
+        Temporary = null;
         JsonStore.Save(StatePath, _state);
+    }
+
+    public void ApplyTemporary(PerformanceState state)
+    {
+        if (!Writable) throw new InvalidOperationException(Error ?? "EC 쓰기 불가");
+        _perf!.Apply(state);
+        Temporary = state;
+    }
+
+    public void RestoreDefault()
+    {
+        if (Temporary is null) return;
+        Temporary = null;
+        if (Writable) _perf!.Apply(_state.Performance);
     }
 
     public void SetChargeLimit(ChargeLimit limit)

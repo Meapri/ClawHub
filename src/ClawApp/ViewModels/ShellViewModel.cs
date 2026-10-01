@@ -34,6 +34,7 @@ public sealed partial class ShellViewModel : ObservableObject
     private bool _inDesktop;
     private string? _appliedProfileId;
     private GamepadMode? _appliedMode;
+    private PerformanceMode? _appliedPerf;
 
     [ObservableProperty] private INavPage? _currentPage;
     [ObservableProperty] private bool _isMainMenuOpen;
@@ -73,6 +74,7 @@ public sealed partial class ShellViewModel : ObservableObject
             if (!c) return;
             _appliedProfileId = null;
             _appliedMode = null;
+            _appliedPerf = null;
             await RefreshStatusAsync();
             await SyncControllerAsync();
         });
@@ -193,6 +195,15 @@ public sealed partial class ShellViewModel : ObservableObject
     [RelayCommand] private void OpenLibrary() { IsShellVisible = true; Navigate(new LibraryViewModel(this)); }
     [RelayCommand] private void OpenProfiles() { IsShellVisible = true; Navigate(new ProfilesViewModel(this)); }
     [RelayCommand] private void OpenSettings() { IsShellVisible = true; Navigate(new SettingsViewModel(this)); }
+
+    /// <summary>퀵 설정(게임 위 오버레이 포함)에서 전체 설정으로. 셸을 띄우고 매핑은 풀린다.</summary>
+    public void OpenSettingsEverywhere()
+    {
+        IsShellVisible = true;
+        IsWindowVisible = true;
+        OpenSettings();
+        _ = SyncControllerAsync();
+    }
 
     public void UpdateHints()
     {
@@ -450,6 +461,22 @@ public sealed partial class ShellViewModel : ObservableObject
                 if (!resp.Ok) { ShowToast($"컨트롤러 모드 전환 실패: {resp.Error}"); return; }
                 _appliedMode = m;
             }
+
+            // 게임별 성능 모드: 게임이 도는 동안만 적용, 끝나면 사용자 기본값으로
+            var perf = RunningGame?.PerformanceMode;
+            if (perf != _appliedPerf && Status?.EcWritable == true)
+            {
+                var resp = perf is { } pm
+                    ? await Service.SendAsync(new Request
+                    {
+                        Op = Ops.ApplyTemporaryPerformance,
+                        Performance = new PerformanceState(pm, PerformanceManager.Preset(pm).Pl1, PerformanceManager.Preset(pm).Pl2,
+                            Status.Performance?.Fan ?? FanMode.Auto),
+                    })
+                    : await Service.SendAsync(new Request { Op = Ops.RestorePerformance });
+                if (resp.Ok) _appliedPerf = perf;
+                if (resp.Status is { } st) Status = st;
+            }
         }
         catch (Exception ex)
         {
@@ -552,5 +579,8 @@ public sealed partial class ShellViewModel : ObservableObject
     }
 
     partial void OnCurrentPageChanged(INavPage? value) => OnPropertyChanged(nameof(PageTitle));
+    partial void OnIsMainMenuOpenChanged(bool value) => OnPropertyChanged(nameof(IsAnyPanelOpen));
+    partial void OnIsQuickAccessOpenChanged(bool value) => OnPropertyChanged(nameof(IsAnyPanelOpen));
+    public void OnPropertyChangedPageTitle() => OnPropertyChanged(nameof(PageTitle));
     public string PageTitle => CurrentPage?.Title ?? "";
 }
