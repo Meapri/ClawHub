@@ -7,8 +7,10 @@ namespace ClawApp.Services;
 /// <summary>Windows 설정의 앱 모드(라이트/다크)와 강조색을 따라간다.</summary>
 public static class SystemTheme
 {
-    public static bool IsLight =>
-        Registry.GetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize", "AppsUseLightTheme", 1) is not 0;
+    /// <summary>CLAWHUB_THEME=light|dark 로 강제할 수 있다 (화면 점검용).</summary>
+    public static bool IsLight => Environment.GetEnvironmentVariable("CLAWHUB_THEME") is { } forced
+        ? !forced.Equals("dark", StringComparison.OrdinalIgnoreCase)
+        : Registry.GetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize", "AppsUseLightTheme", 1) is not 0;
 
     public static void Apply(Application app)
     {
@@ -24,6 +26,8 @@ public static class SystemTheme
             var hover = IsLight ? palette[3] : palette[2];
             colors["Accent"] = Frozen(accent);
             colors["AccentHover"] = Frozen(hover);
+            // 타일은 테마와 관계없이 진한 쪽(라이트 Dark1, 다크 기본색) + 흰 글자
+            colors["TileAccent"] = Frozen(IsLight ? palette[4] : palette[3]);
         }
 
         app.Resources.MergedDictionaries.Insert(0, colors);

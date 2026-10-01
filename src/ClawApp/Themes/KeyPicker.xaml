@@ -1,0 +1,88 @@
+<!-- 키 선택판 공용 (매핑 편집·매크로 편집): 키캡 버튼, 키보드 칸, 큰 타일. 명령은 화면의 PickKeyCommand -->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:m="clr-namespace:ClawApp.Motion"
+                    xmlns:v="clr-namespace:ClawApp.Views">
+    <ItemsPanelTemplate x:Key="Row"><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
+    <ItemsPanelTemplate x:Key="Wrap"><WrapPanel/></ItemsPanelTemplate>
+
+    <!-- 키캡 버튼 (선택판). Tag = 선택됨 -->
+    <Style x:Key="KeycapButton" TargetType="Button">
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Text}"/>
+        <Setter Property="Background" Value="{DynamicResource TileFill}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Stroke}"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Tag" Value="False"/>
+        <Setter Property="m:Press.Scale" Value="0.92"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid>
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="0,0,0,3">
+                            <ContentPresenter Margin="2,0"/>
+                        </Border>
+                        <Border x:Name="Ring" Style="{StaticResource FocusRing}" Margin="-3"/>
+                        <Border x:Name="Inner" Style="{StaticResource FocusRingInner}" Margin="0"/>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource TileFillHover}"/>
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource TileFillHover}"/>
+                            <Setter TargetName="Ring" Property="BorderBrush" Value="{DynamicResource FocusOuter}"/>
+                            <Setter TargetName="Inner" Property="BorderBrush" Value="{DynamicResource FocusInner}"/>
+                        </Trigger>
+                        <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Accent}"/>
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource AccentHover}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource AccentText}"/>
+                        </DataTrigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SurfacePressed}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- 키보드 판의 한 칸 (빈 자리면 간격만) -->
+    <DataTemplate x:Key="KeySlot">
+        <Grid Width="{Binding Width}" Height="46" Margin="0,0,4,4">
+            <Button Style="{StaticResource KeycapButton}" Tag="{Binding IsSelected}"
+                    Visibility="{Binding IsSpacer, Converter={StaticResource NotVis}}"
+                    Command="{Binding DataContext.PickKeyCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                    CommandParameter="{Binding}">
+                <Grid>
+                    <TextBlock Text="{Binding Cap}" HorizontalAlignment="Center" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                    <!-- 이 프로필에서 이미 이 키를 쓰는 버튼 -->
+                    <TextBlock Text="{Binding UsedBy}" FontSize="10" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Top"
+                               Margin="0,2,0,0" Opacity="0.65" Visibility="{Binding UsedBy, Converter={StaticResource NullVis}}"/>
+                </Grid>
+            </Button>
+        </Grid>
+    </DataTemplate>
+
+    <!-- 큰 타일 (마우스·게임패드·미디어): 그림 + 이름 -->
+    <DataTemplate x:Key="KeyTile">
+        <Button Style="{StaticResource KeycapButton}" Tag="{Binding IsSelected}" Width="136" Height="108" Margin="0,0,8,8"
+                Command="{Binding DataContext.PickKeyCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                CommandParameter="{Binding}">
+            <Grid>
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <v:ButtonGlyph Key="{Binding Glyph}" Width="44" Height="44" Margin="0,0,0,8"
+                                   Tint="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                   Visibility="{Binding HasGlyph, Converter={StaticResource Vis}}"/>
+                    <TextBlock Text="{Binding Icon}" Style="{StaticResource Icon}" FontSize="30" HorizontalAlignment="Center" Margin="0,0,0,10"
+                               Visibility="{Binding HasIcon, Converter={StaticResource Vis}}"/>
+                    <TextBlock Text="{Binding Cap}" FontSize="14" TextAlignment="Center" TextWrapping="Wrap"/>
+                </StackPanel>
+                <TextBlock Text="{Binding UsedBy}" FontSize="11" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Top"
+                           Margin="0,4,4,0" Opacity="0.65" Visibility="{Binding UsedBy, Converter={StaticResource NullVis}}"/>
+            </Grid>
+        </Button>
+    </DataTemplate>
+</ResourceDictionary>

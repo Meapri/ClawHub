@@ -8,6 +8,9 @@
     <SolidColorBrush x:Key="Accent" Color="#99EBFF"/>
     <SolidColorBrush x:Key="AccentHover" Color="#8BD9EB"/>
     <SolidColorBrush x:Key="AccentText" Color="#000000"/>
+    <!-- 메트로 타일: 다크에서도 진한 기본 강조색 + 흰 글자 (밝은 강조색 위 흰 글자는 안 읽힘) -->
+    <SolidColorBrush x:Key="TileAccent" Color="#0078D4"/>
+    <SolidColorBrush x:Key="TileAccentText" Color="#FFFFFF"/>
 
     <!-- 컨트롤 / 카드 / 레이어 -->
     <SolidColorBrush x:Key="Surface" Color="#0FFFFFFF"/>

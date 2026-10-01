@@ -38,14 +38,6 @@ public sealed partial class ButtonRowViewModel(ClawButton button, string name, b
     [ObservableProperty] private bool _isLive;
 }
 
-/// <summary>매크로 편집 화면의 키 목록용 (글자 칩).</summary>
-public sealed partial class KeyItemViewModel(KeyCode key) : ObservableObject
-{
-    public KeyCode Key { get; } = key;
-    public string Label => Key.Label;
-    [ObservableProperty] private bool _isSelected;
-}
-
 /// <summary>"함께 누를 키" 토글 (Ctrl·Shift·Alt·Win).</summary>
 public sealed partial class ModifierViewModel(string id, string label) : ObservableObject
 {

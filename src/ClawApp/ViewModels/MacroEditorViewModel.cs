@@ -44,9 +44,9 @@ public sealed partial class MacroEditorViewModel : ObservableObject, INavPage
     private readonly ClawButton _button;
 
     public ObservableCollection<MacroStepViewModel> Steps { get; }
-    public IReadOnlyList<KeyItemViewModel> Keys { get; } =
-        KeyCodes.All.Where(k => k.Category is KeyCategory.Keyboard or KeyCategory.Mouse or KeyCategory.Media)
-            .Select(k => new KeyItemViewModel(k)).ToList();
+    /// <summary>매핑 편집과 같은 키보드 모양 판 + 마우스·미디어 타일.</summary>
+    public List<List<KeySlotViewModel>> KeyboardRows { get; } = KeyboardLayout.Build();
+    public List<KeySlotViewModel> ExtraKeys { get; } = [.. KeyboardLayout.Mouse(), .. KeyboardLayout.Media()];
 
     [ObservableProperty] private MacroStepViewModel? _selected;
     [ObservableProperty] private bool _isPickerOpen;
@@ -96,23 +96,26 @@ public sealed partial class MacroEditorViewModel : ObservableObject, INavPage
 
     private void OpenPicker()
     {
-        IsPickerOpen = true;
+        // 바꾸는 단계의 지금 키를 표시 (새 단계면 표시 없음)
+        foreach (var slot in KeyboardRows.SelectMany(r => r).Concat(ExtraKeys))
+            slot.IsSelected = slot.Key is not null && Selected?.Def.Key == slot.Key.Id;
+        IsPickerOpen = true; // 포커스는 뷰가 옮긴다
         _shell.UpdateHints();
-        _shell.RequestFocus();
     }
 
     [RelayCommand]
-    private void PickKey(KeyItemViewModel key)
+    private void PickKey(KeySlotViewModel slot)
     {
+        if (slot.Key is not { } key) return;
         if (Selected is { } s)
         {
-            s.Def.Key = key.Key.Id;
+            s.Def.Key = key.Id;
             Steps[s.Index] = new MacroStepViewModel(s.Def, s.Index) { IsSelected = true };
             Selected = Steps[s.Index];
         }
         else
         {
-            var step = new MacroStepViewModel(new MappingProfile.MacroStepDef { Key = key.Key.Id }, Steps.Count);
+            var step = new MacroStepViewModel(new MappingProfile.MacroStepDef { Key = key.Id }, Steps.Count);
             Steps.Add(step);
             Selected = step;
         }
@@ -124,7 +127,6 @@ public sealed partial class MacroEditorViewModel : ObservableObject, INavPage
     {
         IsPickerOpen = false;
         _shell.UpdateHints();
-        _shell.RequestFocus();
     }
 
     private void DeleteSelected()

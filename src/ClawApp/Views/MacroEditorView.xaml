@@ -4,6 +4,9 @@
              xmlns:local="clr-namespace:ClawApp"
              xmlns:m="clr-namespace:ClawApp.Motion"
              KeyboardNavigation.DirectionalNavigation="Contained">
+    <UserControl.Resources>
+        <ResourceDictionary Source="/ClawApp;component/Themes/KeyPicker.xaml"/>
+    </UserControl.Resources>
     <Grid Margin="48,0,40,12">
         <!-- ── 단계 목록 + 선택한 단계 시간 ───────────────── -->
         <Grid Visibility="{Binding IsPickerOpen, Converter={StaticResource NotVis}}">
@@ -78,20 +81,21 @@
         </Grid>
 
         <!-- ── 키 고르기 ─────────────────────────────────── -->
-        <DockPanel Visibility="{Binding IsPickerOpen, Converter={StaticResource Vis}}">
+        <DockPanel x:Name="Picker" Visibility="{Binding IsPickerOpen, Converter={StaticResource Vis}}" m:Entrance.Stagger="Self" m:Entrance.Offset="24">
             <TextBlock DockPanel.Dock="Top" Text="이 단계에서 누를 키" Style="{StaticResource Section}" Margin="2,0,0,10"/>
-            <ScrollViewer>
-                <ItemsControl ItemsSource="{Binding Keys}" Focusable="False" Margin="4" m:Entrance.Stagger="Items">
-                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Button Style="{StaticResource NavButton}" Content="{Binding Label}" MinWidth="60" Padding="12,8" Margin="0,0,6,6"
-                                    HorizontalContentAlignment="Center" local:Nav.InitialFocus="True"
-                                    Command="{Binding DataContext.PickKeyCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                    CommandParameter="{Binding}"/>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
+            <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                <StackPanel>
+                    <!-- 매핑 편집과 같은 키보드 모양 판 -->
+                    <ItemsControl ItemsSource="{Binding KeyboardRows}" Focusable="False">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <ItemsControl ItemsSource="{Binding}" Focusable="False" ItemsPanel="{StaticResource Row}" ItemTemplate="{StaticResource KeySlot}"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock Text="마우스 · 미디어" Style="{StaticResource Section}" Margin="2,14,0,10"/>
+                    <ItemsControl ItemsSource="{Binding ExtraKeys}" Focusable="False" ItemsPanel="{StaticResource Wrap}" ItemTemplate="{StaticResource KeyTile}"/>
+                </StackPanel>
             </ScrollViewer>
         </DockPanel>
     </Grid>

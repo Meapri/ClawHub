@@ -262,8 +262,8 @@
          내용은 사용하는 쪽이 채운다. 기본 색은 강조색 단색. -->
     <Style x:Key="MetroTile" TargetType="Button">
         <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
-        <Setter Property="Background" Value="{DynamicResource Accent}"/>
-        <Setter Property="Foreground" Value="{DynamicResource AccentText}"/>
+        <Setter Property="Background" Value="{DynamicResource TileAccent}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TileAccentText}"/>
         <Setter Property="FontSize" Value="15"/>
         <Setter Property="Width" Value="168"/>
         <Setter Property="Height" Value="168"/>

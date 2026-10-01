@@ -105,7 +105,7 @@
                                 </StackPanel>
                             </Grid>
                             <!-- 뒷면: 정보 -->
-                            <Grid Background="{DynamicResource Accent}" Visibility="Hidden" TextElement.Foreground="{DynamicResource AccentText}">
+                            <Grid Background="{DynamicResource TileAccent}" Visibility="Hidden" TextElement.Foreground="{DynamicResource TileAccentText}">
                                 <StackPanel Margin="20,18,20,0">
                                     <TextBlock Text="{Binding Hero.SourceLabel}" FontSize="13" Opacity="0.8"/>
                                     <TextBlock Text="{Binding Hero.Title}" FontSize="36" FontWeight="Bold" TextWrapping="Wrap" MaxHeight="150"
