@@ -42,10 +42,14 @@ public sealed class MsiCenterManager(ILogger<MsiCenterManager> log)
         }
         else
         {
-            foreach (var p in Process.GetProcesses().Where(p => p.ProcessName.StartsWith("MSI_Center_M", StringComparison.OrdinalIgnoreCase)
-                         || p.ProcessName is "MSI Center M" or "Command Center"))
+            foreach (var p in Process.GetProcesses())
             {
-                try { p.Kill(); } catch (Exception) { /* 이미 종료 */ }
+                using (p)
+                {
+                    if (!p.ProcessName.StartsWith("MSI_Center_M", StringComparison.OrdinalIgnoreCase)
+                        && p.ProcessName is not ("MSI Center M" or "Command Center")) continue;
+                    try { p.Kill(); } catch (Exception) { /* 이미 종료 */ }
+                }
             }
             if (sc.Status == ServiceControllerStatus.Running) sc.Stop();
         }
@@ -55,7 +59,8 @@ public sealed class MsiCenterManager(ILogger<MsiCenterManager> log)
     private void Run(string exe, string args)
     {
         using var p = Process.Start(new ProcessStartInfo(exe, args) { CreateNoWindow = true, UseShellExecute = false })!;
-        p.WaitForExit(10000);
-        if (p.ExitCode != 0) log.LogWarning("{Exe} {Args} → {Code}", exe, args, p.ExitCode);
+        // 시간 안에 안 끝났는데 ExitCode를 읽으면 InvalidOperationException → 요청 전체가 실패한다
+        if (!p.WaitForExit(10000)) log.LogWarning("{Exe} {Args} → 10초 안에 끝나지 않음", exe, args);
+        else if (p.ExitCode != 0) log.LogWarning("{Exe} {Args} → {Code}", exe, args, p.ExitCode);
     }
 }

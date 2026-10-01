@@ -29,6 +29,14 @@ public static class ControllerProtocol
     /// <summary>응답이 명령 ack로 취급되면 안 되는 비동기 리포트.</summary>
     public static readonly HashSet<byte> UnsolicitedReports = [0xF4, 0x0A, 0x27, 0x30];
 
+    /// <summary>
+    /// 0x21 RAM 쓰기의 ack 후보. MSI 코드(DeviceMessage.IsDefaultAck)는 비동기 리포트(<see cref="UnsolicitedReports"/>)만
+    /// 제외한 아무 리포트를 ack로 본다 — 실제 ack의 [4] 값은 알려지지 않았다(CommandType.Ack=0x06은 쓰기 경로에서 안 씀).
+    /// 값을 더 좁히면 실제 ack가 버려져 모든 쓰기가 타임아웃될 수 있으므로, 대신 호출 측에서 전송 전에 버퍼를 비워
+    /// "쓰기 이후 도착한 리포트"만 받고, 반영 여부는 재읽기로 검증한다. 실기 ack 값은 <see cref="ClawController.LastWriteAck"/>로 기록.
+    /// </summary>
+    public static bool IsPlausibleWriteAck(byte[] report) => !UnsolicitedReports.Contains(report[4]);
+
     public static byte[] BuildPacket(byte cmd, ReadOnlySpan<byte> args)
     {
         if (!AllowedCommands.Contains(cmd))

@@ -44,7 +44,9 @@ public sealed partial class SteamProvider : ILibraryProvider
                     Source = GameSource.Steam,
                     LaunchTarget = $"steam://rungameid/{appId}",
                     SteamAppId = int.TryParse(appId, out var id) ? id : null,
-                    InstallDir = kv.TryGetValue("installdir", out var dir) ? Path.Combine(apps, "common", dir) : null,
+                    // installdir이 비어 있으면 steamapps\common 전체가 되어 모든 Steam 게임에 걸린다
+                    InstallDir = kv.TryGetValue("installdir", out var dir) && !string.IsNullOrWhiteSpace(dir)
+                        ? Path.Combine(apps, "common", dir) : null,
                     CoverImage = FindArt(steam, appId, "library_600x900.jpg"),
                     HeroImage = FindArt(steam, appId, "library_hero.jpg"),
                 };
@@ -147,7 +149,8 @@ public sealed class InstalledGamesProvider : ILibraryProvider
                 SearchName = e.Name,
                 Source = GameSource.Installed,
                 LaunchTarget = exe,
-                InstallDir = e.Location is { Length: > 0 } ? e.Location : Path.GetDirectoryName(exe),
+                // 드라이브 루트·Program Files 같은 공용 폴더는 감지에 못 쓰므로 exe 폴더로 대신
+                InstallDir = ProcessScanner.SafeInstallDir(e.Location) is not null ? e.Location : Path.GetDirectoryName(exe),
                 ProcessNames = known ? [.. k.Processes] : [],
                 IconSource = exe,
                 MappingProfileId = known ? k.ProfileId : null,

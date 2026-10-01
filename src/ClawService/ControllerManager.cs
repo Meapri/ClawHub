@@ -1,3 +1,4 @@
+using System.Management;
 using ClawCore;
 using ClawCore.Controller;
 using HidSharp;
@@ -24,12 +25,28 @@ public sealed class ControllerManager : IDisposable
 
     public event Action? StatusChanged;
 
+    /// <summary>앱이 마지막으로 요청한 모드. 절전 복귀·재연결로 컨트롤러가 기본 모드로 돌아가면 다시 맞춘다.</summary>
+    private GamepadMode? _desiredMode;
+    private readonly ManagementEventWatcher? _resumeWatcher;
+
     public ControllerManager(ILogger<ControllerManager> log)
     {
         _log = log;
         Settings = JsonStore.Load<ControllerSettings>(SettingsPath);
         DeviceList.Local.Changed += (_, _) => Task.Run(Reconnect);
         Reconnect();
+
+        // 절전 복귀 때 USB 재열거 없이 컨트롤러 RAM만 초기화될 수 있다 → DeviceList 이벤트가 없어도 다시 맞춘다
+        try
+        {
+            _resumeWatcher = new ManagementEventWatcher(new WqlEventQuery("SELECT * FROM Win32_PowerManagementEvent WHERE EventType = 7"));
+            _resumeWatcher.EventArrived += (_, _) => Task.Delay(3000).ContinueWith(_ => Reconnect());
+            _resumeWatcher.Start();
+        }
+        catch (Exception ex)
+        {
+            _log.LogWarning(ex, "절전 복귀 감시 실패 — 복귀 후 컨트롤러 설정은 재연결 때만 다시 적용됩니다");
+        }
     }
 
     public ControllerSettings Settings { get; private set; }
@@ -50,34 +67,71 @@ public sealed class ControllerManager : IDisposable
         }
     }
 
+    /// <summary>
+    /// 장치 목록 변경·절전 복귀·시작 때 호출. 연결이 살아 있으면 RAM이 기대한 상태인지 확인해 다르면 다시 쓰고
+    /// (절전 복귀 시 재열거 없이 RAM이 초기화되는 경우), 끊겼으면 다시 열어 설정/매핑을 재적용한다.
+    /// </summary>
     public void Reconnect()
     {
         lock (_lock)
         {
-            if (_ctl is not null)
-            {
-                try { _ctl.ReadMode(); return; } // 아직 살아 있음
-                catch (Exception) { _ctl.Dispose(); _ctl = null; }
-            }
-
-            _ctl = ClawController.TryOpen();
-            if (_ctl is null) { _log.LogWarning("컨트롤러를 찾지 못함"); StatusChanged?.Invoke(); return; }
-
-            try
-            {
-                _current = _ctl.ReadProfile();
-                LoadOrCaptureBaseline();
-                WriteTarget(); // 설정(+진행 중인 매핑) 재적용
-                _log.LogInformation("컨트롤러 연결: 펌웨어 {Fw}", _ctl.FirmwareVersion);
-            }
-            catch (Exception ex)
-            {
-                _log.LogError(ex, "컨트롤러 초기화 실패");
-                _ctl.Dispose();
-                _ctl = null;
-            }
+            if (_disposed) return;
+            ReconnectLocked();
         }
         StatusChanged?.Invoke();
+    }
+
+    private bool _disposed;
+
+    private void ReconnectLocked()
+    {
+        if (_ctl is not null)
+        {
+            var alive = false;
+            try { _ctl.ReadMode(); alive = true; }
+            catch (Exception) { _ctl.Dispose(); _ctl = null; }
+
+            if (alive)
+            {
+                try { WriteTarget(); } // 쓰기 전에 RAM을 다시 읽으므로, 그대로면 아무것도 쓰지 않는다
+                catch (Exception ex) { _log.LogError(ex, "컨트롤러 상태 재확인 실패"); }
+                RestoreMode();
+                return;
+            }
+        }
+
+        _ctl = ClawController.TryOpen();
+        if (_ctl is null) { _log.LogWarning("컨트롤러를 찾지 못함"); return; }
+
+        try
+        {
+            _current = _ctl.ReadProfile();
+            LoadOrCaptureBaseline();
+            WriteTarget(); // 설정(+진행 중인 매핑) 재적용
+            _log.LogInformation("컨트롤러 연결: 펌웨어 {Fw}", _ctl.FirmwareVersion);
+        }
+        catch (Exception ex)
+        {
+            _log.LogError(ex, "컨트롤러 초기화 실패");
+            _ctl.Dispose();
+            _ctl = null;
+            return;
+        }
+        RestoreMode();
+    }
+
+    /// <summary>앱이 고른 모드와 실제 모드가 다르면 (절전 복귀·재연결로 초기화) 다시 맞춘다. _lock 안에서 호출.</summary>
+    private void RestoreMode()
+    {
+        if (_ctl is null || _desiredMode is not { } want) return;
+        try
+        {
+            var (mode, mk) = _ctl.ReadMode();
+            if (mode == want) return;
+            _log.LogInformation("컨트롤러 모드가 {Actual}(으)로 바뀌어 있음 → {Want} 재적용", mode, want);
+            _ctl.SwitchModeVerified(want, mk);
+        }
+        catch (Exception ex) { _log.LogError(ex, "컨트롤러 모드 재적용 실패"); }
     }
 
     private void LoadOrCaptureBaseline()
@@ -141,13 +195,23 @@ public sealed class ControllerManager : IDisposable
 
     public void SetMode(GamepadMode mode)
     {
+        Exception? error = null;
         lock (_lock)
         {
             var ctl = _ctl ?? throw new InvalidOperationException("컨트롤러 미연결");
             var (_, mk) = ctl.ReadMode();
-            ctl.SwitchMode(mode, mk);
+            try
+            {
+                ctl.SwitchModeVerified(mode, mk); // 0x24는 응답이 없으므로 0x26으로 다시 읽어 확인
+                _desiredMode = mode;
+            }
+            catch (Exception ex)
+            {
+                error = ex;
+            }
         }
-        StatusChanged?.Invoke();
+        StatusChanged?.Invoke(); // 실패해도 실제 모드를 알린다 (앱의 모드 장부 무효화)
+        if (error is not null) System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw(error);
     }
 
     private void WriteTarget() => WriteTarget(_activeBindings, _activeMacros, Settings);
@@ -167,13 +231,23 @@ public sealed class ControllerManager : IDisposable
             MacroLayout.Apply(target, button, steps);
         SettingsLayout.Apply(target, settings);
 
+        // 마지막으로 쓴 상태를 믿지 않고 실제 RAM을 다시 읽어 차이를 계산한다 (27회 읽기 ≈ 0.1~0.2초).
+        // 절전 복귀로 RAM이 초기화됐거나 다른 프로그램이 바꿨으면 전체 차이를 다시 쓴다.
+        var actual = _ctl.ReadProfile();
+        if (!actual.AsSpan().SequenceEqual(_current))
+            _log.LogWarning("컨트롤러 RAM이 마지막으로 쓴 상태와 다릅니다 (절전 복귀 또는 외부 변경) → 다시 적용");
+        _current = actual;
+
         var modified = !target.AsSpan().SequenceEqual(_baseline);
         if (modified) File.WriteAllText(ModifiedMarkerPath, DateTime.Now.ToString("O"));
 
         try
         {
-            if (_ctl.WriteProfileRam(_current, target) is { } range && SettingsLayout.TouchesLight(range.First, range.Last))
-                _ctl.SyncRgb();
+            if (_ctl.WriteProfileRam(_current, target) is { } range)
+            {
+                _log.LogDebug("RAM 쓰기 0x{First:X}..0x{Last:X}, ack 0x{Ack:X2}", range.First, range.Last, _ctl.LastWriteAck);
+                if (SettingsLayout.TouchesLight(range.First, range.Last)) _ctl.SyncRgb();
+            }
             _current = target;
         }
         catch (Exception)
@@ -189,7 +263,13 @@ public sealed class ControllerManager : IDisposable
     public void Dispose()
     {
         // 서비스 종료 시 매핑만 풀고 사용자 설정은 유지
+        try { _resumeWatcher?.Stop(); _resumeWatcher?.Dispose(); } catch (Exception) { /* 종료 중 */ }
         try { RestoreBaseline(); } catch (Exception) { /* 종료 중 */ }
-        _ctl?.Dispose();
+        lock (_lock)
+        {
+            _disposed = true;
+            _ctl?.Dispose();
+            _ctl = null;
+        }
     }
 }

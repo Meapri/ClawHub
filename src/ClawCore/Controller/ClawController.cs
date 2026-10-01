@@ -58,8 +58,9 @@ public sealed class ClawController : IDisposable
     {
         lock (_lock)
         {
+            // 0x27은 모드가 바뀔 때 비동기로도 오므로, 쌓여 있던 옛 0x27을 버린 뒤 요청한다
             var resp = Transact(ControllerProtocol.BuildPacket(ControllerProtocol.CmdReadMode, []),
-                r => r[4] == ControllerProtocol.CmdModeAck);
+                r => r[4] == ControllerProtocol.CmdModeAck, drainFirst: true);
             return ((GamepadMode)resp[5], (MKeysFunction)resp[6]);
         }
     }
@@ -72,6 +73,27 @@ public sealed class ClawController : IDisposable
             Thread.Sleep(20);
         }
     }
+
+    /// <summary>
+    /// 모드를 바꾸고 0x26으로 다시 읽어 확인한다 (응답 없는 명령이라 확인이 유일한 성공 신호).
+    /// 확인되지 않으면 예외.
+    /// </summary>
+    public void SwitchModeVerified(GamepadMode mode, MKeysFunction mk)
+    {
+        lock (_lock)
+        {
+            SwitchMode(mode, mk);
+            for (var i = 0; i < 5; i++)
+            {
+                if (ReadMode().Mode == mode) return;
+                Thread.Sleep(40);
+            }
+            throw new IOException($"컨트롤러 모드 전환이 확인되지 않음 ({mode})");
+        }
+    }
+
+    /// <summary>마지막 RAM 쓰기(0x21)에 대한 응답 리포트의 [4] (진단용, 실기 ack 형태 확인).</summary>
+    public byte? LastWriteAck { get; private set; }
 
     /// <summary>
     /// 자이로/가속도 값을 잠깐 받아 본다 (센서 유무 확인·자이로 테스트용). 끝나면 스트림을 끈다.
@@ -154,7 +176,11 @@ public sealed class ClawController : IDisposable
             {
                 var len = Math.Min(ControllerProtocol.ChunkSize, last - off + 1);
                 var packet = ControllerProtocol.BuildWriteRam(off, targetCopy.AsSpan(off, len));
-                Transact(packet, r => !ControllerProtocol.UnsolicitedReports.Contains(r[4]));
+                // MSI 코드(DeviceMessage.IsDefaultAck)도 0x21의 ack를 "비동기 리포트가 아닌 아무 리포트"로 본다.
+                // 그래서 쓰기 전에 쌓인 리포트를 비우고(= 쓰기 이후 도착한 것만), 다른 명령의 응답으로 알려진 것은 거른다.
+                // 실제 반영 여부는 아래 재읽기 검증이 판단한다.
+                var ack = Transact(packet, ControllerProtocol.IsPlausibleWriteAck, drainFirst: true);
+                LastWriteAck = ack[4];
             }
         }
 
@@ -164,11 +190,34 @@ public sealed class ClawController : IDisposable
         return (first, last);
     }
 
-    private byte[] Transact(byte[] packet, Func<byte[], bool> isAck)
+    /// <summary>
+    /// 이미 도착해 OS 버퍼에 쌓여 있는 입력 리포트를 버린다 (이전 명령의 늦은 응답·비동기 리포트가
+    /// 다음 명령의 ack로 오인되지 않게). 짧은 타임아웃으로 읽어 비어 있으면 바로 끝난다.
+    /// </summary>
+    private void Drain(byte[] buf)
+    {
+        var saved = _stream.ReadTimeout;
+        _stream.ReadTimeout = 2;
+        try
+        {
+            for (var i = 0; i < 64; i++) // HID 입력 버퍼 기본 32개
+            {
+                try { _ = _stream.Read(buf, 0, buf.Length); } // 내용은 버린다
+                catch (TimeoutException) { return; }
+            }
+        }
+        finally
+        {
+            _stream.ReadTimeout = saved;
+        }
+    }
+
+    private byte[] Transact(byte[] packet, Func<byte[], bool> isAck, bool drainFirst = false)
     {
         var buf = new byte[Math.Max(_device.GetMaxInputReportLength(), ControllerProtocol.ReportLength)];
         for (var attempt = 0; attempt < MaxAttempts; attempt++)
         {
+            if (drainFirst) Drain(buf);
             _stream.Write(packet);
             var deadline = DateTime.UtcNow + AckTimeout;
             while (DateTime.UtcNow < deadline)
