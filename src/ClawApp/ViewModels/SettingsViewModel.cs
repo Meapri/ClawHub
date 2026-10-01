@@ -76,6 +76,8 @@ public sealed partial class SettingsViewModel : ObservableObject, INavPage
 
     public ShellViewModel Shell => _shell;
     public QuickAccessViewModel Quick => _shell.QuickAccess;
+    /// <summary>Endurance Gaming·배터리 전용 기본값·배터리 수명 (Views/Sections의 전원 관련 섹션이 바인딩).</summary>
+    public PowerSettingsViewModel Power => _shell.QuickAccess.Power;
 
     public IReadOnlyList<SettingsCategory> Categories { get; }
     [ObservableProperty] private SettingsCategory _selected;

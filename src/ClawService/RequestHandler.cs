@@ -5,7 +5,7 @@ using Microsoft.Win32;
 namespace ClawService;
 
 public sealed class RequestHandler(ILogger<RequestHandler> log, ControllerManager controller, EcManager ec, MsiCenterManager msi,
-    SystemManager system)
+    SystemManager system, EnduranceManager endurance, PowerManager power)
 {
     /// <summary>위젯의 AppCommand를 런처 앱(구독자)에게 보내는 통로 — PipeServer가 연결한다.</summary>
     public Action<string>? RelayAppCommand { get; set; }
@@ -28,6 +28,9 @@ public sealed class RequestHandler(ILogger<RequestHandler> log, ControllerManage
         if (req.FpsLimit is < 0 or > 240) throw new ArgumentException("FPS 제한은 0~240");
         if (req.FrameGeneration is < 0 or > 3) throw new ArgumentException("프레임 생성은 0~3");
         if (req.AppState is { Profiles.Count: > 100 }) throw new ArgumentException("프로필이 너무 많습니다");
+        if (req.EnduranceControl is { } egc && !Enum.IsDefined(egc)) throw new ArgumentException("잘못된 Endurance Gaming 설정");
+        if (req.EnduranceMode is { } egm && !Enum.IsDefined(egm)) throw new ArgumentException("잘못된 Endurance Gaming 모드");
+        if (req.PowerSource is { } src && !Enum.IsDefined(src)) throw new ArgumentException("잘못된 전원 구분");
     }
 
     public Response Handle(Request req)
@@ -41,7 +44,11 @@ public sealed class RequestHandler(ILogger<RequestHandler> log, ControllerManage
                 case Ops.Subscribe:
                     break;
                 case Ops.SetPerformance:
-                    ec.SetPerformance(req.Performance ?? throw new ArgumentException("Performance 누락"));
+                    if (req.Performance is null && req.PowerSource == PowerSourceKind.Battery) ec.ClearPerformanceOnBattery();
+                    else ec.SetPerformance(req.Performance ?? throw new ArgumentException("Performance 누락"), req.PowerSource);
+                    break;
+                case Ops.SetEnduranceGaming:
+                    endurance.Set(req.EnduranceControl ?? throw new ArgumentException("EnduranceControl 누락"), req.EnduranceMode);
                     break;
                 case Ops.ApplyTemporaryPerformance:
                     ec.ApplyTemporary(req.Performance ?? throw new ArgumentException("Performance 누락"));
@@ -118,7 +125,12 @@ public sealed class RequestHandler(ILogger<RequestHandler> log, ControllerManage
             Graphics = system.Graphics,
             Brightness = system.Brightness,
             AppState = system.AppState,
+            OnBattery = power.OnBattery,
+            PerformanceOnAc = ec.PerformanceOnAc,
+            PerformanceOnBattery = ec.PerformanceOnBattery,
+            BatteryHealth = power.BatteryHealth,
         };
+        if (s.Graphics is { } g) g.Endurance = endurance.State;
         if (ec.Error is not null) s.Warnings.Add($"EC: {ec.Error}");
         if (!controller.Connected) s.Warnings.Add("컨트롤러가 연결되지 않았습니다");
         return s;
