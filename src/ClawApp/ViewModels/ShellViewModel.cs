@@ -105,6 +105,54 @@ public sealed partial class ShellViewModel : ObservableObject
         OnPropertyChanged(nameof(IsGameRunning));
         OnPropertyChanged(nameof(RunningGameTitle));
         UpdateHints(); // 홈 힌트에 "B 게임으로"가 붙었다 떨어진다
+        _ = PushAppStateAsync();
+    }
+
+    // ── Game Bar 위젯 연동 (서비스가 중계) ─────────────────
+
+    /// <summary>위젯이 보여 줄 현재 게임·매핑 정보를 서비스에 맡긴다.</summary>
+    public async Task PushAppStateAsync()
+    {
+        if (!ServiceConnected) return;
+        var game = RunningGame;
+        var profile = Profiles.Find(game?.MappingProfileId);
+        var state = new AppState
+        {
+            RunningGameTitle = game?.Title ?? ForegroundApp?.Name,
+            ProfileId = profile?.Id,
+            ProfileName = profile?.Name,
+            Profiles = [.. Profiles.All.Select(p => new ProfileItem { Id = p.Id, Name = p.Name })],
+            GamePerformanceMode = game?.PerformanceMode?.ToString(),
+            GameFpsLimit = game?.FpsLimit,
+        };
+        try { await Service.SendAsync(new Request { Op = Ops.SetAppState, AppState = state }, TimeSpan.FromSeconds(3)); }
+        catch (Exception) { /* 연결 끊김 — 재연결 때 다시 보냄 */ }
+    }
+
+    /// <summary>위젯에서 온 명령. 위젯이 이미 확인을 받았으므로 여기서는 바로 실행한다.</summary>
+    private void OnWidgetCommand(string command)
+    {
+        switch (command)
+        {
+            case AppCommands.CycleProfile:
+                CycleTargetProfile();
+                break;
+            case AppCommands.QuitGame:
+                Session?.Kill();
+                ShowToast("게임을 종료하는 중…");
+                break;
+            case AppCommands.ShowClawHub:
+                ShowFromOutside();
+                break;
+            case var c when c.StartsWith(AppCommands.SetProfilePrefix, StringComparison.Ordinal):
+                var id = c[AppCommands.SetProfilePrefix.Length..];
+                var profileId = string.IsNullOrEmpty(id) ? null : Profiles.Find(id)?.Id;
+                if (RunningGame is { } g) Library.SetProfile(g, profileId);
+                else if (ForegroundApp is { } app && profileId is not null) BindForegroundApp(app, profileId);
+                break;
+        }
+        _ = PushAppStateAsync();
+        _ = SyncControllerAsync(); // 프로필이 바뀌었으면 매핑 다시 적용
     }
 
     public ShellViewModel()
@@ -132,6 +180,7 @@ public sealed partial class ShellViewModel : ObservableObject
         {
             if (e.Event == Ops.EventButton && e.Button is { } b) OnMsiButton(b);
             else if (e.Event == Ops.EventStatus && e.Status is { } s) Status = s;
+            else if (e.Event == Ops.EventAppCommand && e.Command is { } c) OnWidgetCommand(c);
         });
         Service.Start();
 
@@ -347,15 +396,21 @@ public sealed partial class ShellViewModel : ObservableObject
         }
         else if (ForegroundApp is { } app)
         {
-            var bound = Library.BindProcess(app.Name, app.Path, Next(null));
-            var session = GameSession.Attach(bound);
-            session.Ended += s => Ui(() => OnGameEnded(s));
-            Session = session;
-            RunningGame = bound;
-            ForegroundApp = null;
-            Home.Reload();
+            BindForegroundApp(app, Next(null));
         }
         QuickAccess.Refresh(); // 패널을 닫으면 SyncControllerAsync가 새 프로필을 적용
+    }
+
+    /// <summary>라이브러리 밖 앱(Xbox 앱 게임 등)에 프로필을 붙이고 실행 중 게임으로 추적한다.</summary>
+    private void BindForegroundApp((string Name, string? Path) app, string? profileId)
+    {
+        var bound = Library.BindProcess(app.Name, app.Path, profileId);
+        var session = GameSession.Attach(bound);
+        session.Ended += s => Ui(() => OnGameEnded(s));
+        Session = session;
+        RunningGame = bound;
+        ForegroundApp = null;
+        Home.Reload();
     }
 
     [System.Runtime.InteropServices.DllImport("user32.dll")]
@@ -752,6 +807,7 @@ public sealed partial class ShellViewModel : ObservableObject
 
     private void UpdateClock()
     {
+        _ = PushAppStateAsync(); // 위젯 표시용 상태: 10초마다 갱신 (프로필 이름 변경 등도 반영)
         Clock = DateTime.Now.ToString("tt h:mm");
         var b = SystemControls.GetBattery();
         BatteryText = b.Percent is { } p ? $"{p}%" : "";
