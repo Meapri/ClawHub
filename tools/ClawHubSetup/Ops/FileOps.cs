@@ -48,7 +48,7 @@ internal static class FileOps
             var old = $"{target}.old-{DateTime.Now:yyyyMMddHHmmss}";
             Directory.Move(target, old);
             ScheduleDelete(old);
-            log.Warn($"{Path.GetFileName(target)} 폴더 일부가 사용 중이라 {Path.GetFileName(old)}로 옮기고 재부팅 때 지웁니다.");
+            log.Warn($"{Path.GetFileName(target)} 폴더 일부가 사용 중이라 {Path.GetFileName(old)}로 옮기고 재부팅 때 지워요.");
         }
         Directory.Move(source, target);
     }
@@ -80,7 +80,7 @@ internal static class FileOps
             return;
         }
         ScheduleDelete(dir);
-        log.Warn($"{dir} 일부가 사용 중이라 재부팅 때 지웁니다.");
+        log.Warn($"{dir} 일부가 사용 중이라 재부팅 때 지워요.");
     }
 
     private static void ScheduleDelete(string dir)

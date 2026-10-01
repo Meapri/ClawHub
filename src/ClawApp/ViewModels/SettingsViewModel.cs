@@ -164,7 +164,7 @@ public sealed partial class SettingsViewModel : ObservableObject, INavPage
         try
         {
             if (await _shell.SendAsync(new Request { Op = Ops.SetMsiCenter, Enabled = enabled }))
-                _shell.ShowToast(enabled ? "MSI Center M을 켰습니다" : "MSI Center M을 껐습니다 — 이제 본체 버튼은 ClawHub만 반응합니다");
+                _shell.ShowToast(enabled ? "MSI Center M을 켰어요" : "MSI Center M을 껐어요 — 이제 본체 버튼은 ClawHub만 반응해요");
         }
         finally
         {
@@ -300,7 +300,7 @@ public sealed partial class SettingsViewModel : ObservableObject, INavPage
         if (await _shell.SendAsync(new Request { Op = Ops.SetControllerSettings, ControllerSettings = new ControllerSettings() }))
         {
             LoadFromStatus();
-            _shell.ShowToast("컨트롤러 설정을 원래대로 돌렸습니다");
+            _shell.ShowToast("컨트롤러 설정을 원래대로 돌렸어요");
         }
     }
 
@@ -341,7 +341,7 @@ public sealed partial class SettingsViewModel : ObservableObject, INavPage
     {
         SystemControls.OpenWindowsSettings(page);
         _shell.GoToDesktopCommand.Execute(null);
-        _shell.ShowToast("왼쪽 MSI 버튼을 누르면 ClawHub로 돌아옵니다");
+        _shell.ShowToast("왼쪽 MSI 버튼을 누르면 ClawHub로 돌아와요");
     }
 
     // ── 라이브러리 ─────────────────────────────────────────
@@ -356,7 +356,7 @@ public sealed partial class SettingsViewModel : ObservableObject, INavPage
         };
         if (dlg.ShowDialog() != true) return;
         var game = _shell.Library.AddCustom(Path.GetFileNameWithoutExtension(dlg.FileName), dlg.FileName);
-        _shell.ShowToast($"{game.Title}을(를) 추가했습니다");
+        _shell.ShowToast($"{game.Title}을(를) 추가했어요");
         _shell.Home.Reload();
     }
 
@@ -365,7 +365,7 @@ public sealed partial class SettingsViewModel : ObservableObject, INavPage
     {
         _shell.Library.Refresh();
         _shell.Home.Reload();
-        _shell.ShowToast($"게임 {_shell.Library.Visible.Count()}개를 찾았습니다");
+        _shell.ShowToast($"게임 {_shell.Library.Visible.Count()}개를 찾았어요");
     }
 
     [RelayCommand]
@@ -373,7 +373,7 @@ public sealed partial class SettingsViewModel : ObservableObject, INavPage
     {
         var n = _shell.Library.UnhideAll();
         _shell.Home.Reload();
-        _shell.ShowToast(n > 0 ? $"숨긴 게임 {n}개를 다시 표시합니다" : "숨긴 게임이 없습니다");
+        _shell.ShowToast(n > 0 ? $"숨긴 게임 {n}개를 다시 표시해요" : "숨긴 게임이 없어요");
     }
 
     // ── 정보 ───────────────────────────────────────────────

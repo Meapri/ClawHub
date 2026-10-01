@@ -25,7 +25,7 @@ public sealed partial class ShellViewModel
             await Task.Delay(CaptureFocusDelay);
         }
         if (!GameCapture.Send(action))
-            ShowToast($"{GameCapture.Label(action)} 단축키를 보내지 못했습니다");
+            ShowToast($"{GameCapture.Label(action)} 단축키를 보내지 못했어요");
     }
 
     /// <summary>

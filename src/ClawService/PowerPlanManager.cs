@@ -55,7 +55,7 @@ public sealed class PowerPlanManager(ILogger<PowerPlanManager> log, PowerManager
             var src = source ?? (def.AcApplies ? (power.OnBattery ? PowerSourceKind.Battery : PowerSourceKind.Ac) : PowerSourceKind.Battery);
             PowerPlanReader.Validate(state, setting, src, value);
             if (state.SchemeGuid is null || !Guid.TryParse(state.SchemeGuid, out var scheme))
-                throw new InvalidOperationException("활성 전원 구성표를 읽지 못했습니다");
+                throw new InvalidOperationException("활성 전원 구성표를 읽지 못했어요");
 
             var ac = src == PowerSourceKind.Ac;
             PowerPlanNative.Write(scheme, def.Sub, def.Guid, ac, (uint)value);

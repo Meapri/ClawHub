@@ -57,7 +57,7 @@
         <!-- SteamGridDB 키 + 상태 -->
         <StackPanel DockPanel.Dock="Top" Margin="0,0,0,10">
             <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="2,0,0,4"
-                       Text="SteamGridDB API 키 (선택) — steamgriddb.com 로그인 → 환경설정 → API에서 받은 키를 넣으면 커뮤니티 아트도 함께 찾습니다."/>
+                       Text="SteamGridDB API 키 (선택) — steamgriddb.com 로그인 → 환경설정 → API에서 받은 키를 넣으면 커뮤니티 아트도 함께 찾아요."/>
             <v:InlineEdit Text="{Binding SteamGridDbKey}" Placeholder="키 없음 (Steam 아트만 찾아요)" InnerPadding="14,10"/>
             <TextBlock Text="{Binding StatusText}" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="2,8,0,0"
                        Visibility="{Binding StatusText, Converter={StaticResource NullVis}}"/>

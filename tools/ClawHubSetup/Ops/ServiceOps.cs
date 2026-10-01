@@ -72,7 +72,7 @@ internal static class ServiceOps
         catch (System.ServiceProcess.TimeoutException)
         {
             throw new SetupException("ClawHub 서비스가 멈추지 않았어요. 컨트롤러 매핑 복원이 끝나지 않았을 수 있어 " +
-                                     "강제로 끝내지 않고 중단합니다. 잠시 후 다시 시도하세요.");
+                                     "강제로 끝내지 않고 중단해요. 잠시 후 다시 시도하세요.");
         }
         log.Ok("서비스 중지 (컨트롤러 기준 매핑 복원)");
     }

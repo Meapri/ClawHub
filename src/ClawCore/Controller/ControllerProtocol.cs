@@ -42,7 +42,7 @@ public static class ControllerProtocol
         if (!AllowedCommands.Contains(cmd))
             throw new InvalidOperationException($"차단된 컨트롤러 명령 0x{cmd:X2}");
         if (args.Length > ReportLength - 5)
-            throw new ArgumentException("인자가 너무 깁니다", nameof(args));
+            throw new ArgumentException("인자가 너무 길어요", nameof(args));
 
         var buf = new byte[ReportLength];
         buf[0] = ReportId;

@@ -55,7 +55,7 @@ public partial class MainWindow : Window
         {
             InstallStatusText.Text = installed is null
                 ? $"스크립트로 설치한 ClawHub를 {version}(으)로 업데이트해요."
-                : installed == version ? $"ClawHub {version}을(를) 다시 설치(복구)해요." : $"ClawHub {installed} → {version} 업데이트";
+                : installed == version ? $"ClawHub {version}을(를) 다시 설치(복구)해요." : $"ClawHub {installed}을(를) {version}(으)로 업데이트해요.";
             InstallDetailText.Text = "서비스를 잠시 멈추고(컨트롤러 매핑은 원래대로) 파일을 바꾼 뒤 다시 시작해요. 사용자 설정은 그대로예요.";
         }
 

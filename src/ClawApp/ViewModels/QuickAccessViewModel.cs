@@ -121,14 +121,14 @@ public sealed partial class QuickAccessViewModel : ObservableObject
 
     public bool PerfAvailable => _shell.Status?.EcWritable == true;
     public string PerfUnavailableText => _shell.ServiceConnected
-        ? (_shell.Status?.Warnings.FirstOrDefault() ?? "EC를 사용할 수 없습니다")
-        : "ClawHub 서비스가 실행되지 않아 성능 설정을 바꿀 수 없습니다";
+        ? (_shell.Status?.Warnings.FirstOrDefault() ?? "EC를 사용할 수 없어요")
+        : "ClawHub 서비스가 실행되지 않아 성능 설정을 바꿀 수 없어요";
     public bool IsManual => Mode == PerformanceMode.Manual;
 
     public string? PerfNote => _shell.Status?.TemporaryPerformance is { } t
-        ? $"지금은 게임별 설정({t.Mode switch { PerformanceMode.Battery => "절전", PerformanceMode.Performance => "성능", _ => "균형" }})이 적용 중 — 여기서 바꾸면 기본값이 바뀝니다"
+        ? $"지금은 게임별 설정({t.Mode switch { PerformanceMode.Battery => "절전", PerformanceMode.Performance => "성능", _ => "균형" }})이 적용 중 — 여기서 바꾸면 기본값이 바뀌어요"
         : _shell.Status is { OnBattery: true, PerformanceOnBattery: not null }
-            ? "배터리 사용 중 기본값 — 여기서 바꾸면 배터리용 값이 바뀌고, 전원을 연결하면 원래 기본값으로 돌아갑니다"
+            ? "배터리 사용 중 기본값 — 여기서 바꾸면 배터리용 값이 바뀌고, 전원을 연결하면 원래 기본값으로 돌아가요"
             : null;
 
     [CommunityToolkit.Mvvm.Input.RelayCommand]

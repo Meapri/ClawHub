@@ -52,7 +52,7 @@
                     <StackPanel Orientation="Horizontal"><TextBlock Text="{StaticResource Icon.Keyboard}" Style="{StaticResource Icon}" Margin="0,0,14,0"/><TextBlock Text="버튼 → 키 매핑 편집"/></StackPanel>
                 </Button>
                 <TextBlock Style="{StaticResource Caption}" Margin="2,6,0,0"
-                           Text="게임이 실행되면 프로필이 컨트롤러 펌웨어에 적용되어 진짜 키보드 입력으로 나갑니다. 게임을 끄거나 메뉴를 열면 원래 버튼으로 돌아옵니다."/>
+                           Text="게임이 실행되면 프로필이 컨트롤러 펌웨어에 적용되어 진짜 키보드 입력으로 나가요. 게임을 끄거나 메뉴를 열면 원래 버튼으로 돌아와요."/>
 
                 <TextBlock Text="성능" Style="{StaticResource Section}"/>
                 <Button Style="{StaticResource NavButton}" Command="{Binding CyclePerformanceCommand}" HorizontalContentAlignment="Stretch">

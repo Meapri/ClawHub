@@ -53,12 +53,12 @@ public sealed partial class PowerSettingsViewModel : ObservableObject
     /// <summary>예전 서비스는 Endurance를 보내지 않는다 → 사용 불가로 표시.</summary>
     public bool EnduranceAvailable => _shell.ServiceConnected && Endurance?.Available == true;
 
-    public string EnduranceNote => !_shell.ServiceConnected ? "ClawHub 서비스가 실행되지 않아 바꿀 수 없습니다"
-        : Endurance is null ? "서비스를 업데이트해야 쓸 수 있습니다"
-        : !Endurance.Available ? "Intel 그래픽 드라이버 설정(MSI Center M의 intelGEDll.dll)을 찾을 수 없습니다"
-        : Endurance.Source is null ? "현재 값을 드라이버에서 읽지 못했습니다"
-        : Endurance.Source == "Saved" ? "드라이버에서 읽을 수 없는 조합이라 마지막으로 정한 값을 표시합니다"
-        : "자동이면 배터리로 돌 때만 드라이버가 프레임·전력을 줄입니다";
+    public string EnduranceNote => !_shell.ServiceConnected ? "ClawHub 서비스가 실행되지 않아 바꿀 수 없어요"
+        : Endurance is null ? "서비스를 업데이트해야 쓸 수 있어요"
+        : !Endurance.Available ? "Intel 그래픽 드라이버 설정(MSI Center M의 intelGEDll.dll)을 찾을 수 없어요"
+        : Endurance.Source is null ? "현재 값을 드라이버에서 읽지 못했어요"
+        : Endurance.Source == "Saved" ? "드라이버에서 읽을 수 없는 조합이라 마지막으로 정한 값을 표시해요"
+        : "자동이면 배터리로 돌 때만 드라이버가 프레임·전력을 줄여요";
 
     public bool EgOff { get => Endurance?.Control == EnduranceControl.Off; set { if (value) _ = SetEnduranceAsync(EnduranceControl.Off, null); } }
     public bool EgOn { get => Endurance?.Control == EnduranceControl.On; set { if (value) _ = SetEnduranceAsync(EnduranceControl.On, null); } }
@@ -95,9 +95,9 @@ public sealed partial class PowerSettingsViewModel : ObservableObject
 
     public string BatteryPerfText => BatteryPerf switch
     {
-        null => "배터리여도 기본 성능 모드를 그대로 씁니다",
+        null => "배터리여도 기본 성능 모드를 그대로 써요",
         { Mode: PerformanceMode.Manual } p => $"배터리일 때: 수동 {p.Pl1}W / 최대 {p.Pl2}W",
-        _ => "배터리로 돌 때 이 모드로 바꾸고, 전원을 연결하면 기본 성능 모드로 돌아옵니다",
+        _ => "배터리로 돌 때 이 모드로 바꾸고, 전원을 연결하면 기본 성능 모드로 돌아와요",
     };
 
     private async Task SetBatteryPerfAsync(PerformanceMode? mode)
@@ -120,8 +120,8 @@ public sealed partial class PowerSettingsViewModel : ObservableObject
 
     public string BatteryFpsText => _shell.Settings.FpsLimitOnBattery switch
     {
-        null => "배터리여도 기본 FPS 제한을 그대로 씁니다",
-        _ => "게임별 값이 있으면 그게 우선입니다 (게임 페이지에서 게임별 배터리 값도 정할 수 있어요)",
+        null => "배터리여도 기본 FPS 제한을 그대로 써요",
+        _ => "게임별 값이 있으면 그게 우선이에요 (게임 페이지에서 게임별 배터리 값도 정할 수 있어요)",
     };
 
     [RelayCommand]
@@ -147,14 +147,14 @@ public sealed partial class PowerSettingsViewModel : ObservableObject
     public bool NoHealth => !HasHealth;
 
     public string HealthUnavailableText => _shell.ServiceConnected
-        ? "배터리 정보를 읽는 중이거나 이 기기에서 읽을 수 없습니다"
-        : "ClawHub 서비스가 실행되지 않아 배터리 정보를 읽을 수 없습니다";
+        ? "배터리 정보를 읽는 중이거나 이 기기에서 읽을 수 없어요"
+        : "ClawHub 서비스가 실행되지 않아 배터리 정보를 읽을 수 없어요";
 
     public string HealthPercentText => Health?.HealthPercent is { } p ? $"{p}%" : "–";
 
     public string HealthSummary => Health?.HealthPercent switch
     {
-        null => "설계 용량을 알 수 없어 수명을 계산하지 못했습니다",
+        null => "설계 용량을 알 수 없어 수명을 계산하지 못했어요",
         >= 90 => "좋음 — 거의 새 배터리 수준이에요",
         >= 75 => "보통 — 정상적으로 닳은 상태예요",
         >= 60 => "다소 닳음 — 사용 시간이 눈에 띄게 줄었을 수 있어요",

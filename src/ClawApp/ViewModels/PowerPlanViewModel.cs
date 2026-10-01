@@ -24,9 +24,9 @@ public sealed partial class PowerPlanViewModel : ObservableObject
         Sleep = new(this, PowerPlanSetting.Sleep, "절전 전환", "입력이 없을 때 절전 모드로 들어가는 시간 (화면 끄기보다 짧게 하면 화면 끄기도 같이 줄어요)");
         Hibernate = new(this, PowerPlanSetting.Hibernate, "최대 절전 전환", "절전한 뒤 이 시간이 지나면 최대 절전으로 — 배터리를 거의 쓰지 않아요");
         PowerButton = new(this, PowerPlanSetting.PowerButton, "전원 버튼을 누르면", "본체 전원 버튼을 짧게 눌렀을 때 할 일");
-        EnergySaverThreshold = new(this, PowerPlanSetting.EnergySaverThreshold, "절약 모드 자동 켜짐", "배터리가 이만큼 남으면 Windows 절약 모드를 켭니다");
+        EnergySaverThreshold = new(this, PowerPlanSetting.EnergySaverThreshold, "절약 모드 자동 켜짐", "배터리가 이만큼 남으면 Windows 절약 모드를 켜요");
         EnergySaverBrightness = new(this, PowerPlanSetting.EnergySaverBrightness, "절약 모드 화면 밝기", "절약 모드일 때 평소 밝기의 몇 %로 낮출지");
-        AdaptiveBrightness = new(this, PowerPlanSetting.AdaptiveBrightness, "밝기 자동 조절", "주변 밝기에 맞춰 화면 밝기를 바꿉니다");
+        AdaptiveBrightness = new(this, PowerPlanSetting.AdaptiveBrightness, "밝기 자동 조절", "주변 밝기에 맞춰 화면 밝기를 바꿔요");
         Rows = [DisplayOff, Sleep, Hibernate, PowerButton, EnergySaverThreshold, EnergySaverBrightness, AdaptiveBrightness];
         shell.PropertyChanged += OnShellChanged;
         Refresh();
@@ -56,10 +56,10 @@ public sealed partial class PowerPlanViewModel : ObservableObject
     public bool Available => _shell.ServiceConnected && Plan?.Available == true;
     public bool NotAvailable => !Available;
 
-    public string Note => !_shell.ServiceConnected ? "ClawHub 서비스가 실행되지 않아 바꿀 수 없습니다"
-        : Plan is null ? "서비스를 업데이트해야 쓸 수 있습니다"
-        : !Plan.Available ? Plan.Error ?? "전원 설정을 읽지 못했습니다"
-        : $"Windows 전원 구성표 '{Plan.SchemeName ?? "알 수 없음"}'{(Plan.ModernStandby ? " · 모던 스탠바이 기기" : "")} — Windows 설정과 같은 값입니다";
+    public string Note => !_shell.ServiceConnected ? "ClawHub 서비스가 실행되지 않아 바꿀 수 없어요"
+        : Plan is null ? "서비스를 업데이트해야 쓸 수 있어요"
+        : !Plan.Available ? Plan.Error ?? "전원 설정을 읽지 못했어요"
+        : $"Windows 전원 구성표 '{Plan.SchemeName ?? "알 수 없음"}'{(Plan.ModernStandby ? " · 모던 스탠바이 기기" : "")} — Windows 설정과 같은 값이에요";
 
     public string CurrentSourceText => OnBattery ? "지금: 배터리 사용 중" : "지금: 충전 중";
     /// <summary>빠른 설정용: 지금 전원 상태 칸을 바꾼다는 안내.</summary>
@@ -83,7 +83,7 @@ public sealed partial class PowerPlanViewModel : ObservableObject
 
     public string KeepAwakeText => _shell.KeepingAwake
         ? "지금 게임 중이라 화면이 꺼지지 않게 막고 있어요"
-        : "게임 화면에 있는 동안 화면이 꺼지거나 절전되지 않게 합니다 (ClawHub로 돌아오면 원래대로)";
+        : "게임 화면에 있는 동안 화면이 꺼지거나 절전되지 않게 해요 (ClawHub로 돌아오면 원래대로)";
 
     // ── 서비스 값 반영 / 쓰기 ─────────────────────────────
 

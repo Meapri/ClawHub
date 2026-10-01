@@ -23,7 +23,7 @@ public sealed class ServiceClient : IAsyncDisposable
 
     public async Task<Response> SendAsync(Request request, TimeSpan? timeout = null)
     {
-        var writer = _writer ?? throw new InvalidOperationException("ClawService에 연결되지 않았습니다");
+        var writer = _writer ?? throw new InvalidOperationException("ClawService에 연결되지 않았어요");
         request.Id = Interlocked.Increment(ref _nextId);
         var tcs = new TaskCompletionSource<Response>(TaskCreationOptions.RunContinuationsAsynchronously);
         _pending[request.Id] = tcs;

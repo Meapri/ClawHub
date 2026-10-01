@@ -30,7 +30,7 @@ public static class DisplayControls
     public static string? Apply(DisplayMode mode)
     {
         var dm = NewDevMode();
-        if (!EnumDisplaySettings(null, EnumCurrentSettings, ref dm)) return "현재 디스플레이 설정을 읽을 수 없습니다";
+        if (!EnumDisplaySettings(null, EnumCurrentSettings, ref dm)) return "현재 디스플레이 설정을 읽을 수 없어요";
         dm.dmPelsWidth = mode.Width;
         dm.dmPelsHeight = mode.Height;
         dm.dmDisplayFrequency = mode.Hz;

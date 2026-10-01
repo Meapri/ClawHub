@@ -13,7 +13,7 @@
                     <TextBlock DockPanel.Dock="Left" Text="{DynamicResource Icon.Leaf}" FontFamily="{DynamicResource LucideFont}"
                                Style="{DynamicResource Icon}" VerticalAlignment="Center" Margin="0,0,12,0"/>
                     <StackPanel>
-                        <TextBlock Text="Intel 드라이버가 프레임과 전력을 알아서 줄여 배터리를 아낍니다"/>
+                        <TextBlock Text="Intel 드라이버가 프레임과 전력을 알아서 줄여 배터리를 아껴요"/>
                         <TextBlock Text="{Binding EnduranceNote}" Style="{DynamicResource Caption}" TextWrapping="Wrap"/>
                     </StackPanel>
                 </DockPanel>

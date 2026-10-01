@@ -28,6 +28,6 @@
             </Button>
         </WrapPanel>
         <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="2,4,0,0"
-                   Text="Windows Game Bar로 저장됩니다 (동영상\캡처 폴더). 최근 30초 저장은 설정 → 게임 → 캡처의 '방금 일어난 일 기록'을 켜야 합니다."/>
+                   Text="Windows Game Bar로 저장돼요 (동영상\캡처 폴더). 최근 30초 저장은 설정 → 게임 → 캡처의 '방금 일어난 일 기록'을 켜야 해요."/>
     </StackPanel>
 </UserControl>

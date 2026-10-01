@@ -230,7 +230,7 @@ public sealed partial class ArtPickerViewModel : ObservableObject, INavPage
                 return;
             }
             _shell.Library.SetUserArt(Tile.Game, kind, image.Bytes);
-            AfterArtChanged($"{KindLabel} 이미지를 바꿨습니다");
+            AfterArtChanged($"{KindLabel} 이미지를 바꿨어요");
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
         {
@@ -254,7 +254,7 @@ public sealed partial class ArtPickerViewModel : ObservableObject, INavPage
         try
         {
             _shell.Library.SetUserArtFromFile(Tile.Game, Kind, dlg.FileName);
-            AfterArtChanged($"{KindLabel} 이미지를 바꿨습니다");
+            AfterArtChanged($"{KindLabel} 이미지를 바꿨어요");
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
         {
@@ -267,11 +267,11 @@ public sealed partial class ArtPickerViewModel : ObservableObject, INavPage
     {
         if (!HasUserArt)
         {
-            _shell.ShowToast($"이미 기본 {KindLabel}입니다");
+            _shell.ShowToast($"이미 기본 {KindLabel} 이미지예요");
             return;
         }
         _shell.Library.ResetArt(Tile.Game, Kind);
-        AfterArtChanged($"{KindLabel} 이미지를 기본으로 되돌렸습니다");
+        AfterArtChanged($"{KindLabel} 이미지를 기본으로 되돌렸어요");
     }
 
     private void AfterArtChanged(string message)

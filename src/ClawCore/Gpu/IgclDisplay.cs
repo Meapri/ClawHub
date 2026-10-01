@@ -58,7 +58,7 @@ public sealed class IgclDisplay : IDisposable
                 return null;
             }
         }
-        error = "Intel ControlLib.dll을 찾지 못했습니다";
+        error = "Intel ControlLib.dll을 찾지 못했어요";
         return null;
     }
 
@@ -75,7 +75,7 @@ public sealed class IgclDisplay : IDisposable
 
         uint count = 0;
         Check(_n.EnumerateDevices(_api, ref count, null), "ctlEnumerateDevices");
-        if (count == 0) throw new InvalidOperationException("Intel 그래픽 어댑터가 없습니다");
+        if (count == 0) throw new InvalidOperationException("Intel 그래픽 어댑터가 없어요");
         var devices = new IntPtr[count];
         Check(_n.EnumerateDevices(_api, ref count, devices), "ctlEnumerateDevices");
         _device = devices[0]; // Claw에는 내장 Arc GPU 하나뿐
@@ -198,8 +198,8 @@ public sealed class IgclDisplay : IDisposable
         {
             if (c.Sharpening is not null || c.SharpeningLevel is not null)
             {
-                if (_display == IntPtr.Zero) throw new InvalidOperationException("활성 디스플레이가 없습니다");
-                var range = ReadSharpnessRange() ?? throw new InvalidOperationException("선명도 조절을 지원하지 않습니다");
+                if (_display == IntPtr.Zero) throw new InvalidOperationException("활성 디스플레이가 없어요");
+                var range = ReadSharpnessRange() ?? throw new InvalidOperationException("선명도 조절을 지원하지 않아요");
                 var sh = new SharpnessSettings { Size = (uint)Marshal.SizeOf<SharpnessSettings>() };
                 Check(_n.GetCurrentSharpness(_display, ref sh), "ctlGetCurrentSharpness");
                 if (c.Sharpening is { } en) sh.Enable = en ? (byte)1 : (byte)0;
@@ -212,7 +212,7 @@ public sealed class IgclDisplay : IDisposable
 
             if (c.LowLatency is { } mode)
             {
-                if (!SupportedLowLatency().Contains(mode)) throw new InvalidOperationException($"저지연 {mode}는 지원하지 않습니다");
+                if (!SupportedLowLatency().Contains(mode)) throw new InvalidOperationException($"저지연 {mode}는 지원하지 않아요");
                 var f = New3D(Feature3D.LowLatency, ValueTypeEnum, set: true);
                 f.EnumValue = mode switch { LowLatencyMode.On => 1u, LowLatencyMode.Boost => 2u, _ => 0u };
                 Check(_n.GetSet3DFeature(_device, ref f), "ctlGetSet3DFeature(LOW_LATENCY)");

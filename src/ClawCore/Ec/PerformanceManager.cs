@@ -77,7 +77,7 @@ public sealed class PerformanceManager(MsiWmi wmi)
 
     public void SetChargeLimit(ChargeLimit limit)
     {
-        if (!ChargeLimitSupported) throw new NotSupportedException("이 EC는 충전 한도를 지원하지 않습니다");
+        if (!ChargeLimitSupported) throw new NotSupportedException("이 EC는 충전 한도를 지원하지 않아요");
         wmi.SetData(EcIndex.BatteryLimit, (byte)(0x80 | (int)limit));
     }
 

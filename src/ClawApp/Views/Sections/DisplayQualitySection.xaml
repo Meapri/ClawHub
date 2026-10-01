@@ -37,7 +37,7 @@
                 <TextBlock Text="{DynamicResource Icon.Monitor}" Style="{StaticResource RowIcon}"/>
                 <StackPanel>
                     <TextBlock Text="레트로 스케일링"/>
-                    <TextBlock Text="낮은 해상도를 정수 배율로 키워 픽셀이 뭉개지지 않게 합니다. 바꿀 때 화면이 잠깐 깜빡입니다."
+                    <TextBlock Text="낮은 해상도를 정수 배율로 키워 픽셀이 뭉개지지 않게 해요. 바꿀 때 화면이 잠깐 깜빡여요."
                                Style="{DynamicResource Caption}"/>
                 </StackPanel>
             </StackPanel>
@@ -49,7 +49,7 @@
                     <RadioButton Style="{DynamicResource ChipRadio}" GroupName="retroMode" Content="정수 배율" IsChecked="{Binding RetroInteger}"/>
                     <RadioButton Style="{DynamicResource ChipRadio}" GroupName="retroMode" Content="최근접 이웃" IsChecked="{Binding RetroNearest}"/>
                 </WrapPanel>
-                <TextBlock Text="정수 배율은 화면 가장자리에 검은 테두리가 생길 수 있고, 최근접 이웃은 화면을 꽉 채웁니다."
+                <TextBlock Text="정수 배율은 화면 가장자리에 검은 테두리가 생길 수 있고, 최근접 이웃은 화면을 꽉 채워요."
                            Style="{DynamicResource Caption}" Margin="0,6,0,0"/>
             </StackPanel>
         </Border>
@@ -61,7 +61,7 @@
                 <TextBlock Text="{DynamicResource Icon.Sparkles}" Style="{StaticResource RowIcon}"/>
                 <StackPanel>
                     <TextBlock Text="선명도"/>
-                    <TextBlock Text="화면 출력 단계에서 경계를 또렷하게 합니다 (모든 앱·게임에 적용)" Style="{DynamicResource Caption}"/>
+                    <TextBlock Text="화면 출력 단계에서 경계를 또렷하게 해요 (모든 앱·게임에 적용)" Style="{DynamicResource Caption}"/>
                 </StackPanel>
             </StackPanel>
         </ToggleButton>
@@ -87,7 +87,7 @@
                     <TextBlock Text="{DynamicResource Icon.Zap}" Style="{StaticResource RowIcon}"/>
                     <StackPanel>
                         <TextBlock Text="저지연 모드"/>
-                        <TextBlock Text="입력 지연을 줄입니다 (DirectX 9·11 게임, 드라이버 전역 설정)" Style="{DynamicResource Caption}"/>
+                        <TextBlock Text="입력 지연을 줄여요 (DirectX 9·11 게임, 드라이버 전역 설정)" Style="{DynamicResource Caption}"/>
                     </StackPanel>
                 </StackPanel>
                 <WrapPanel>

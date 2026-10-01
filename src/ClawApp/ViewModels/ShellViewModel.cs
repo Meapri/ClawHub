@@ -277,7 +277,7 @@ public sealed partial class ShellViewModel : ObservableObject
     {
         if (!XboxIntegration.TryOpenXboxApp(out var error))
         {
-            ShowToast($"Xbox 앱을 열 수 없습니다: {error}");
+            ShowToast($"Xbox 앱을 열 수 없어요:{error}");
             return false;
         }
         _inDesktop = false;
@@ -675,7 +675,7 @@ public sealed partial class ShellViewModel : ObservableObject
     {
         if (RunningGame is not null)
         {
-            ShowToast($"{RunningGame.Title}이(가) 이미 실행 중입니다");
+            ShowToast($"{RunningGame.Title}이(가) 이미 실행 중이에요");
             return;
         }
 
@@ -725,7 +725,7 @@ public sealed partial class ShellViewModel : ObservableObject
     private void QuitGame()
     {
         if (Session is null || RunningGame is null) return;
-        if (!ConfirmTwice("quit", $"{RunningGame.Title}을(를) 종료합니다")) return;
+        if (!ConfirmTwice("quit", $"{RunningGame.Title}을(를) 종료해요")) return;
         KillInBackground(Session);
         CloseMenus();
         ShowToast("게임을 종료하는 중…");
@@ -833,7 +833,7 @@ public sealed partial class ShellViewModel : ObservableObject
         try { await Task.Delay(duration, cancel); }
         catch (OperationCanceledException) { /* 사용자가 끝냄 */ }
         await SyncControllerAsync();
-        ShowToast("테스트 끝 — 원래 버튼으로 돌아왔습니다");
+        ShowToast("테스트 끝 — 원래 버튼으로 돌아왔어요");
     }
 
     public async Task RefreshStatusAsync()
@@ -849,7 +849,7 @@ public sealed partial class ShellViewModel : ObservableObject
 
     public async Task<bool> SendAsync(Request request)
     {
-        if (!ServiceConnected) { ShowToast("ClawHub 서비스가 실행되고 있지 않습니다"); return false; }
+        if (!ServiceConnected) { ShowToast("ClawHub 서비스가 실행되고 있지 않아요"); return false; }
         try
         {
             var resp = await Service.SendAsync(request);
@@ -900,13 +900,13 @@ public sealed partial class ShellViewModel : ObservableObject
     }
 
     [RelayCommand] private static void Sleep() => SystemControls.Sleep();
-    [RelayCommand] private void Restart() { if (ConfirmTwice("restart", "다시 시작합니다")) SystemControls.Restart(); }
-    [RelayCommand] private void Shutdown() { if (ConfirmTwice("shutdown", "시스템을 종료합니다")) SystemControls.Shutdown(); }
+    [RelayCommand] private void Restart() { if (ConfirmTwice("restart", "다시 시작해요")) SystemControls.Restart(); }
+    [RelayCommand] private void Shutdown() { if (ConfirmTwice("shutdown", "시스템을 종료해요")) SystemControls.Shutdown(); }
 
     [RelayCommand]
     private async Task ExitApp()
     {
-        if (!ConfirmTwice("exit", "ClawHub를 종료합니다")) return;
+        if (!ConfirmTwice("exit", "ClawHub를 종료해요")) return;
         if (ServiceConnected)
         {
             try { await Service.SendAsync(new Request { Op = Ops.RestoreMapping }, TimeSpan.FromSeconds(3)); }

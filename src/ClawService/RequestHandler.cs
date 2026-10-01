@@ -28,7 +28,7 @@ public sealed class RequestHandler(ILogger<RequestHandler> log, ControllerManage
         if (req.Brightness is < 0 or > 100) throw new ArgumentException("밝기는 0~100");
         if (req.FpsLimit is < 0 or > 240) throw new ArgumentException("FPS 제한은 0~240");
         if (req.FrameGeneration is < 0 or > 3) throw new ArgumentException("프레임 생성은 0~3");
-        if (req.AppState is { Profiles.Count: > 100 }) throw new ArgumentException("프로필이 너무 많습니다");
+        if (req.AppState is { Profiles.Count: > 100 }) throw new ArgumentException("프로필이 너무 많아요");
         if (req.EnduranceControl is { } egc && !Enum.IsDefined(egc)) throw new ArgumentException("잘못된 Endurance Gaming 설정");
         if (req.EnduranceMode is { } egm && !Enum.IsDefined(egm)) throw new ArgumentException("잘못된 Endurance Gaming 모드");
         if (req.PowerSource is { } src && !Enum.IsDefined(src)) throw new ArgumentException("잘못된 전원 구분");
@@ -98,7 +98,7 @@ public sealed class RequestHandler(ILogger<RequestHandler> log, ControllerManage
                     var cmd = req.Command ?? throw new ArgumentException("Command 누락");
                     if (!KnownCommands.Contains(cmd) && !cmd.StartsWith(AppCommands.SetProfilePrefix, StringComparison.Ordinal))
                         throw new ArgumentException($"알 수 없는 명령 {cmd}");
-                    if (RelayAppCommand is null || system.AppState is null) throw new InvalidOperationException("ClawHub 앱이 실행 중이 아닙니다");
+                    if (RelayAppCommand is null || system.AppState is null) throw new InvalidOperationException("ClawHub 앱이 실행 중이 아니에요");
                     RelayAppCommand(cmd);
                     break;
                 case Ops.SetMsiCenter:
@@ -146,7 +146,7 @@ public sealed class RequestHandler(ILogger<RequestHandler> log, ControllerManage
         };
         if (s.Graphics is { } g) g.Endurance = endurance.State;
         if (ec.Error is not null) s.Warnings.Add($"EC: {ec.Error}");
-        if (!controller.Connected) s.Warnings.Add("컨트롤러가 연결되지 않았습니다");
+        if (!controller.Connected) s.Warnings.Add("컨트롤러가 연결되지 않았어요");
         return s;
     }
 }

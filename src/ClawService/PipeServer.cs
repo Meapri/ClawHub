@@ -153,7 +153,7 @@ public sealed class PipeServer(ILogger<PipeServer> log, RequestHandler handler)
                     resp = new Response
                     {
                         Ok = false,
-                        Error = "다른 사용자가 이 기기를 쓰고 있어 상태 조회만 할 수 있습니다",
+                        Error = "다른 사용자가 이 기기를 쓰고 있어 상태 조회만 할 수 있어요",
                         Status = await Task.Run(handler.BuildStatus, ct),
                     };
                 }

@@ -162,7 +162,7 @@ public sealed partial class GameViewModel(ShellViewModel shell, GameTileViewMode
     private void Hide()
     {
         shell.Library.SetHidden(Tile.Game, true);
-        shell.ShowToast($"{Tile.Title}을(를) 라이브러리에서 숨겼습니다 (설정 → 숨긴 게임 복원)");
+        shell.ShowToast($"{Tile.Title}을(를) 라이브러리에서 숨겼어요 (설정 → 숨긴 게임 복원)");
         shell.GoBack();
     }
 

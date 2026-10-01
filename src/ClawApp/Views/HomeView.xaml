@@ -67,7 +67,7 @@
                                HorizontalAlignment="Left" VerticalAlignment="Top"/>
                         <StackPanel VerticalAlignment="Bottom">
                             <TextBlock Text="아직 게임이 없어요" FontSize="30" FontWeight="Bold"/>
-                            <TextBlock Text="설정 → 라이브러리에서 실행 파일을 고르거나, Steam·Epic에 설치하면 자동으로 나타납니다."
+                            <TextBlock Text="설정 → 라이브러리에서 실행 파일을 고르거나, Steam·Epic에 설치하면 자동으로 나타나요."
                                        FontSize="14" TextWrapping="Wrap" Opacity="0.85" Margin="0,8,0,0"/>
                         </StackPanel>
                     </Grid>

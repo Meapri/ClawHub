@@ -119,7 +119,7 @@ public static class ArtSources
         req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey.Trim());
         using var resp = await Http.SendAsync(req, ct);
         if (resp.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
-            throw new UnauthorizedAccessException("SteamGridDB API 키가 올바르지 않습니다");
+            throw new UnauthorizedAccessException("SteamGridDB API 키가 올바르지 않아요");
         if (resp.StatusCode == HttpStatusCode.NotFound) return null; // 해당 게임에 이미지 없음
         resp.EnsureSuccessStatusCode();
         var body = await resp.Content.ReadFromJsonAsync<SgdbResponse<T>>(ct);
@@ -208,7 +208,7 @@ public static class UserArt
 
     public static string Save(GameEntry g, ArtKind kind, byte[] bytes)
     {
-        var ext = ImageFormat.Extension(bytes) ?? throw new InvalidDataException("지원하지 않는 이미지 형식입니다");
+        var ext = ImageFormat.Extension(bytes) ?? throw new InvalidDataException("지원하지 않는 이미지 형식이에요");
         var dir = ArtFetcher.CacheDir(g);
         Directory.CreateDirectory(dir);
         var target = Path.Combine(dir, $"{Prefix(kind)}{DateTime.UtcNow:yyyyMMddHHmmssfff}{ext}");
@@ -222,8 +222,8 @@ public static class UserArt
     public static string SaveFromFile(GameEntry g, ArtKind kind, string path)
     {
         var info = new FileInfo(path);
-        if (!info.Exists) throw new FileNotFoundException("파일이 없습니다", path);
-        if (info.Length > ArtSources.MaxImageBytes) throw new InvalidDataException("이미지 파일이 너무 큽니다 (25MB 이하)");
+        if (!info.Exists) throw new FileNotFoundException("파일이 없어요", path);
+        if (info.Length > ArtSources.MaxImageBytes) throw new InvalidDataException("이미지 파일이 너무 커요 (25MB 이하)");
         return Save(g, kind, File.ReadAllBytes(path));
     }
 
