@@ -2,40 +2,53 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:ClawApp"
+             xmlns:m="clr-namespace:ClawApp.Motion"
              KeyboardNavigation.DirectionalNavigation="Contained">
-    <DockPanel Margin="32,0,22,0">
-        <!-- 탭 (LB/RB) -->
-        <ItemsControl DockPanel.Dock="Top" ItemsSource="{Binding Tabs}" AlternationCount="100" Focusable="False" Margin="0,0,0,8">
-            <ItemsControl.ItemsPanel>
+    <DockPanel Margin="48,0,40,0">
+        <!-- 피벗 머리글 (LB/RB): 고른 분류만 밝게. 바뀌면 이동 방향으로 미끄러진다 -->
+        <!-- 표시 전용 Selector: SelectedIndex = TabIndex, 패드 포커스는 받지 않는다 -->
+        <ListBox DockPanel.Dock="Top" ItemsSource="{Binding Tabs}" SelectedIndex="{Binding TabIndex, Mode=OneWay}"
+                 Focusable="False" IsHitTestVisible="False" Margin="0,0,0,16"
+                 m:Entrance.Stagger="Items" m:Entrance.Key="{Binding TabIndex}" m:Entrance.Offset="36">
+            <ListBox.Template>
+                <ControlTemplate TargetType="ListBox"><ItemsPresenter/></ControlTemplate>
+            </ListBox.Template>
+            <ListBox.ItemsPanel>
                 <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
-            </ItemsControl.ItemsPanel>
-            <ItemsControl.ItemTemplate>
-                <DataTemplate>
-                    <Border x:Name="Tab" CornerRadius="16" Padding="16,7" Margin="0,0,8,0" Background="Transparent">
-                        <TextBlock x:Name="Label" Text="{Binding Label}" FontSize="15" Foreground="{DynamicResource TextDim}"/>
-                    </Border>
-                    <DataTemplate.Triggers>
-                        <DataTrigger Value="True">
-                            <DataTrigger.Binding>
-                                <MultiBinding Converter="{x:Static local:TabSelectedConverter.Instance}">
-                                    <Binding Path="(ItemsControl.AlternationIndex)" RelativeSource="{RelativeSource AncestorType=ContentPresenter}"/>
-                                    <Binding Path="DataContext.TabIndex" RelativeSource="{RelativeSource AncestorType=ItemsControl}"/>
-                                </MultiBinding>
-                            </DataTrigger.Binding>
-                            <Setter TargetName="Tab" Property="Background" Value="{DynamicResource SurfaceHi}"/>
-                            <Setter TargetName="Label" Property="Foreground" Value="{DynamicResource Text}"/>
-                        </DataTrigger>
-                    </DataTemplate.Triggers>
-                </DataTemplate>
-            </ItemsControl.ItemTemplate>
-        </ItemsControl>
+            </ListBox.ItemsPanel>
+            <ListBox.ItemContainerStyle>
+                <Style TargetType="ListBoxItem">
+                    <Setter Property="Focusable" Value="False"/>
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="ListBoxItem">
+                                <StackPanel Margin="0,0,30,0">
+                                    <TextBlock x:Name="Label" Text="{Binding Label}" Style="{StaticResource PivotItem}"/>
+                                    <!-- 고른 분류 밑의 강조색 막대 -->
+                                    <Border x:Name="Bar" Height="3" Width="24" HorizontalAlignment="Left" Margin="1,4,0,0"
+                                            Background="{DynamicResource Accent}" Visibility="Hidden"/>
+                                </StackPanel>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter TargetName="Label" Property="Foreground" Value="{DynamicResource Text}"/>
+                                        <Setter TargetName="Bar" Property="Visibility" Value="Visible"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </ListBox.ItemContainerStyle>
+        </ListBox>
 
         <Grid>
-            <TextBlock Text="이 분류에는 게임이 없어요" Style="{StaticResource Caption}" FontSize="18"
-                       HorizontalAlignment="Center" VerticalAlignment="Center"
+            <TextBlock Text="이 분류에는 게임이 없어요" Style="{StaticResource H2}" Foreground="{DynamicResource TextDim}"
+                       HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,8,0,0"
                        Visibility="{Binding IsEmpty, Converter={StaticResource Vis}}"/>
-            <ScrollViewer Margin="-10,0,0,0">
-                <ItemsControl ItemsSource="{Binding Tiles}" ItemTemplate="{StaticResource CoverTile}" Focusable="False">
+            <!-- 포커스 테두리가 잘리지 않게 스크롤 영역을 바깥으로 6px 넓힌다 -->
+            <ScrollViewer Margin="-6,-6,0,0">
+                <ItemsControl ItemsSource="{Binding Tiles}" ItemTemplate="{StaticResource CoverTile}" Focusable="False" Margin="6,6,0,12"
+                              m:Entrance.Stagger="Items" m:Entrance.Key="{Binding TabIndex}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>

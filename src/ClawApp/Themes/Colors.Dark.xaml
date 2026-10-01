@@ -32,4 +32,31 @@
     <SolidColorBrush x:Key="Good" Color="#6CCB5F"/>
     <SolidColorBrush x:Key="Warn" Color="#FCE100"/>
     <SolidColorBrush x:Key="Danger" Color="#FF99A4"/>
+
+    <!-- ── 메트로 + 흐림 ───────────────────────────────────── -->
+    <!-- 흐린 게임 아트 위에 까는 어둡게 하기 층 (아크릴 틴트) -->
+    <SolidColorBrush x:Key="BackdropTint" Color="#B3101010"/>
+    <!-- 화면 위쪽(제목)·아래쪽(힌트)을 조금 더 어둡게: 글자 대비 확보 -->
+    <LinearGradientBrush x:Key="BackdropShade" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#66000000" Offset="0"/>
+        <GradientStop Color="#00000000" Offset="0.3"/>
+        <GradientStop Color="#00000000" Offset="0.8"/>
+        <GradientStop Color="#80000000" Offset="1"/>
+    </LinearGradientBrush>
+    <!-- 게임 아트가 없을 때의 배경 -->
+    <LinearGradientBrush x:Key="BackdropFallback" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#1B1B22" Offset="0"/>
+        <GradientStop Color="#101012" Offset="1"/>
+    </LinearGradientBrush>
+    <!-- 반투명 타일·카드 (배경이 비쳐 보이는 유리판) -->
+    <SolidColorBrush x:Key="TileFill" Color="#1FFFFFFF"/>
+    <SolidColorBrush x:Key="TileFillHover" Color="#2EFFFFFF"/>
+    <SolidColorBrush x:Key="TileText" Color="#FFFFFF"/>
+    <!-- 포커스 테두리 안쪽의 얇은 대비선 (밝은 아트 위에서도 보이게) -->
+    <SolidColorBrush x:Key="FocusInner" Color="#B3000000"/>
+    <!-- 위험 동작 타일 (게임 종료): 메트로 레드 -->
+    <SolidColorBrush x:Key="DangerFill" Color="#E51400"/>
+    <SolidColorBrush x:Key="OnDanger" Color="#FFFFFF"/>
+    <!-- 피벗에서 선택되지 않은 머리글 -->
+    <SolidColorBrush x:Key="PivotDim" Color="#66FFFFFF"/>
 </ResourceDictionary>

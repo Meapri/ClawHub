@@ -2,85 +2,167 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:ClawApp"
+             xmlns:m="clr-namespace:ClawApp.Motion"
              KeyboardNavigation.DirectionalNavigation="Contained">
-    <Grid Margin="32,4,0,0">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
+    <!--
+      메트로 시작 화면: 가로로 흐르는 타일 그룹 (파노라마).
+      타일 단위 168 (+간격 8): 작게 80 · 보통 168 · 넓게 344×168 · 크게 344×344. 그룹 높이 = 3단 = 528.
+      [지금 플레이 중] [이어서 플레이] [최근 게임] [ClawHub]
+      처음 열릴 때 왼쪽 열부터 차례로 쓸려 들어온다 (Entrance.Stagger=Tiles).
+    -->
+    <ScrollViewer HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled">
+        <StackPanel Orientation="Horizontal" Margin="48,24,48,0" VerticalAlignment="Top" m:Entrance.Stagger="Tiles">
 
-        <!-- 게임이 하나도 없을 때 -->
-        <StackPanel Grid.RowSpan="2" VerticalAlignment="Center" HorizontalAlignment="Center"
-                    Visibility="{Binding IsEmpty, Converter={StaticResource Vis}}">
-            <TextBlock Text="아직 게임이 없어요" Style="{StaticResource H1}" HorizontalAlignment="Center"/>
-            <TextBlock Text="설정 → 게임 추가에서 실행 파일을 고르거나, Steam·Epic에 설치하면 자동으로 나타납니다."
-                       Style="{StaticResource Caption}" Margin="0,10,0,24" HorizontalAlignment="Center"/>
-            <Button Style="{StaticResource PrimaryButton}" Content="설정 열기" HorizontalAlignment="Center" local:Nav.InitialFocus="True"
-                    Command="{Binding DataContext.OpenSettingsCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
-        </StackPanel>
-
-        <!-- 히어로: 최근 게임 -->
-        <Grid Visibility="{Binding IsEmpty, Converter={StaticResource NotVis}}" Margin="0,0,32,0" Height="300">
-            <!-- 게임 아트 배너: 테마와 상관없이 아트 위 글자는 흰색 (아래쪽을 어둡게 깔아 가독성 확보) -->
-            <Grid>
-                <Border CornerRadius="8" Background="{Binding Hero.Placeholder}"/>
-                <Border CornerRadius="8" Visibility="{Binding Hero.HasHero, Converter={StaticResource Vis}}">
-                    <Border.Background>
-                        <ImageBrush ImageSource="{Binding Hero.Hero}" Stretch="UniformToFill" AlignmentY="Center"/>
-                    </Border.Background>
-                </Border>
-                <Image Source="{Binding Hero.Icon}" Width="96" Height="96" HorizontalAlignment="Right" Margin="0,0,64,0"
-                       Visibility="{Binding Hero.HasHero, Converter={StaticResource NotVis}}"/>
-                <Border CornerRadius="8" BorderBrush="{DynamicResource CardStroke}" BorderThickness="1">
-                    <Border.Background>
-                        <LinearGradientBrush StartPoint="0,1" EndPoint="0.8,0">
-                            <GradientStop Color="#E0000000" Offset="0"/>
-                            <GradientStop Color="#00000000" Offset="0.75"/>
-                        </LinearGradientBrush>
-                    </Border.Background>
-                </Border>
-            </Grid>
-            <StackPanel VerticalAlignment="Bottom" Margin="32,0,0,28" TextElement.Foreground="White">
-                <TextBlock Text="{Binding Hero.LastPlayedLabel}" FontSize="12" Opacity="0.85" Margin="0,0,0,6"/>
-                <!-- 로고 아트가 있으면 로고, 없으면 제목 -->
-                <Image Source="{Binding Hero.Logo}" MaxWidth="360" MaxHeight="120" HorizontalAlignment="Left" Stretch="Uniform"
-                       Visibility="{Binding Hero.HasLogo, Converter={StaticResource Vis}}" Margin="0,0,0,8"/>
-                <TextBlock Text="{Binding Hero.Title}" FontFamily="{StaticResource DisplayFont}" FontSize="36" FontWeight="SemiBold"
-                           MaxWidth="700" HorizontalAlignment="Left" TextTrimming="CharacterEllipsis"
-                           Visibility="{Binding Hero.HasLogo, Converter={StaticResource NotVis}}"/>
-                <TextBlock Text="{Binding Hero.ProfileLabel}" FontSize="12" Opacity="0.85" Margin="0,2,0,16"/>
+            <!-- ── 지금 플레이 중 (게임 실행 중일 때만) ───────── -->
+            <StackPanel Margin="0,0,40,0"
+                        Visibility="{Binding DataContext.IsGameRunning, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Vis}, FallbackValue=Collapsed}">
+                <TextBlock Text="지금 플레이 중" Style="{StaticResource GroupHeader}"/>
+                <Button Style="{StaticResource MetroTile}" Width="344" Height="344" local:Nav.InitialFocus="True"
+                        Command="{Binding DataContext.ReturnToBackgroundCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                        DataContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Window}}"
+                        m:Backdrop.FocusSource="{Binding RunningTile.Hero}">
+                    <Grid TextElement.Foreground="White">
+                        <Border Background="{Binding RunningTile.Placeholder}"/>
+                        <Border Visibility="{Binding RunningTile.HasHero, Converter={StaticResource Vis}, FallbackValue=Collapsed}">
+                            <Border.Background><ImageBrush ImageSource="{Binding RunningTile.Hero}" Stretch="UniformToFill"/></Border.Background>
+                        </Border>
+                        <Border>
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                    <GradientStop Color="#00000000" Offset="0.35"/>
+                                    <GradientStop Color="#D0000000" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Border.Background>
+                        </Border>
+                        <!-- 실행 중 표시: 강조색 띠 -->
+                        <Border Height="6" VerticalAlignment="Top" Background="{DynamicResource Accent}"/>
+                        <StackPanel VerticalAlignment="Bottom" Margin="18,0,18,16">
+                            <Image Source="{Binding RunningTile.Logo}" MaxWidth="240" MaxHeight="80" HorizontalAlignment="Left" Stretch="Uniform"
+                                   Margin="0,0,0,10" Visibility="{Binding RunningTile.HasLogo, Converter={StaticResource Vis}, FallbackValue=Collapsed}"/>
+                            <TextBlock Text="{Binding RunningGameTitle}" FontSize="26" FontWeight="Bold" TextTrimming="CharacterEllipsis"
+                                       Visibility="{Binding RunningTile.HasLogo, Converter={StaticResource NotVis}, FallbackValue=Visible}"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                <TextBlock Text="{StaticResource Icon.Play}" Style="{StaticResource Icon}" FontSize="17" Margin="0,0,10,0"/>
+                                <TextBlock Text="게임으로 돌아가기" FontSize="16" FontWeight="SemiBold"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+                </Button>
                 <StackPanel Orientation="Horizontal">
-                    <Button Style="{StaticResource PrimaryButton}" Command="{Binding Hero.PlayCommand}" local:Nav.InitialFocus="True" Margin="0,0,10,0" MinWidth="140">
-                        <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE768;" Style="{StaticResource Icon}" Margin="0,0,10,0"/><TextBlock Text="플레이"/></StackPanel>
-                    </Button>
-                    <Button Style="{StaticResource NavButton}" Command="{Binding Hero.OpenCommand}" Margin="0" Padding="20,10"
-                            Background="#33FFFFFF" BorderBrush="#40FFFFFF" Foreground="White">
-                        <TextBlock Text="자세히"/>
-                    </Button>
+                    <!-- 실수로 끄지 않게 두 번 눌러야 종료 (토스트로 안내) -->
+                    <Button Style="{StaticResource DangerTile}" Tag="{StaticResource Icon.CircleStop}" Content="게임 종료"
+                            Command="{Binding DataContext.QuitGameCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                    <Button Style="{StaticResource GlassTile}" Tag="{StaticResource Icon.Info}" Content="게임 정보"
+                            Command="{Binding DataContext.RunningTile.OpenCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
                 </StackPanel>
             </StackPanel>
-        </Grid>
 
-        <!-- 최근/전체 줄 -->
-        <DockPanel Grid.Row="1" Visibility="{Binding IsEmpty, Converter={StaticResource NotVis}}" Margin="0,14,0,0">
-            <TextBlock DockPanel.Dock="Top" Text="최근 플레이" Style="{StaticResource Section}" Margin="2,4,0,0"/>
-            <ScrollViewer HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled" Margin="-10,0,0,0">
-                <StackPanel Orientation="Horizontal">
-                    <ItemsControl ItemsSource="{Binding Recent}" ItemTemplate="{StaticResource CoverTile}" Focusable="False">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                    </ItemsControl>
-                    <!-- 라이브러리 바로가기 타일 -->
-                    <Button Style="{StaticResource TileButton}" Width="168" Height="252" Margin="10,10,32,10"
-                            Command="{Binding DataContext.OpenLibraryCommand, RelativeSource={RelativeSource AncestorType=Window}}">
-                        <StackPanel VerticalAlignment="Center">
-                            <TextBlock Text="&#xE8F1;" Style="{StaticResource Icon}" FontSize="40" HorizontalAlignment="Center"/>
-                            <TextBlock Text="라이브러리 전체" FontSize="16" HorizontalAlignment="Center" Margin="0,12,0,0"/>
+            <!-- ── 게임이 하나도 없을 때 ───────────────────── -->
+            <StackPanel Margin="0,0,40,0" Visibility="{Binding IsEmpty, Converter={StaticResource Vis}}">
+                <TextBlock Text="시작하기" Style="{StaticResource GroupHeader}"/>
+                <Button Style="{StaticResource MetroTile}" Width="520" Height="344" local:Nav.InitialFocus="True"
+                        Command="{Binding DataContext.OpenSettingsCommand, RelativeSource={RelativeSource AncestorType=Window}}">
+                    <Grid Margin="22,20">
+                        <TextBlock Text="{StaticResource Icon.Gamepad2}" FontFamily="{StaticResource LucideFont}" FontSize="64"
+                               HorizontalAlignment="Left" VerticalAlignment="Top"/>
+                        <StackPanel VerticalAlignment="Bottom">
+                            <TextBlock Text="아직 게임이 없어요" FontSize="30" FontWeight="Bold"/>
+                            <TextBlock Text="설정 → 라이브러리에서 실행 파일을 고르거나, Steam·Epic에 설치하면 자동으로 나타납니다."
+                                       FontSize="14" TextWrapping="Wrap" Opacity="0.85" Margin="0,8,0,0"/>
                         </StackPanel>
-                    </Button>
+                    </Grid>
+                </Button>
+            </StackPanel>
+
+            <!-- ── 이어서 플레이 (히어로, 라이브 타일) ─────────── -->
+            <StackPanel Margin="0,0,40,0" Visibility="{Binding IsEmpty, Converter={StaticResource NotVis}}">
+                <TextBlock Text="이어서 플레이" Style="{StaticResource GroupHeader}"/>
+                <Button Style="{StaticResource MetroTile}" Width="520" Height="344" Background="{DynamicResource TileFill}"
+                        Command="{Binding Hero.PlayCommand}" local:Nav.InitialFocus="True" m:Backdrop.FocusSource="{Binding Hero.Hero}">
+                    <Grid TextElement.Foreground="White">
+                        <Grid ClipToBounds="True" m:LiveTile.IsLive="True">
+                            <!-- 앞면: 게임 아트 + 로고 -->
+                            <Grid>
+                                <Border Background="{Binding Hero.Placeholder}"/>
+                                <Border Visibility="{Binding Hero.HasHero, Converter={StaticResource Vis}}">
+                                    <Border.Background><ImageBrush ImageSource="{Binding Hero.Hero}" Stretch="UniformToFill"/></Border.Background>
+                                </Border>
+                                <Image Source="{Binding Hero.Icon}" Width="96" Height="96" HorizontalAlignment="Right" VerticalAlignment="Top"
+                                       Margin="0,36,40,0" Visibility="{Binding Hero.HasHero, Converter={StaticResource NotVis}}"/>
+                                <Border>
+                                    <Border.Background>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                            <GradientStop Color="#00000000" Offset="0.4"/>
+                                            <GradientStop Color="#C8000000" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                </Border>
+                                <StackPanel VerticalAlignment="Bottom" Margin="20,0,20,50">
+                                    <Image Source="{Binding Hero.Logo}" MaxWidth="280" MaxHeight="96" HorizontalAlignment="Left" Stretch="Uniform"
+                                           Visibility="{Binding Hero.HasLogo, Converter={StaticResource Vis}}"/>
+                                    <TextBlock Text="{Binding Hero.Title}" FontSize="32" FontWeight="Bold" TextTrimming="CharacterEllipsis"
+                                               Visibility="{Binding Hero.HasLogo, Converter={StaticResource NotVis}}"/>
+                                </StackPanel>
+                            </Grid>
+                            <!-- 뒷면: 정보 -->
+                            <Grid Background="{DynamicResource Accent}" Visibility="Hidden" TextElement.Foreground="{DynamicResource AccentText}">
+                                <StackPanel Margin="20,18,20,0">
+                                    <TextBlock Text="{Binding Hero.SourceLabel}" FontSize="13" Opacity="0.8"/>
+                                    <TextBlock Text="{Binding Hero.Title}" FontSize="36" FontWeight="Bold" TextWrapping="Wrap" MaxHeight="150"
+                                               TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
+                                    <TextBlock Text="{Binding Hero.LastPlayedLabel}" FontSize="17" FontWeight="SemiBold" Margin="0,12,0,0"/>
+                                    <TextBlock Text="{Binding Hero.ProfileLabel}" FontSize="14" Opacity="0.85" Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </Grid>
+                        </Grid>
+                        <!-- 두 면 공통: 왼쪽 아래 동작 이름 -->
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom" Margin="20,0,20,16">
+                            <TextBlock Text="{StaticResource Icon.Play}" Style="{StaticResource Icon}" FontSize="18" Margin="0,0,10,0"/>
+                            <TextBlock Text="플레이" FontSize="17" FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </Grid>
+                </Button>
+                <StackPanel Orientation="Horizontal">
+                    <Button Style="{StaticResource FunctionTile}" Width="344" Tag="{StaticResource Icon.Library}" Content="라이브러리"
+                            Command="{Binding DataContext.OpenLibraryCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                    <Button Style="{StaticResource GlassTile}" Tag="{StaticResource Icon.Info}" Content="게임 정보" Command="{Binding Hero.OpenCommand}"/>
                 </StackPanel>
-            </ScrollViewer>
-        </DockPanel>
-    </Grid>
+            </StackPanel>
+
+            <!-- ── 최근 게임 (2단 커버, 라이브 타일) ──────────── -->
+            <StackPanel Margin="0,0,40,0" Visibility="{Binding IsEmpty, Converter={StaticResource NotVis}}">
+                <TextBlock Text="최근 게임" Style="{StaticResource GroupHeader}"/>
+                <ItemsControl ItemsSource="{Binding Recent}" ItemTemplate="{StaticResource LiveCoverTile}" Focusable="False">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate><WrapPanel Orientation="Vertical" Height="528"/></ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                </ItemsControl>
+            </StackPanel>
+
+            <!-- ── ClawHub 기능 (강조색·유리 타일을 바둑판으로) ─── -->
+            <StackPanel>
+                <TextBlock Text="ClawHub" Style="{StaticResource GroupHeader}"/>
+                <Grid DataContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Window}}">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="176"/><ColumnDefinition Width="176"/></Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions><RowDefinition Height="176"/><RowDefinition Height="176"/><RowDefinition Height="176"/></Grid.RowDefinitions>
+
+                    <Button Style="{StaticResource FunctionTile}" Tag="{StaticResource Icon.Keyboard}" Content="키 매핑" Command="{Binding OpenProfilesCommand}"/>
+                    <Button Grid.Column="1" Style="{StaticResource GlassTile}" Tag="{StaticResource Icon.Settings}" Content="설정" Command="{Binding OpenSettingsCommand}"/>
+                    <Button Grid.Row="1" Style="{StaticResource GlassTile}" Tag="{StaticResource Icon.Gamepad2}" Content="Xbox 앱" Command="{Binding OpenXboxAppCommand}"/>
+                    <Button Grid.Row="1" Grid.Column="1" Style="{StaticResource FunctionTile}" Tag="{StaticResource Icon.Monitor}" Content="데스크톱으로"
+                            Command="{Binding GoToDesktopCommand}"/>
+
+                    <!-- 전원: 작은 타일 2×2 (다시 시작·종료는 두 번 눌러야 실행) -->
+                    <WrapPanel Grid.Row="2" Width="176">
+                        <Button Style="{StaticResource SmallTile}" Tag="{StaticResource Icon.Moon}" Content="절전" Command="{Binding SleepCommand}"/>
+                        <Button Style="{StaticResource SmallTile}" Tag="{StaticResource Icon.RotateCcw}" Content="다시 시작" Command="{Binding RestartCommand}"/>
+                        <Button Style="{StaticResource SmallTile}" Tag="{StaticResource Icon.Power}" Content="시스템 종료" Command="{Binding ShutdownCommand}"/>
+                        <Button Style="{StaticResource SmallTile}" Tag="{StaticResource Icon.LogOut}" Content="ClawHub 종료" Command="{Binding ExitAppCommand}"/>
+                    </WrapPanel>
+                    <Button Grid.Row="2" Grid.Column="1" Style="{StaticResource FunctionTile}" Tag="{StaticResource Icon.SlidersHorizontal}" Content="빠른 설정"
+                            Command="{Binding OpenQuickSettingsCommand}"/>
+                </Grid>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
 </UserControl>

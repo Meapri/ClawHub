@@ -2,27 +2,29 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:ClawApp"
+             xmlns:m="clr-namespace:ClawApp.Motion"
              KeyboardNavigation.DirectionalNavigation="Contained">
-    <!-- Windows 11 빠른 설정 패널 모양: 토글 타일 → 슬라이더 → 하단 바 -->
-    <Border Background="{DynamicResource Bg1}" BorderBrush="{DynamicResource CardStroke}" BorderThickness="1" CornerRadius="8">
+    <!-- 메트로 참(charms) 바: 오른쪽 가장자리에 붙은 직각 패널. 토글 타일 → 슬라이더 → 하단 바 -->
+    <Border Background="{DynamicResource Bg1}" BorderBrush="{DynamicResource Accent}" BorderThickness="3,0,0,0">
         <DockPanel>
             <!-- 하단 바: 배터리 + 전체 설정 -->
             <Border DockPanel.Dock="Bottom" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Divider}" BorderThickness="0,1,0,0"
-                    CornerRadius="0,0,8,8" Padding="16,8">
+                    Padding="20,8">
                 <DockPanel>
                     <Button DockPanel.Dock="Right" Style="{StaticResource NavItem}" Command="{Binding OpenAllSettingsCommand}" Width="40" Padding="0"
                             HorizontalContentAlignment="Center" ToolTip="전체 설정">
-                        <TextBlock Text="&#xE713;" Style="{StaticResource Icon}"/>
+                        <TextBlock Text="{StaticResource Icon.Settings}" Style="{StaticResource Icon}"/>
                     </Button>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock Text="&#xE83F;" Style="{StaticResource Icon}" Margin="0,0,8,0"/>
+                        <TextBlock Text="{StaticResource Icon.Battery}" Style="{StaticResource Icon}" Margin="0,0,10,0"/>
                         <TextBlock Text="{Binding BatteryText}" VerticalAlignment="Center"/>
                     </StackPanel>
                 </DockPanel>
             </Border>
 
-            <ScrollViewer Padding="20,20,20,8">
-                <StackPanel>
+            <ScrollViewer Padding="24,24,24,8">
+                <StackPanel m:Entrance.Stagger="Items" m:Entrance.Offset="48">
+                    <TextBlock Text="빠른 설정" Style="{StaticResource H1}" Margin="0,0,0,16"/>
                     <!-- 실시간 상태 (2초마다) -->
                     <Border Style="{StaticResource CardPanel}" Padding="14,10" Margin="0,0,0,14">
                         <UniformGrid Columns="4">
@@ -49,7 +51,7 @@
                         <Button Style="{StaticResource NavButton}" Command="{Binding CycleProfileCommand}" local:Nav.InitialFocus="True"
                                 HorizontalContentAlignment="Stretch">
                             <DockPanel>
-                                <TextBlock DockPanel.Dock="Left" Text="&#xE765;" Style="{StaticResource Icon}" Margin="0,0,14,0"/>
+                                <TextBlock DockPanel.Dock="Left" Text="{StaticResource Icon.Keyboard}" Style="{StaticResource Icon}" Margin="0,0,14,0"/>
                                 <TextBlock DockPanel.Dock="Right" Text="A로 변경" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="10,0,0,0"/>
                                 <StackPanel>
                                     <TextBlock Text="{Binding TargetTitle}" Style="{StaticResource Caption}" TextTrimming="CharacterEllipsis"/>
@@ -63,11 +65,11 @@
                     <TextBlock Text="{Binding PerfUnavailableText}" Style="{StaticResource Caption}" Foreground="{DynamicResource Warn}" Margin="0,0,0,8"
                                Visibility="{Binding PerfAvailable, Converter={StaticResource NotVis}}"/>
                     <WrapPanel IsEnabled="{Binding PerfAvailable}">
-                        <RadioButton Style="{StaticResource QuickTileRadio}" GroupName="perf" Tag="&#xEC48;" Content="절전" IsChecked="{Binding IsBattery}"/>
-                        <RadioButton Style="{StaticResource QuickTileRadio}" GroupName="perf" Tag="&#xEC49;" Content="균형" IsChecked="{Binding IsBalanced}"/>
-                        <RadioButton Style="{StaticResource QuickTileRadio}" GroupName="perf" Tag="&#xEC4A;" Content="성능" IsChecked="{Binding IsPerformance}" Margin="0,0,0,10"/>
-                        <RadioButton Style="{StaticResource QuickTileRadio}" GroupName="perf" Tag="&#xE713;" Content="수동 TDP" IsChecked="{Binding IsManualMode}"/>
-                        <ToggleButton Style="{StaticResource QuickTile}" Tag="&#xE9CA;" Content="쿨러 부스트" IsChecked="{Binding CoolerBoost}"/>
+                        <RadioButton Style="{StaticResource QuickTileRadio}" GroupName="perf" Tag="{StaticResource Icon.Leaf}" Content="절전" IsChecked="{Binding IsBattery}"/>
+                        <RadioButton Style="{StaticResource QuickTileRadio}" GroupName="perf" Tag="{StaticResource Icon.Scale}" Content="균형" IsChecked="{Binding IsBalanced}"/>
+                        <RadioButton Style="{StaticResource QuickTileRadio}" GroupName="perf" Tag="{StaticResource Icon.Rocket}" Content="성능" IsChecked="{Binding IsPerformance}" Margin="0,0,0,10"/>
+                        <RadioButton Style="{StaticResource QuickTileRadio}" GroupName="perf" Tag="{StaticResource Icon.SlidersHorizontal}" Content="수동 TDP" IsChecked="{Binding IsManualMode}"/>
+                        <ToggleButton Style="{StaticResource QuickTile}" Tag="{StaticResource Icon.Snowflake}" Content="쿨러 부스트" IsChecked="{Binding CoolerBoost}"/>
                     </WrapPanel>
                     <TextBlock Style="{StaticResource Caption}" Margin="2,0,0,0"><Run Text="TDP "/><Run Text="{Binding TdpText, Mode=OneWay}"/></TextBlock>
                     <TextBlock Text="{Binding PerfNote}" Style="{StaticResource Caption}" Foreground="{DynamicResource Accent}" Margin="2,2,0,0"
@@ -113,12 +115,12 @@
 
                     <!-- 슬라이더: 아이콘 + 막대 (Windows 빠른 설정과 같은 배치) -->
                     <DockPanel Margin="0,16,0,0">
-                        <TextBlock Text="&#xE706;" Style="{StaticResource Icon}" Width="28"/>
+                        <TextBlock Text="{StaticResource Icon.Sun}" Style="{StaticResource Icon}" Width="30"/>
                         <TextBlock DockPanel.Dock="Right" Text="{Binding Brightness}" Width="32" TextAlignment="Right" VerticalAlignment="Center"/>
                         <Slider Minimum="0" Maximum="100" SmallChange="5" Value="{Binding Brightness}"/>
                     </DockPanel>
                     <DockPanel Margin="0,4,0,0">
-                        <TextBlock Text="&#xE767;" Style="{StaticResource Icon}" Width="28"/>
+                        <TextBlock Text="{StaticResource Icon.Volume2}" Style="{StaticResource Icon}" Width="30"/>
                         <TextBlock DockPanel.Dock="Right" Text="{Binding Volume}" Width="32" TextAlignment="Right" VerticalAlignment="Center"/>
                         <Slider Minimum="0" Maximum="100" SmallChange="5" Value="{Binding Volume}"/>
                     </DockPanel>

@@ -260,7 +260,7 @@ public partial class MainWindow : Window
 
     private void FocusCurrent()
     {
-        DependencyObject root = _vm.IsQuickAccessOpen ? QuickPanel : _vm.IsMainMenuOpen ? MainMenu : PageHost;
+        DependencyObject root = _vm.IsQuickAccessOpen ? QuickPanel : PageHost;
 
         if (root == PageHost && _vm.CurrentPage is { } page && _focusMemory.TryGetValue(page, out var index))
         {
@@ -289,17 +289,8 @@ public partial class MainWindow : Window
         for (var i = 0; i < VisualTreeHelper.GetChildrenCount(node); i++) CollectFocusable(VisualTreeHelper.GetChild(node, i), into);
     }
 
-    /// <summary>Windows 11 진입 애니메이션: 살짝 아래에서 떠오르며 나타남 (0.2초).</summary>
-    private void PlayPageEntrance()
-    {
-        var ease = new System.Windows.Media.Animation.CubicEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut };
-        var shift = new TranslateTransform(0, 16);
-        PageHost.RenderTransform = shift;
-        shift.BeginAnimation(TranslateTransform.YProperty,
-            new System.Windows.Media.Animation.DoubleAnimation(16, 0, TimeSpan.FromMilliseconds(220)) { EasingFunction = ease });
-        PageHost.BeginAnimation(OpacityProperty,
-            new System.Windows.Media.Animation.DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(180)));
-    }
+    /// <summary>메트로 페이지 전환: 앞으로 가면 오른쪽에서, 뒤로 오면 왼쪽에서 (피벗 제목이 한 박자 늦게 따라온다).</summary>
+    private void PlayPageEntrance() => Motion.PageTransition.Play(PageHost, PivotHeader, _vm.CurrentPage);
 
     private static IInputElement? FindFocusable(DependencyObject node, bool initialOnly)
     {
