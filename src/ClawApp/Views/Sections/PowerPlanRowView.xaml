@@ -1,0 +1,58 @@
+<!-- Windows 전원 설정 한 줄 (충전 중 / 배터리 두 칸). DataContext = PowerPlanRow, IconText = 아이콘 (예: {DynamicResource Icon.Monitor}) -->
+<UserControl x:Class="ClawApp.Views.Sections.PowerPlanRowView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Name="Root">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolVisLocal"/>
+        <DataTemplate x:Key="ChipTemplate">
+            <ToggleButton Style="{DynamicResource Chip}" Content="{Binding Label}" IsChecked="{Binding IsSelected, Mode=OneWay}"
+                          Command="{Binding DataContext.PickCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                          CommandParameter="{Binding}"/>
+        </DataTemplate>
+        <ItemsPanelTemplate x:Key="WrapPanelTemplate"><WrapPanel/></ItemsPanelTemplate>
+    </UserControl.Resources>
+
+    <Border Style="{DynamicResource CardPanel}" IsEnabled="{Binding IsEnabled}"
+            Visibility="{Binding IsAvailable, Converter={StaticResource BoolVisLocal}}">
+        <StackPanel>
+            <DockPanel Margin="0,0,0,10">
+                <TextBlock DockPanel.Dock="Left" Text="{Binding IconText, ElementName=Root}" FontFamily="{DynamicResource LucideFont}"
+                           Style="{DynamicResource Icon}" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                <StackPanel>
+                    <TextBlock Text="{Binding Title}"/>
+                    <TextBlock Text="{Binding Description}" Style="{DynamicResource Caption}" TextWrapping="Wrap"/>
+                    <TextBlock Text="{Binding ExtraNote}" Style="{DynamicResource Caption}" Foreground="{DynamicResource Warn}" TextWrapping="Wrap"
+                               Visibility="{Binding HasExtraNote, Converter={StaticResource BoolVisLocal}}"/>
+                </StackPanel>
+            </DockPanel>
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="16"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0">
+                    <TextBlock Style="{DynamicResource Caption}" Margin="0,0,0,6">
+                        <Run Text="충전 중"/><Run Text=" · "/><Run Text="{Binding AcText, Mode=OneWay}"/>
+                    </TextBlock>
+                    <ItemsControl ItemsSource="{Binding AcChoices}" Focusable="False" ItemTemplate="{StaticResource ChipTemplate}"
+                                  ItemsPanel="{StaticResource WrapPanelTemplate}"
+                                  Visibility="{Binding AcApplies, Converter={StaticResource BoolVisLocal}}"/>
+                    <TextBlock Text="배터리로 돌 때만 쓰는 설정이에요" Style="{DynamicResource Caption}" TextWrapping="Wrap"
+                               Visibility="{Binding AcNotApplicable, Converter={StaticResource BoolVisLocal}}"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="2">
+                    <TextBlock Style="{DynamicResource Caption}" Margin="0,0,0,6">
+                        <Run Text="배터리"/><Run Text=" · "/><Run Text="{Binding DcText, Mode=OneWay}"/>
+                    </TextBlock>
+                    <ItemsControl ItemsSource="{Binding DcChoices}" Focusable="False" ItemTemplate="{StaticResource ChipTemplate}"
+                                  ItemsPanel="{StaticResource WrapPanelTemplate}"/>
+                </StackPanel>
+            </Grid>
+        </StackPanel>
+    </Border>
+</UserControl>

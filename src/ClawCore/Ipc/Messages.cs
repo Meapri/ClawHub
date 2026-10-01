@@ -40,6 +40,11 @@ public sealed class Request
     /// (배터리 사용 중이고 배터리 전용 값이 있으면 그 값, 아니면 기본값). "Battery" + Performance null = 배터리 전용 값 지우기.
     /// </summary>
     public PowerSourceKind? PowerSource { get; set; }
+
+    /// <summary>SetPowerPlanSetting: 바꿀 Windows 전원 설정. PowerSource 생략 = 지금 전원 상태 칸.</summary>
+    public PowerPlanSetting? PowerSetting { get; set; }
+    /// <summary>SetPowerPlanSetting: 새 값 (초 / % / 목록 값 — PowerPlanSettingState.Choices 참고).</summary>
+    public int? Value { get; set; }
 }
 
 /// <summary>위젯이 런처 앱에 보내는 명령 (AppCommand.Command 값).</summary>
@@ -169,6 +174,8 @@ public sealed class ServiceStatus
     /// <summary>배터리 전용 사용자 기본 성능 (null = 배터리여도 PerformanceOnAc).</summary>
     public PerformanceState? PerformanceOnBattery { get; set; }
     public BatteryHealth? BatteryHealth { get; set; }
+    /// <summary>Windows 전원 구성표 (화면 끄기·절전·전원 단추 등, 10초 캐시). 예전 서비스면 null.</summary>
+    public PowerPlanState? PowerPlan { get; set; }
 
     public List<string> Warnings { get; set; } = [];
 }
@@ -192,6 +199,10 @@ public static class Ops
     public const string SetAppState = "SetAppState";
     /// <summary>Intel Endurance Gaming 설정 (EnduranceControl, EnduranceMode). 서비스가 저장하고 시작·절전 복귀 때 재적용.</summary>
     public const string SetEnduranceGaming = "SetEnduranceGaming";
+    /// <summary>전원 구성표를 지금 다시 읽어 Status.PowerPlan으로 돌려준다 (평소엔 10초 캐시).</summary>
+    public const string GetPowerPlan = "GetPowerPlan";
+    /// <summary>Windows 전원 설정 하나 바꾸기 (PowerSetting, PowerSource, Value). 활성 구성표에 쓰고 바로 적용.</summary>
+    public const string SetPowerPlanSetting = "SetPowerPlanSetting";
     public const string AppCommand = "AppCommand";
     public const string Subscribe = "Subscribe";
 
