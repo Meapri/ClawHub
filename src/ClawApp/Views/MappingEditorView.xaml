@@ -210,17 +210,8 @@
                     </Grid>
 
                     <!-- 이름: 평소엔 버튼(지나가도 터치 키보드가 뜨지 않게), A를 누르면 입력칸 -->
-                    <Grid Margin="0,0,0,4">
-                        <Button x:Name="RenameButton" Style="{StaticResource NavButton}" Padding="14,9" HorizontalContentAlignment="Stretch" Click="Rename_Click"
-                                IsEnabled="{Binding IsTesting, Converter={x:Static local:InvertBool.Instance}}">
-                            <DockPanel>
-                                <TextBlock DockPanel.Dock="Right" Text="{StaticResource Icon.Pencil}" Style="{StaticResource Icon}" FontSize="15" Opacity="0.6"/>
-                                <TextBlock Text="{Binding ProfileName}" FontSize="18" FontWeight="SemiBold" TextAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                            </DockPanel>
-                        </Button>
-                        <TextBox x:Name="NameBox" Text="{Binding ProfileName}" FontSize="18" FontWeight="SemiBold" HorizontalContentAlignment="Center"
-                                 Margin="0" Visibility="Collapsed" LostKeyboardFocus="NameBox_LostFocus"/>
-                    </Grid>
+                    <v:InlineEdit Text="{Binding ProfileName}" FontSize="18" FontWeight="SemiBold" TextAlignment="Center" InnerPadding="14,9" Margin="0,0,0,4"
+                                  IsEnabled="{Binding IsTesting, Converter={x:Static local:InvertBool.Instance}}"/>
                     <TextBlock Text="{Binding SummaryText}" Style="{StaticResource Caption}" TextAlignment="Center" Margin="0,0,0,12"/>
 
                     <!-- 테스트 (테스트 중에도 터치로 끌 수 있게 입력 가로채기에서 뺀다) -->

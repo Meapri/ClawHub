@@ -50,7 +50,13 @@
         </ScrollViewer>
 
         <ScrollViewer x:Name="ContentHost" Grid.Column="1" Margin="28,0,0,0">
-            <StackPanel MaxWidth="760" HorizontalAlignment="Left" Margin="6,4,6,16">
+            <!-- 분류마다 카드 폭이 내용에 따라 달라지지 않게 한 열(최대 760)로 고정 -->
+            <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" MaxWidth="772"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel Margin="6,4,6,16">
 
                 <!-- ── 일반 ──────────────────────────────── -->
                 <StackPanel Visibility="{Binding Selected.Key, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=general}" m:Entrance.Stagger="Items">
@@ -363,6 +369,7 @@
                     </Border>
                 </StackPanel>
             </StackPanel>
+            </Grid>
         </ScrollViewer>
     </Grid>
 </UserControl>

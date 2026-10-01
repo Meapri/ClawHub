@@ -1,0 +1,29 @@
+<UserControl x:Class="ClawApp.Views.InlineEdit"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Name="Root" Focusable="False">
+    <!--
+        글자 입력칸. 평소엔 버튼이라 패드로 지나가도 터치 키보드가 뜨지 않는다.
+        A(또는 클릭) → 입력칸 + 터치 키보드, Enter·B·다른 곳 선택 → 다시 버튼 (값은 그때 저장).
+    -->
+    <Grid>
+        <Button x:Name="Display" Style="{StaticResource NavButton}" Margin="0" HorizontalContentAlignment="Stretch" Click="Display_Click"
+                Padding="{Binding InnerPadding, ElementName=Root}">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Right" Text="{StaticResource Icon.Pencil}" Style="{StaticResource Icon}" FontSize="15" Opacity="0.55"
+                           Margin="12,0,0,0"/>
+                <Grid>
+                    <TextBlock x:Name="ValueText" Text="{Binding Text, ElementName=Root}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"
+                               FontSize="{Binding FontSize, ElementName=Root}" FontWeight="{Binding FontWeight, ElementName=Root}"
+                               TextAlignment="{Binding TextAlignment, ElementName=Root}"/>
+                    <TextBlock x:Name="HintText" Text="{Binding Placeholder, ElementName=Root}" Foreground="{DynamicResource TextDim}"
+                               FontSize="{Binding FontSize, ElementName=Root}" VerticalAlignment="Center" Visibility="Collapsed"
+                               TextAlignment="{Binding TextAlignment, ElementName=Root}"/>
+                </Grid>
+            </DockPanel>
+        </Button>
+        <TextBox x:Name="Editor" Margin="0" Visibility="Collapsed" VerticalContentAlignment="Center"
+                 FontSize="{Binding FontSize, ElementName=Root}" FontWeight="{Binding FontWeight, ElementName=Root}"
+                 LostKeyboardFocus="Editor_LostFocus"/>
+    </Grid>
+</UserControl>

@@ -44,6 +44,8 @@ public partial class MainWindow : Window
 
         PreviewKeyDown += OnKey;
         PreviewKeyUp += OnKeyUp;
+        // 포커스가 어디로 가든(패드 이동·페이지 전환·선택판) 화면 밖이면 스크롤해서 보여 준다
+        AddHandler(Keyboard.GotKeyboardFocusEvent, new KeyboardFocusChangedEventHandler((_, _) => RevealFocused()), true);
         PreviewMouseDown += OnMouseButton;
         PreviewMouseUp += OnMouseButton;
         PreviewMouseWheel += OnMouseWheelCapture;
@@ -281,7 +283,28 @@ public partial class MainWindow : Window
             _ => FocusNavigationDirection.Right,
         };
         focused.MoveFocus(new TraversalRequest(dir));
+
+        // 아래(위)에 더 고를 것이 없으면 읽기 전용 내용(배터리 수명 등)이 보이게 그냥 스크롤한다
+        if (Keyboard.FocusedElement == focused && a is NavAction.Up or NavAction.Down && FindScroller(focused) is { } sv)
+            sv.ScrollToVerticalOffset(sv.VerticalOffset + (a == NavAction.Down ? 160 : -160));
     }
+
+    private static ScrollViewer? FindScroller(DependencyObject from)
+    {
+        for (var d = VisualTreeHelper.GetParent(from); d is not null; d = VisualTreeHelper.GetParent(d))
+            if (d is ScrollViewer { ScrollableHeight: > 0 } sv) return sv;
+        return null;
+    }
+
+    /// <summary>
+    /// 포커스가 옮겨 간 요소를 스크롤해서 보여 준다 (위아래 여유 포함).
+    /// WPF는 "마지막 입력이 키보드"일 때만 스스로 스크롤하므로 패드 입력에서는 직접 해 줘야 한다.
+    /// </summary>
+    private void RevealFocused() => Dispatcher.BeginInvoke(() =>
+    {
+        if (Keyboard.FocusedElement is FrameworkElement { IsVisible: true } fe)
+            fe.BringIntoView(new Rect(-16, -48, fe.ActualWidth + 32, fe.ActualHeight + 96));
+    }, DispatcherPriority.Loaded);
 
     /// <summary>포커스된 요소를 "누른다". 버튼/토글/라디오를 자동화 패턴으로 실행한다.</summary>
     private static void Invoke(UIElement? el)

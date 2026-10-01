@@ -4,6 +4,7 @@
              xmlns:local="clr-namespace:ClawApp"
              xmlns:m="clr-namespace:ClawApp.Motion"
              xmlns:s="clr-namespace:ClawApp.Views.Sections"
+             xmlns:v="clr-namespace:ClawApp.Views"
              KeyboardNavigation.DirectionalNavigation="Contained">
     <!-- 게임 상세: 배경은 이 게임의 아트(흐림), 제목은 상단 피벗 제목이 맡는다 -->
     <Grid Margin="48,4,40,12" m:Backdrop.PageSource="{Binding Tile.Hero}">
@@ -78,8 +79,8 @@
                 <s:GameBatterySection/>
 
                 <TextBlock Text="관리" Style="{StaticResource Section}"/>
-                <TextBlock Text="이름 (A를 누르면 키보드)" Style="{StaticResource Caption}" Margin="2,0,0,6"/>
-                <TextBox Text="{Binding GameTitle}"/>
+                <TextBlock Text="표시 이름" Style="{StaticResource Caption}" Margin="2,0,0,6"/>
+                <v:InlineEdit Text="{Binding GameTitle}" FontSize="16" Margin="0,0,0,4"/>
                 <s:GameArtSection/>
                 <Button Style="{StaticResource NavButton}" Command="{Binding HideCommand}" Foreground="{DynamicResource TextDim}">
                     <StackPanel Orientation="Horizontal"><TextBlock Text="{StaticResource Icon.EyeOff}" Style="{StaticResource Icon}" Margin="0,0,14,0"/><TextBlock Text="라이브러리에서 숨기기"/></StackPanel>

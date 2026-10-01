@@ -51,25 +51,6 @@ public partial class MappingEditorView : UserControl
         if (target is not null) Keyboard.Focus(target);
     }
 
-    private void Rename_Click(object sender, RoutedEventArgs e)
-    {
-        RenameButton.Visibility = Visibility.Hidden;
-        NameBox.Visibility = Visibility.Visible;
-        Dispatcher.BeginInvoke(() =>
-        {
-            Keyboard.Focus(NameBox);
-            NameBox.SelectAll();
-            Services.SystemControls.ShowTouchKeyboard();
-        }, DispatcherPriority.Loaded);
-    }
-
-    /// <summary>입력이 끝나면(Enter·B·다른 곳 선택) 다시 버튼으로. 값은 TextBox 바인딩이 저장한다.</summary>
-    private void NameBox_LostFocus(object sender, KeyboardFocusChangedEventArgs e)
-    {
-        NameBox.Visibility = Visibility.Collapsed;
-        RenameButton.Visibility = Visibility.Visible;
-    }
-
     /// <summary>보이는 포커스 가능 요소 중 조건에 맞는 첫 번째 (화면 순서).</summary>
     private static UIElement? Find(DependencyObject root, Func<UIElement, bool> match)
     {
