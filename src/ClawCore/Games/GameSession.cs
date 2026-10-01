@@ -1,12 +1,11 @@
 using System.Diagnostics;
-using System.Runtime.InteropServices;
-using System.Text;
 
 namespace ClawCore.Games;
 
 /// <summary>
 /// 게임 실행과 종료 감지. 런처(Steam/넥슨) 경유 실행도 있으므로 직접 띄운 프로세스가 아니라
 /// 설치 폴더/프로세스 이름으로 "게임이 돌고 있는지"를 판단한다.
+/// 설치 폴더로 찾을 때는 런처·안티치트·업데이터 같은 도우미 프로세스는 세지 않는다 (<see cref="ProcessScanner.IsHelper"/>).
 /// </summary>
 public sealed class GameSession : IDisposable
 {
@@ -15,8 +14,12 @@ public sealed class GameSession : IDisposable
     private static readonly TimeSpan StartGrace = TimeSpan.FromMinutes(3);
 
     private readonly Timer _timer;
+    private readonly object _pollLock = new();
+    /// <summary>이 세션에서 설치 폴더로 찾은 게임 본체 프로세스 이름들 — 종료 대상.</summary>
+    private readonly HashSet<string> _seenNames = new(StringComparer.OrdinalIgnoreCase);
     private DateTime _launchedAt;
     private bool _seenRunning;
+    private bool _disposed;
 
     public GameEntry Game { get; }
     public bool IsRunning { get; private set; }
@@ -35,13 +38,21 @@ public sealed class GameSession : IDisposable
     public static GameSession Launch(GameEntry game)
     {
         var session = new GameSession(game);
-        Process.Start(new ProcessStartInfo(game.LaunchTarget, game.LaunchArgs ?? "")
+        try
         {
-            UseShellExecute = true,
-            WorkingDirectory = File.Exists(game.LaunchTarget) ? Path.GetDirectoryName(game.LaunchTarget)! : "",
-        });
+            using var _ = Process.Start(new ProcessStartInfo(game.LaunchTarget, game.LaunchArgs ?? "")
+            {
+                UseShellExecute = true,
+                WorkingDirectory = File.Exists(game.LaunchTarget) ? Path.GetDirectoryName(game.LaunchTarget)! : "",
+            });
+        }
+        catch
+        {
+            session.Dispose();
+            throw;
+        }
         session._launchedAt = DateTime.UtcNow;
-        session._timer.Change(PollInterval, PollInterval);
+        session.Schedule();
         return session;
     }
 
@@ -50,7 +61,7 @@ public sealed class GameSession : IDisposable
     {
         var session = new GameSession(game) { LaunchedByUs = false, _seenRunning = true, IsRunning = true };
         session._launchedAt = DateTime.UtcNow;
-        session._timer.Change(PollInterval, PollInterval);
+        session.Schedule();
         return session;
     }
 
@@ -63,78 +74,136 @@ public sealed class GameSession : IDisposable
         var byName = new Dictionary<string, GameEntry>(StringComparer.OrdinalIgnoreCase);
         foreach (var g in candidates)
             foreach (var n in g.ProcessNames) byName.TryAdd(n, g);
-        var dirs = candidates.Where(g => g.InstallDir is { Length: > 0 })
-            .Select(g => (Dir: Path.GetFullPath(g.InstallDir!).TrimEnd('\\') + "\\", Game: g)).ToList();
+        var dirs = candidates.Select(g => (Dir: ProcessScanner.SafeInstallDir(g.InstallDir), Game: g))
+            .Where(x => x.Dir is not null).ToList();
 
-        foreach (var p in Process.GetProcesses())
+        foreach (var p in ProcessScanner.List())
         {
-            if (byName.TryGetValue(p.ProcessName, out var hit)) return hit;
-            if (dirs.Count == 0 || GetPath(p) is not { } path) continue;
+            if (byName.TryGetValue(p.Name, out var hit)) return hit;
+            if (dirs.Count == 0 || ProcessScanner.IsHelper(p.Name) || ProcessScanner.PathOf(p) is not { } path) continue;
             foreach (var (dir, game) in dirs)
-                if (path.StartsWith(dir, StringComparison.OrdinalIgnoreCase)) return game;
+                if (path.StartsWith(dir!, StringComparison.OrdinalIgnoreCase)) return game;
         }
         return null;
     }
 
-    /// <summary>게임 프로세스를 종료한다 (퀵 설정의 "게임 종료").</summary>
+    /// <summary>
+    /// 게임 프로세스를 종료한다 (퀵 설정의 "게임 종료"). 폴더 전체가 아니라 게임 자신의 실행 파일만:
+    /// 지정된 프로세스 이름, 실행 대상/아이콘 exe, 이 세션에서 설치 폴더로 찾은 게임 본체.
+    /// 이름만 같은 다른 폴더의 프로세스는 건드리지 않는다. 프로세스 목록을 훑으므로 UI 스레드에서 부르지 말 것.
+    /// </summary>
     public void Kill()
     {
-        foreach (var p in FindProcesses())
+        var explicitNames = new HashSet<string>(Game.ProcessNames, StringComparer.OrdinalIgnoreCase);
+        var exeNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var exe in new[] { Game.LaunchTarget, Game.IconSource })
+            if (exe is not null && exe.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)
+                && Path.GetFileNameWithoutExtension(exe) is { Length: > 0 } n && !ProcessScanner.IsHelper(n))
+                exeNames.Add(n);
+        foreach (var p in FindGameProcesses()) exeNames.Add(p.Name); // 지금 도는 게임 본체 (도우미 제외)
+        lock (_pollLock) exeNames.UnionWith(_seenNames);
+
+        // 지정 이름이 아닌 것은 게임 폴더 안의 같은 이름일 때만 (흔한 이름 "Game" 등이 다른 곳에서 죽지 않게)
+        var dir = ProcessScanner.SafeInstallDir(Game.InstallDir)
+            ?? (File.Exists(Game.LaunchTarget) ? ProcessScanner.SafeInstallDir(Path.GetDirectoryName(Game.LaunchTarget)) : null);
+        foreach (var p in ProcessScanner.List())
         {
-            try { p.Kill(entireProcessTree: true); } catch (Exception) { /* 권한 없음/이미 종료 */ }
+            if (p.Id == Environment.ProcessId) continue;
+            var kill = explicitNames.Contains(p.Name)
+                || (dir is not null && exeNames.Contains(p.Name)
+                    && ProcessScanner.PathOf(p)?.StartsWith(dir, StringComparison.OrdinalIgnoreCase) == true);
+            if (!kill) continue;
+            try
+            {
+                using var proc = Process.GetProcessById(p.Id);
+                proc.Kill(entireProcessTree: true);
+            }
+            catch (Exception) { /* 권한 없음/이미 종료 */ }
+        }
+    }
+
+    /// <summary>게임 창 (게임으로 돌아가기용). 없으면 0. 프로세스 목록을 훑으므로 UI 스레드에서 부르지 말 것.</summary>
+    public IntPtr FindMainWindow()
+    {
+        foreach (var p in FindGameProcesses())
+        {
+            try
+            {
+                using var proc = Process.GetProcessById(p.Id);
+                if (proc.MainWindowHandle != IntPtr.Zero) return proc.MainWindowHandle;
+            }
+            catch (Exception) { /* 이미 종료 */ }
+        }
+        return IntPtr.Zero;
+    }
+
+    private void Schedule()
+    {
+        // 한 번씩만 예약하고 Poll이 끝난 뒤 다시 예약 — 목록 훑기가 느려도 Poll이 겹치지 않는다
+        lock (_pollLock)
+        {
+            if (!_disposed) _timer.Change(PollInterval, Timeout.InfiniteTimeSpan);
         }
     }
 
     private void Poll()
     {
-        var running = FindProcesses().Any();
-        if (running && !_seenRunning)
-        {
-            _seenRunning = IsRunning = true;
-            Started?.Invoke(this);
-        }
-        else if (!running && (_seenRunning || DateTime.UtcNow - _launchedAt > StartGrace))
-        {
-            IsRunning = false;
-            _timer.Change(Timeout.Infinite, Timeout.Infinite);
-            Ended?.Invoke(this);
-        }
-    }
-
-    public IEnumerable<Process> FindProcesses()
-    {
-        var names = new HashSet<string>(Game.ProcessNames, StringComparer.OrdinalIgnoreCase);
-        var dir = Game.InstallDir is { Length: > 0 } d ? Path.GetFullPath(d).TrimEnd('\\') + "\\" : null;
-
-        foreach (var p in Process.GetProcesses())
-        {
-            if (names.Contains(p.ProcessName)) { yield return p; continue; }
-            if (dir is not null && GetPath(p) is { } path && path.StartsWith(dir, StringComparison.OrdinalIgnoreCase))
-                yield return p;
-        }
-    }
-
-    public static string? GetPath(Process p)
-    {
-        var h = OpenProcess(0x1000 /* QUERY_LIMITED_INFORMATION */, false, p.Id);
-        if (h == IntPtr.Zero) return null;
         try
         {
-            var sb = new StringBuilder(1024);
-            var size = sb.Capacity;
-            return QueryFullProcessImageName(h, 0, sb, ref size) ? sb.ToString() : null;
+            lock (_pollLock)
+            {
+                if (_disposed) return;
+            }
+            var running = FindGameProcesses().Count > 0;
+
+            if (running && !_seenRunning)
+            {
+                _seenRunning = IsRunning = true;
+                Started?.Invoke(this);
+            }
+            else if (!running && (_seenRunning || DateTime.UtcNow - _launchedAt > StartGrace))
+            {
+                IsRunning = false;
+                Ended?.Invoke(this);
+                return; // 끝난 세션은 다시 예약하지 않는다
+            }
         }
-        finally { CloseHandle(h); }
+        catch (Exception)
+        {
+            // 타이머 스레드의 예외는 앱 전체를 죽인다 — 다음 주기에 다시 본다
+        }
+        Schedule();
     }
 
-    public void Dispose() => _timer.Dispose();
+    /// <summary>게임 프로세스: 지정된 이름, 또는 설치 폴더 아래의 도우미가 아닌 프로세스.</summary>
+    private List<ProcessScanner.Proc> FindGameProcesses()
+    {
+        var names = new HashSet<string>(Game.ProcessNames, StringComparer.OrdinalIgnoreCase);
+        var dir = ProcessScanner.SafeInstallDir(Game.InstallDir);
+        var found = new List<ProcessScanner.Proc>();
 
-    [DllImport("kernel32.dll", SetLastError = true)]
-    private static extern IntPtr OpenProcess(uint access, bool inherit, int pid);
+        foreach (var p in ProcessScanner.List())
+        {
+            if (names.Contains(p.Name)) { found.Add(p); continue; }
+            if (dir is not null && !ProcessScanner.IsHelper(p.Name)
+                && ProcessScanner.PathOf(p) is { } path && path.StartsWith(dir, StringComparison.OrdinalIgnoreCase))
+            {
+                found.Add(p);
+                lock (_pollLock) _seenNames.Add(p.Name);
+            }
+        }
+        return found;
+    }
 
-    [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-    private static extern bool QueryFullProcessImageName(IntPtr h, int flags, StringBuilder name, ref int size);
+    /// <summary>프로세스의 실행 파일 경로 (권한 없음/종료됨이면 null).</summary>
+    public static string? GetPath(Process p) => ProcessScanner.QueryPath(p.Id);
 
-    [DllImport("kernel32.dll")]
-    private static extern bool CloseHandle(IntPtr h);
+    public void Dispose()
+    {
+        lock (_pollLock)
+        {
+            _disposed = true;
+            _timer.Dispose();
+        }
+    }
 }

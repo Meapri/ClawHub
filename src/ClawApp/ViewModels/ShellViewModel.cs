@@ -138,7 +138,7 @@ public sealed partial class ShellViewModel : ObservableObject
                 CycleTargetProfile();
                 break;
             case AppCommands.QuitGame:
-                Session?.Kill();
+                if (Session is { } quitting) KillInBackground(quitting);
                 ShowToast("게임을 종료하는 중…");
                 break;
             case AppCommands.ShowClawHub:
@@ -179,7 +179,7 @@ public sealed partial class ShellViewModel : ObservableObject
         Service.EventReceived += e => Ui(() =>
         {
             if (e.Event == Ops.EventButton && e.Button is { } b) OnMsiButton(b);
-            else if (e.Event == Ops.EventStatus && e.Status is { } s) Status = s;
+            else if (e.Event == Ops.EventStatus && e.Status is { } s) { Status = s; ReconcileWithStatus(s); }
             else if (e.Event == Ops.EventAppCommand && e.Command is { } c) OnWidgetCommand(c);
         });
         Service.Start();
@@ -359,6 +359,10 @@ public sealed partial class ShellViewModel : ObservableObject
     {
         "ClawApp", "explorer", "XboxPcApp", "ApplicationFrameHost", "ShellExperienceHost", "SearchHost",
         "StartMenuExperienceHost", "TextInputHost", "LockApp", "GameBar", "Idle",
+        // 항상 떠 있는 런처·메신저 — 게임 대신 이것에 프로필이 붙으면 게임처럼 추적·종료된다
+        "steam", "steamwebhelper", "Discord", "EpicGamesLauncher", "EpicWebHelper", "Battle.net", "NexonPlay", "NGM", "NGM64",
+        "LeagueClient", "LeagueClientUx", "RiotClientServices", "RiotClientUx", "EADesktop", "upc", "UbisoftConnect",
+        "GalaxyClient", "Overwolf", "Taskmgr", "SystemSettings",
     };
 
     /// <summary>본체 버튼으로 런처를 띄우기 직전에 앞에 있던 앱 (라이브러리 밖 게임에 프로필을 붙일 때 사용).</summary>
@@ -372,7 +376,7 @@ public sealed partial class ShellViewModel : ObservableObject
         try
         {
             using var p = System.Diagnostics.Process.GetProcessById((int)pid);
-            if (NotApps.Contains(p.ProcessName)) return;
+            if (NotApps.Contains(p.ProcessName) || ProcessScanner.IsHelper(p.ProcessName)) return;
             var path = GameSession.GetPath(p);
             if (path?.Contains(@"\Microsoft.GamingApp_", StringComparison.OrdinalIgnoreCase) == true) return;
             ForegroundApp = (p.ProcessName, path);
@@ -610,12 +614,33 @@ public sealed partial class ShellViewModel : ObservableObject
     public void ReturnToBackground()
     {
         HideWindow();
-        var target = _returnWindow;
-        if (RunningGame is not null && Session?.FindProcesses().FirstOrDefault(p => p.MainWindowHandle != IntPtr.Zero) is { } p)
-            target = p.MainWindowHandle;
-        SystemControls.Activate(target);
+        _ = ActivateReturnTargetAsync(RunningGame is not null ? Session : null, _returnWindow);
         _ = SyncControllerAsync();
     }
+
+    /// <summary>게임 창을 찾아(프로세스 목록 훑기 — UI 스레드 밖에서) 앞으로 올린다. 없으면 런처를 띄우기 전 창.</summary>
+    private static async Task ActivateReturnTargetAsync(GameSession? session, IntPtr fallback)
+    {
+        var target = fallback;
+        if (session is not null)
+        {
+            try
+            {
+                var hwnd = await Task.Run(session.FindMainWindow);
+                if (hwnd != IntPtr.Zero) target = hwnd;
+            }
+            catch (Exception) { /* 게임이 막 종료됨 */ }
+        }
+        SystemControls.Activate(target);
+    }
+
+    /// <summary>게임 종료는 프로세스 목록을 훑으므로 UI 스레드 밖에서.</summary>
+    private static void KillInBackground(GameSession session) =>
+        _ = Task.Run(() =>
+        {
+            try { session.Kill(); }
+            catch (Exception) { /* 권한 없음/이미 종료 */ }
+        });
 
     [RelayCommand]
     private void GoToDesktop()
@@ -682,7 +707,7 @@ public sealed partial class ShellViewModel : ObservableObject
     {
         if (Session is null || RunningGame is null) return;
         if (!ConfirmTwice("quit", $"{RunningGame.Title}을(를) 종료합니다")) return;
-        Session.Kill();
+        KillInBackground(Session);
         CloseMenus();
         ShowToast("게임을 종료하는 중…");
     }
@@ -753,6 +778,31 @@ public sealed partial class ShellViewModel : ObservableObject
         {
             _syncLock.Release();
         }
+    }
+
+    private bool _resyncQueued;
+    private DateTime _lastAutoResync;
+
+    /// <summary>
+    /// 서비스가 알려 준 실제 상태가 앱의 "적용함" 장부와 다르면 (절전 복귀로 모드 초기화, 사용자 전환으로 매핑 해제,
+    /// 모드 전환 확인 실패 등) 장부를 버리고 다시 맞춘다. 실패가 반복돼도 3초에 한 번만.
+    /// </summary>
+    private void ReconcileWithStatus(ServiceStatus s)
+    {
+        var stale = false;
+        if (_appliedMode is { } m && s.ControllerMode is { } actual && actual != m) { _appliedMode = null; stale = true; }
+        if (_appliedProfileId is not null && !s.MappingActive) { _appliedProfileId = null; stale = true; }
+        if (_appliedPerf is not null && s.TemporaryPerformance is null) { _appliedPerf = null; stale = true; }
+        if (!stale || _resyncQueued) return;
+        _resyncQueued = true;
+        var wait = _lastAutoResync + TimeSpan.FromSeconds(3) - DateTime.UtcNow;
+        Ui(async () =>
+        {
+            if (wait > TimeSpan.Zero) await Task.Delay(wait);
+            _resyncQueued = false;
+            _lastAutoResync = DateTime.UtcNow;
+            await SyncControllerAsync();
+        });
     }
 
     /// <summary>편집 중인 매핑을 잠깐 실제로 적용해 본다. 시간이 지나면 자동으로 원래대로.</summary>

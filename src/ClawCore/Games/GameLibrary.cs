@@ -89,8 +89,8 @@ public sealed class GameLibrary
     public GameEntry BindProcess(string processName, string? exePath, string? profileId)
     {
         var game = Games.FirstOrDefault(g => g.ProcessNames.Contains(processName, StringComparer.OrdinalIgnoreCase)
-            || (exePath is not null && g.InstallDir is { Length: > 0 } d
-                && exePath.StartsWith(Path.GetFullPath(d).TrimEnd('\\') + "\\", StringComparison.OrdinalIgnoreCase)));
+            || (exePath is not null && ProcessScanner.SafeInstallDir(g.InstallDir) is { } d
+                && exePath.StartsWith(d, StringComparison.OrdinalIgnoreCase)));
         if (game is null)
         {
             game = new GameEntry

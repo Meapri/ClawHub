@@ -80,6 +80,36 @@ internal static class PipeAccess
         }
     }
 
+    /// <summary>지금 화면(콘솔)을 가진 세션. 전환 중이면 0xFFFFFFFF.</summary>
+    public static uint ActiveConsoleSession => WTSGetActiveConsoleSessionId();
+
+    /// <summary>클라이언트 프로세스의 로그온 세션 (실패하면 null → 읽기 전용으로 취급).</summary>
+    public static uint? ClientSession(NamedPipeServerStream pipe) =>
+        GetNamedPipeClientSessionId(pipe.SafePipeHandle, out var session) ? session : null;
+
+    /// <summary>
+    /// 클라이언트가 (UAC 승격된) 관리자인지. 파이프에서 데이터를 읽은 뒤에만 가장(impersonation)이 가능하므로
+    /// 첫 요청을 받은 다음에 부른다. 필터링된(비승격) 관리자 토큰은 false.
+    /// </summary>
+    public static bool IsClientAdmin(NamedPipeServerStream pipe)
+    {
+        var admin = false;
+        try
+        {
+            pipe.RunAsClient(() =>
+            {
+                // ifImpersonating: 가장에 실패했으면 null — 서비스 자신(SYSTEM)의 토큰으로 판단하는 일이 없도록
+                using var id = WindowsIdentity.GetCurrent(ifImpersonating: true);
+                admin = id is not null && new WindowsPrincipal(id).IsInRole(WindowsBuiltInRole.Administrator);
+            });
+        }
+        catch (Exception) { admin = false; }
+        return admin;
+    }
+
+    [DllImport("kernel32.dll")] private static extern uint WTSGetActiveConsoleSessionId();
+    [DllImport("kernel32.dll", SetLastError = true)] private static extern bool GetNamedPipeClientSessionId(SafePipeHandle pipe, out uint session);
+
     [StructLayout(LayoutKind.Sequential)]
     private struct SecurityAttributes
     {
