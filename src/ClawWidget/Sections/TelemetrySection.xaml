@@ -1,0 +1,63 @@
+<local:WidgetSection
+    x:Class="ClawWidget.Sections.TelemetrySection"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:ClawWidget.Sections"
+    xmlns:ui="using:ClawWidget.UI">
+
+    <!-- 실시간: CPU °C · CPU W · 배터리 % · 배터리 W + 최근 2분 그래프 -->
+    <Border Style="{StaticResource CardStyle}">
+        <StackPanel Spacing="10">
+            <ui:SectionHeader x:Name="Header" Icon="&#xE038;" Title="실시간" />
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock Style="{StaticResource MetricLabelStyle}" Text="CPU 온도" />
+                    <TextBlock x:Name="CpuTempValue" Style="{StaticResource MetricValueStyle}" Foreground="{ThemeResource WidgetCpuLineBrush}" Text="–" />
+                </StackPanel>
+                <StackPanel Grid.Column="1">
+                    <TextBlock Style="{StaticResource MetricLabelStyle}" Text="CPU 전력" />
+                    <TextBlock x:Name="CpuWattsValue" Style="{StaticResource MetricValueStyle}" Text="–" />
+                </StackPanel>
+                <StackPanel Grid.Column="2">
+                    <TextBlock Style="{StaticResource MetricLabelStyle}" Text="배터리" />
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock x:Name="BatteryValue" Style="{StaticResource MetricValueStyle}" Text="–" />
+                        <FontIcon x:Name="ChargingIcon" FontFamily="{StaticResource WidgetIconFont}" Glyph="&#xE1B4;" FontSize="12"
+                                  Margin="3,0,0,0" VerticalAlignment="Center" Visibility="Collapsed"
+                                  Foreground="{ThemeResource WidgetOkBrush}" />
+                    </StackPanel>
+                </StackPanel>
+                <StackPanel Grid.Column="3">
+                    <TextBlock x:Name="BatteryWattsLabel" Style="{StaticResource MetricLabelStyle}" Text="배터리 전력" />
+                    <TextBlock x:Name="BatteryWattsValue" Style="{StaticResource MetricValueStyle}" Foreground="{ThemeResource WidgetBatteryLineBrush}" Text="–" />
+                </StackPanel>
+            </Grid>
+
+            <Canvas x:Name="SparkCanvas" Height="44" IsHitTestVisible="False">
+                <Polygon x:Name="CpuFill" Fill="{ThemeResource WidgetCpuFillBrush}" />
+                <Polyline x:Name="CpuLine" Stroke="{ThemeResource WidgetCpuLineBrush}" StrokeThickness="2"
+                          StrokeLineJoin="Round" StrokeEndLineCap="Round" StrokeStartLineCap="Round" />
+                <Polyline x:Name="BatteryLine" Stroke="{ThemeResource WidgetBatteryLineBrush}" StrokeThickness="1.5"
+                          StrokeLineJoin="Round" StrokeDashArray="3,2" />
+            </Canvas>
+
+            <StackPanel Orientation="Horizontal" Spacing="10">
+                <StackPanel Orientation="Horizontal" Spacing="4">
+                    <Rectangle Width="10" Height="2" VerticalAlignment="Center" Fill="{ThemeResource WidgetCpuLineBrush}" />
+                    <TextBlock Style="{StaticResource MetricLabelStyle}" Text="CPU 온도" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="4">
+                    <Rectangle Width="10" Height="2" VerticalAlignment="Center" Fill="{ThemeResource WidgetBatteryLineBrush}" />
+                    <TextBlock Style="{StaticResource MetricLabelStyle}" Text="배터리 전력 · 최근 2분" />
+                </StackPanel>
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</local:WidgetSection>

@@ -1,0 +1,22 @@
+<local:WidgetSection
+    x:Class="ClawWidget.Sections.EnduranceSection"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:ClawWidget.Sections"
+    xmlns:ui="using:ClawWidget.UI">
+
+    <!-- 자동 TDP (Intel Endurance Gaming): 끔/켬/자동 + 강도 -->
+    <Border Style="{StaticResource CardStyle}">
+        <StackPanel Spacing="6">
+            <ui:SectionHeader x:Name="Header" Icon="&#xE412;" Title="자동 TDP" />
+            <TextBlock Style="{StaticResource CaptionStyle}"
+                       Text="Intel Endurance Gaming이 프레임과 전력을 알아서 줄여요. 자동 = 배터리일 때만 켜짐" />
+            <Grid x:Name="ControlGrid" Margin="-2,0" />
+            <StackPanel x:Name="ModePanel" Spacing="2">
+                <TextBlock Text="강도" Style="{StaticResource CaptionStyle}" Margin="0,4,0,0" />
+                <Grid x:Name="ModeGrid" Margin="-2,0" />
+            </StackPanel>
+            <TextBlock x:Name="Note" Visibility="Collapsed" Style="{StaticResource CaptionStyle}" />
+        </StackPanel>
+    </Border>
+</local:WidgetSection>

@@ -1,0 +1,193 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ClawHub Xbox Game Bar 위젯 (클래식 UWP, .NET Native).
+  Microsoft XboxGameBarSamples/WidgetSampleCS 기반으로 손으로 작성.
+  빌드: build.ps1 (VS Build Tools 18 + UWP 워크로드 + Windows SDK 10.0.26100)
+  이 프로젝트는 ClawHub.slnx에 넣지 않는다 (dotnet build로는 빌드되지 않음).
+-->
+<Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x64</Platform>
+    <ProjectGuid>{5C1A7E3B-8F2D-4B6E-9A41-3D7C2E9F0B15}</ProjectGuid>
+    <OutputType>AppContainerExe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>ClawWidget</RootNamespace>
+    <AssemblyName>ClawWidget</AssemblyName>
+    <DefaultLanguage>ko-KR</DefaultLanguage>
+    <TargetPlatformIdentifier>UAP</TargetPlatformIdentifier>
+    <TargetPlatformVersion Condition=" '$(TargetPlatformVersion)' == '' ">10.0.26100.0</TargetPlatformVersion>
+    <TargetPlatformMinVersion>10.0.19041.0</TargetPlatformMinVersion>
+    <MinimumVisualStudioVersion>14</MinimumVisualStudioVersion>
+    <FileAlignment>512</FileAlignment>
+    <ProjectTypeGuids>{A5A43C5B-DE2A-4C0C-9213-0A381AF9435A};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <LangVersion>7.3</LangVersion>
+    <WindowsXamlEnableOverview>true</WindowsXamlEnableOverview>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+
+    <!-- 패키지: 사이드로드용 단일 .msix (번들 없음). 서명 인증서는 build.ps1이 PackageCertificateThumbprint로 넘긴다. -->
+    <AppxPackageSigningEnabled>True</AppxPackageSigningEnabled>
+    <AppxPackageSigningTimestampDigestAlgorithm>SHA256</AppxPackageSigningTimestampDigestAlgorithm>
+    <PackageCertificateKeyFile></PackageCertificateKeyFile>
+    <GenerateAppInstallerFile>False</GenerateAppInstallerFile>
+    <AppxAutoIncrementPackageRevision>False</AppxAutoIncrementPackageRevision>
+    <AppxSymbolPackageEnabled>False</AppxSymbolPackageEnabled>
+    <GenerateTestArtifacts>True</GenerateTestArtifacts>
+    <AppxBundle>Never</AppxBundle>
+    <AppxBundlePlatforms>x64</AppxBundlePlatforms>
+    <UapAppxPackageBuildMode>SideloadOnly</UapAppxPackageBuildMode>
+    <AppxPackageDir>$(MSBuildProjectDirectory)\AppPackages\</AppxPackageDir>
+    <HoursBetweenUpdateChecks>0</HoursBetweenUpdateChecks>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\x64\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE;NETFX_CORE;WINDOWS_UWP</DefineConstants>
+    <NoWarn>;2008</NoWarn>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <UseVSHostingProcess>false</UseVSHostingProcess>
+    <ErrorReport>prompt</ErrorReport>
+    <Prefer32Bit>true</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <OutputPath>bin\x64\Release\</OutputPath>
+    <DefineConstants>TRACE;NETFX_CORE;WINDOWS_UWP</DefineConstants>
+    <Optimize>true</Optimize>
+    <NoWarn>;2008</NoWarn>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <UseVSHostingProcess>false</UseVSHostingProcess>
+    <ErrorReport>prompt</ErrorReport>
+    <Prefer32Bit>true</Prefer32Bit>
+    <UseDotNetNativeToolchain>true</UseDotNetNativeToolchain>
+  </PropertyGroup>
+  <PropertyGroup>
+    <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="App.xaml.cs">
+      <DependentUpon>App.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="WidgetPage.xaml.cs">
+      <DependentUpon>WidgetPage.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Ipc\Models.cs" />
+    <Compile Include="Ipc\PipeClient.cs" />
+    <Compile Include="UI\AnimatedNumber.cs" />
+    <Compile Include="UI\ChoiceGroup.cs" />
+    <Compile Include="UI\Motion.cs" />
+    <Compile Include="UI\Sparkline.cs" />
+    <Compile Include="UI\Debouncer.cs" />
+    <Compile Include="UI\Icons.cs" />
+    <Compile Include="Sections\WidgetSection.cs" />
+    <Compile Include="Sections\EnduranceSection.xaml.cs">
+      <DependentUpon>EnduranceSection.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Sections\CaptureSection.xaml.cs">
+      <DependentUpon>CaptureSection.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Sections\HeaderSection.xaml.cs">
+      <DependentUpon>HeaderSection.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Sections\TelemetrySection.xaml.cs">
+      <DependentUpon>TelemetrySection.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Sections\PerformanceSection.xaml.cs">
+      <DependentUpon>PerformanceSection.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Sections\GraphicsSection.xaml.cs">
+      <DependentUpon>GraphicsSection.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Sections\DisplaySection.xaml.cs">
+      <DependentUpon>DisplaySection.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Sections\LightingSection.xaml.cs">
+      <DependentUpon>LightingSection.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <AppxManifest Include="Package.appxmanifest">
+      <SubType>Designer</SubType>
+    </AppxManifest>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Assets\Square44x44Logo.png" />
+    <Content Include="Assets\Square150x150Logo.png" />
+    <Content Include="Assets\StoreLogo.png" />
+    <Content Include="Assets\Wide310x150Logo.png" />
+    <Content Include="Assets\SplashScreen.png" />
+    <Content Include="GameBar\Icons\icon.targetsize-16.png" />
+    <Content Include="GameBar\Icons\icon.targetsize-20.png" />
+    <Content Include="GameBar\Icons\icon.targetsize-24.png" />
+    <Content Include="GameBar\Icons\icon.targetsize-32.png" />
+    <Content Include="GameBar\Icons\icon.targetsize-44.png" />
+    <Content Include="GameBar\Icons\icon.targetsize-256.png" />
+    <Content Include="Properties\Default.rd.xml" />
+    <Content Include="Assets\Fonts\lucide.ttf" />
+    <Content Include="Assets\Fonts\Lucide-LICENSE.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ApplicationDefinition Include="App.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </ApplicationDefinition>
+    <Page Include="WidgetPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Sections\HeaderSection.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Sections\TelemetrySection.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Sections\PerformanceSection.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Sections\GraphicsSection.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Sections\DisplaySection.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Sections\LightingSection.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Sections\EnduranceSection.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Sections\CaptureSection.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Gaming.XboxGameBar">
+      <Version>7.3.2607010</Version>
+    </PackageReference>
+    <PackageReference Include="Microsoft.NETCore.UniversalWindowsPlatform">
+      <Version>6.2.14</Version>
+    </PackageReference>
+    <PackageReference Include="Microsoft.UI.Xaml">
+      <Version>2.8.7</Version>
+    </PackageReference>
+  </ItemGroup>
+  <PropertyGroup>
+    <XboxGameBar-Platform Condition="'$(Platform)' == 'x86'">win32</XboxGameBar-Platform>
+    <XboxGameBar-Platform Condition="'$(Platform)' != 'x86'">$(Platform)</XboxGameBar-Platform>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
+    <VisualStudioVersion>14.0</VisualStudioVersion>
+  </PropertyGroup>
+  <Import Project="$(MSBuildExtensionsPath)\Microsoft\WindowsXaml\v$(VisualStudioVersion)\Microsoft.Windows.UI.Xaml.CSharp.targets" />
+</Project>

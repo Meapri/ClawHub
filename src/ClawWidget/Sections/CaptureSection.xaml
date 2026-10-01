@@ -1,0 +1,36 @@
+<local:WidgetSection
+    x:Class="ClawWidget.Sections.CaptureSection"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:ClawWidget.Sections">
+
+    <!-- 캡처: 스크린샷 · 녹화 · 최근 30초 저장 (런처가 Game Bar 단축키를 대신 누른다). 카드 없이 한 줄. -->
+    <Grid x:Name="Row" ColumnSpacing="6" Margin="0,0,0,8">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <Button x:Name="ScreenshotButton" Style="{StaticResource ActionButtonStyle}" Click="ScreenshotButton_Click"
+                AutomationProperties.Name="스크린샷">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+                <FontIcon FontFamily="{StaticResource WidgetIconFont}" Glyph="&#xE064;" FontSize="14" />
+                <TextBlock Text="스크린샷" />
+            </StackPanel>
+        </Button>
+        <Button x:Name="RecordButton" Grid.Column="1" Style="{StaticResource ActionButtonStyle}" Click="RecordButton_Click"
+                AutomationProperties.Name="녹화 시작 또는 중지">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+                <FontIcon FontFamily="{StaticResource WidgetIconFont}" Glyph="&#xE1A5;" FontSize="14" />
+                <TextBlock Text="녹화" />
+            </StackPanel>
+        </Button>
+        <Button x:Name="ClipButton" Grid.Column="2" Style="{StaticResource ActionButtonStyle}" Click="ClipButton_Click"
+                AutomationProperties.Name="최근 30초 저장">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+                <FontIcon FontFamily="{StaticResource WidgetIconFont}" Glyph="&#xE0D0;" FontSize="14" />
+                <TextBlock Text="30초 저장" />
+            </StackPanel>
+        </Button>
+    </Grid>
+</local:WidgetSection>

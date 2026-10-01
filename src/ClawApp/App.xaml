@@ -4,6 +4,7 @@
              xmlns:vm="clr-namespace:ClawApp.ViewModels"
              xmlns:v="clr-namespace:ClawApp.Views"
              xmlns:local="clr-namespace:ClawApp"
+             xmlns:m="clr-namespace:ClawApp.Motion"
              ShutdownMode="OnExplicitShutdown">
     <Application.Resources>
         <ResourceDictionary>
@@ -23,21 +24,45 @@
             <DataTemplate DataType="{x:Type vm:ProfilesViewModel}"><v:ProfilesView/></DataTemplate>
             <DataTemplate DataType="{x:Type vm:SettingsViewModel}"><v:SettingsView/></DataTemplate>
 
-            <!-- 게임 커버 타일 (라이브러리/홈 공용) -->
+            <!-- 게임 커버 앞면: 커버 아트, 없으면 제목 색 그라데이션 + 아이콘 + 제목 -->
+            <DataTemplate x:Key="CoverFace" DataType="{x:Type vm:GameTileViewModel}">
+                <Grid>
+                    <Border Background="{Binding Placeholder}"/>
+                    <StackPanel VerticalAlignment="Bottom" Margin="14,0,14,14" Visibility="{Binding HasCover, Converter={StaticResource NotVis}}">
+                        <Image Source="{Binding Icon}" Width="48" Height="48" HorizontalAlignment="Left" Margin="0,0,0,12"/>
+                        <TextBlock Text="{Binding Title}" FontSize="17" FontWeight="SemiBold" Foreground="White" TextWrapping="Wrap"/>
+                    </StackPanel>
+                    <Border Visibility="{Binding HasCover, Converter={StaticResource Vis}}">
+                        <Border.Background>
+                            <ImageBrush ImageSource="{Binding Cover}" Stretch="UniformToFill"/>
+                        </Border.Background>
+                    </Border>
+                </Grid>
+            </DataTemplate>
+
+            <!-- 게임 커버 타일 (라이브러리). 포커스가 가면 배경이 그 게임 아트로 바뀐다 -->
             <DataTemplate x:Key="CoverTile" DataType="{x:Type vm:GameTileViewModel}">
-                <Button Style="{StaticResource TileButton}" Command="{Binding OpenCommand}" Width="168" Height="252">
-                    <Grid ClipToBounds="True">
-                        <Border CornerRadius="8" Background="{Binding Placeholder}"/>
-                        <StackPanel VerticalAlignment="Center" Visibility="{Binding HasCover, Converter={StaticResource NotVis}}" Margin="12">
-                            <Image Source="{Binding Icon}" Width="56" Height="56" Margin="0,0,0,14"/>
-                            <TextBlock Text="{Binding Title}" FontSize="17" FontWeight="SemiBold" Foreground="White"
-                                       TextWrapping="Wrap" TextAlignment="Center"/>
-                        </StackPanel>
-                        <Border CornerRadius="8" Visibility="{Binding HasCover, Converter={StaticResource Vis}}">
-                            <Border.Background>
-                                <ImageBrush ImageSource="{Binding Cover}" Stretch="UniformToFill"/>
-                            </Border.Background>
-                        </Border>
+                <Button Style="{StaticResource TileButton}" Command="{Binding OpenCommand}" m:Backdrop.FocusSource="{Binding Hero}">
+                    <ContentControl Content="{Binding}" ContentTemplate="{StaticResource CoverFace}" Focusable="False"/>
+                </Button>
+            </DataTemplate>
+
+            <!-- 라이브 커버 타일 (홈): 커버 ↔ 정보(제목·마지막 플레이)가 몇 초마다 위로 굴러 바뀐다 -->
+            <DataTemplate x:Key="LiveCoverTile" DataType="{x:Type vm:GameTileViewModel}">
+                <Button Style="{StaticResource TileButton}" Command="{Binding OpenCommand}" m:Backdrop.FocusSource="{Binding Hero}">
+                    <Grid ClipToBounds="True" m:LiveTile.IsLive="True">
+                        <ContentControl Content="{Binding}" ContentTemplate="{StaticResource CoverFace}" Focusable="False"/>
+                        <Grid Background="{DynamicResource Accent}" Visibility="Hidden" TextElement.Foreground="{DynamicResource AccentText}">
+                            <StackPanel Margin="14,14,14,14">
+                                <Image Source="{Binding Icon}" Width="32" Height="32" HorizontalAlignment="Left" Margin="0,0,0,10"/>
+                                <TextBlock Text="{Binding Title}" FontSize="19" FontWeight="Bold" TextWrapping="Wrap" MaxHeight="128"
+                                           TextTrimming="CharacterEllipsis"/>
+                            </StackPanel>
+                            <StackPanel VerticalAlignment="Bottom" Margin="14,0,14,14">
+                                <TextBlock Text="{Binding SourceLabel}" FontSize="12" Opacity="0.8"/>
+                                <TextBlock Text="{Binding LastPlayedLabel}" FontSize="13" FontWeight="SemiBold" Margin="0,2,0,0"/>
+                            </StackPanel>
+                        </Grid>
                     </Grid>
                 </Button>
             </DataTemplate>

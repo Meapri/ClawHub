@@ -2,62 +2,63 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:ClawApp"
+             xmlns:m="clr-namespace:ClawApp.Motion"
              KeyboardNavigation.DirectionalNavigation="Contained">
-    <Grid Margin="32,4,32,16">
+    <!-- 게임 상세: 배경은 이 게임의 아트(흐림), 제목은 상단 피벗 제목이 맡는다 -->
+    <Grid Margin="48,4,40,12" m:Backdrop.PageSource="{Binding Tile.Hero}">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="220"/>
+            <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <!-- 커버 -->
-        <Border CornerRadius="12" Width="200" Height="300" VerticalAlignment="Top" Background="{Binding Tile.Placeholder}" ClipToBounds="True">
-            <Grid>
-                <Image Source="{Binding Tile.Icon}" Width="72" Height="72"
-                       Visibility="{Binding Tile.HasCover, Converter={StaticResource NotVis}}"/>
-                <Border CornerRadius="12" Visibility="{Binding Tile.HasCover, Converter={StaticResource Vis}}">
-                    <Border.Background><ImageBrush ImageSource="{Binding Tile.Cover}" Stretch="UniformToFill"/></Border.Background>
-                </Border>
-            </Grid>
-        </Border>
+        <!-- 커버 (직각, 메트로 타일과 같은 비율) -->
+        <Grid Width="240" Height="364" VerticalAlignment="Top" ClipToBounds="True" m:Entrance.Stagger="Self">
+            <Border Background="{Binding Tile.Placeholder}"/>
+            <Image Source="{Binding Tile.Icon}" Width="72" Height="72"
+                   Visibility="{Binding Tile.HasCover, Converter={StaticResource NotVis}}"/>
+            <Border Visibility="{Binding Tile.HasCover, Converter={StaticResource Vis}}">
+                <Border.Background><ImageBrush ImageSource="{Binding Tile.Cover}" Stretch="UniformToFill"/></Border.Background>
+            </Border>
+        </Grid>
 
-        <ScrollViewer Grid.Column="1" Margin="28,0,0,0">
-            <StackPanel MaxWidth="600" HorizontalAlignment="Left">
-                <TextBlock Text="{Binding Tile.SourceLabel}" Style="{StaticResource Caption}"/>
-                <TextBlock Text="{Binding GameTitle}" Style="{StaticResource H1}" FontSize="38" TextWrapping="Wrap" Margin="0,2,0,4"/>
-                <TextBlock Text="{Binding Tile.LastPlayedLabel}" Style="{StaticResource Caption}" Margin="0,0,0,22"/>
+        <ScrollViewer Grid.Column="1" Margin="36,-6,0,0">
+            <StackPanel MaxWidth="640" HorizontalAlignment="Left" Margin="6,6,6,0" m:Entrance.Stagger="Items">
+                <TextBlock Style="{StaticResource Caption}" FontSize="15" Margin="0,0,0,18">
+                    <Run Text="{Binding Tile.SourceLabel, Mode=OneWay}" Foreground="{DynamicResource Text}" FontWeight="SemiBold"/><Run Text="   ·   "/><Run Text="{Binding Tile.LastPlayedLabel, Mode=OneWay}"/>
+                </TextBlock>
 
-                <Button Style="{StaticResource PrimaryButton}" Command="{Binding PlayCommand}" HorizontalAlignment="Left" MinWidth="220"
-                        local:Nav.InitialFocus="True" Margin="0,0,0,26">
+                <Button Style="{StaticResource PrimaryButton}" Command="{Binding PlayCommand}" HorizontalAlignment="Left" MinWidth="280" Height="60"
+                        HorizontalContentAlignment="Left" local:Nav.InitialFocus="True" Margin="0,0,0,8">
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="&#xE768;" Style="{StaticResource Icon}" Margin="0,0,10,0"/>
-                        <TextBlock Text="플레이" Visibility="{Binding IsRunning, Converter={StaticResource NotVis}}"/>
-                        <TextBlock Text="게임으로 돌아가기" Visibility="{Binding IsRunning, Converter={StaticResource Vis}}"/>
+                        <TextBlock Text="{StaticResource Icon.Play}" Style="{StaticResource Icon}" FontSize="20" Margin="0,0,14,0"/>
+                        <TextBlock Text="플레이" FontSize="19" Visibility="{Binding IsRunning, Converter={StaticResource NotVis}}"/>
+                        <TextBlock Text="게임으로 돌아가기" FontSize="19" Visibility="{Binding IsRunning, Converter={StaticResource Vis}}"/>
                     </StackPanel>
                 </Button>
 
-                <TextBlock Text="컨트롤러 매핑" Style="{StaticResource Section}" Margin="2,0,0,8"/>
+                <TextBlock Text="컨트롤러 매핑" Style="{StaticResource Section}"/>
                 <Button Style="{StaticResource NavButton}" Command="{Binding CycleProfileCommand}" HorizontalContentAlignment="Stretch">
                     <DockPanel>
                         <TextBlock DockPanel.Dock="Right" Text="A로 변경" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="12,0,0,0"/>
                         <StackPanel>
                             <TextBlock Text="게임 중 사용할 프로필" Style="{StaticResource Caption}"/>
-                            <TextBlock Text="{Binding ProfileText}" FontSize="18" FontWeight="SemiBold" Margin="0,2,0,0"/>
+                            <TextBlock Text="{Binding ProfileText}" FontSize="19" FontWeight="SemiBold" Margin="0,2,0,0"/>
                         </StackPanel>
                     </DockPanel>
                 </Button>
                 <Button Style="{StaticResource NavButton}" Command="{Binding EditMappingCommand}">
-                    <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE765;" Style="{StaticResource Icon}" Margin="0,0,14,0"/><TextBlock Text="버튼 → 키 매핑 편집"/></StackPanel>
+                    <StackPanel Orientation="Horizontal"><TextBlock Text="{StaticResource Icon.Keyboard}" Style="{StaticResource Icon}" Margin="0,0,14,0"/><TextBlock Text="버튼 → 키 매핑 편집"/></StackPanel>
                 </Button>
-                <TextBlock Style="{StaticResource Caption}" Margin="2,4,0,0"
+                <TextBlock Style="{StaticResource Caption}" Margin="2,6,0,0"
                            Text="게임이 실행되면 프로필이 컨트롤러 펌웨어에 적용되어 진짜 키보드 입력으로 나갑니다. 게임을 끄거나 메뉴를 열면 원래 버튼으로 돌아옵니다."/>
 
-                <TextBlock Text="성능" Style="{StaticResource Section}" Margin="2,24,0,8"/>
+                <TextBlock Text="성능" Style="{StaticResource Section}"/>
                 <Button Style="{StaticResource NavButton}" Command="{Binding CyclePerformanceCommand}" HorizontalContentAlignment="Stretch">
                     <DockPanel>
                         <TextBlock DockPanel.Dock="Right" Text="A로 변경" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="12,0,0,0"/>
                         <StackPanel>
                             <TextBlock Text="게임 중 성능 모드" Style="{StaticResource Caption}"/>
-                            <TextBlock Text="{Binding PerformanceText}" FontSize="18" FontWeight="SemiBold" Margin="0,2,0,0"/>
+                            <TextBlock Text="{Binding PerformanceText}" FontSize="19" FontWeight="SemiBold" Margin="0,2,0,0"/>
                         </StackPanel>
                     </DockPanel>
                 </Button>
@@ -68,16 +69,16 @@
                         <TextBlock DockPanel.Dock="Right" Text="A로 변경" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="12,0,0,0"/>
                         <StackPanel>
                             <TextBlock Text="게임 중 FPS 제한" Style="{StaticResource Caption}"/>
-                            <TextBlock Text="{Binding FpsText}" FontSize="18" FontWeight="SemiBold" Margin="0,2,0,0"/>
+                            <TextBlock Text="{Binding FpsText}" FontSize="19" FontWeight="SemiBold" Margin="0,2,0,0"/>
                         </StackPanel>
                     </DockPanel>
                 </Button>
 
-                <TextBlock Text="관리" Style="{StaticResource Section}" Margin="2,24,0,8"/>
-                <TextBlock Text="이름 (A를 누르면 키보드)" Style="{StaticResource Caption}" Margin="2,0,0,4"/>
+                <TextBlock Text="관리" Style="{StaticResource Section}"/>
+                <TextBlock Text="이름 (A를 누르면 키보드)" Style="{StaticResource Caption}" Margin="2,0,0,6"/>
                 <TextBox Text="{Binding GameTitle}"/>
                 <Button Style="{StaticResource NavButton}" Command="{Binding HideCommand}" Foreground="{DynamicResource TextDim}">
-                    <StackPanel Orientation="Horizontal"><TextBlock Text="&#xED1A;" Style="{StaticResource Icon}" Margin="0,0,14,0"/><TextBlock Text="라이브러리에서 숨기기"/></StackPanel>
+                    <StackPanel Orientation="Horizontal"><TextBlock Text="{StaticResource Icon.EyeOff}" Style="{StaticResource Icon}" Margin="0,0,14,0"/><TextBlock Text="라이브러리에서 숨기기"/></StackPanel>
                 </Button>
             </StackPanel>
         </ScrollViewer>

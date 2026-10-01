@@ -1,0 +1,9 @@
+<!--
+    .NET Native runtime directives. https://go.microsoft.com/fwlink/?LinkID=391919
+    JSON은 Windows.Data.Json으로 직접 읽고 쓰므로 직렬화용 리플렉션 지시문은 필요 없다.
+-->
+<Directives xmlns="http://schemas.microsoft.com/netfx/2013/01/metadata">
+  <Application>
+    <Assembly Name="*Application*" Dynamic="Required All" />
+  </Application>
+</Directives>
