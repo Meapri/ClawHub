@@ -3,62 +3,72 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:ClawApp"
              KeyboardNavigation.DirectionalNavigation="Contained">
-    <Border Background="{StaticResource Bg1}" BorderBrush="{StaticResource Stroke}" BorderThickness="0,0,1,0">
-        <DockPanel Margin="20,28,20,20">
-            <TextBlock DockPanel.Dock="Top" Text="ClawHub" Style="{StaticResource H1}" FontSize="28" Margin="6,0,0,4"/>
-            <TextBlock DockPanel.Dock="Top" Text="MSI Claw 8 EX" Style="{StaticResource Caption}" Margin="6,0,0,22"/>
+    <!-- Windows 11 플라이아웃: Acrylic 틴트 + 8px 모서리 + 얇은 테두리 -->
+    <Border Background="{DynamicResource Bg1}" BorderBrush="{DynamicResource CardStroke}" BorderThickness="1" CornerRadius="8">
+        <DockPanel Margin="12,20,12,12">
+            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="12,0,0,20">
+                <Border Width="36" Height="36" CornerRadius="18" Background="{DynamicResource Accent}" Margin="0,0,12,0">
+                    <TextBlock Text="&#xE7FC;" Style="{StaticResource Icon}" Foreground="{DynamicResource AccentText}" HorizontalAlignment="Center"/>
+                </Border>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="ClawHub" FontSize="16" FontWeight="SemiBold"/>
+                    <TextBlock Text="MSI Claw 8 EX" Style="{StaticResource Caption}"/>
+                </StackPanel>
+            </StackPanel>
 
             <!-- 게임 실행 중일 때만 -->
-            <StackPanel DockPanel.Dock="Top" Visibility="{Binding RunningGame, Converter={StaticResource NullVis}}" Margin="0,0,0,14">
+            <StackPanel DockPanel.Dock="Top" Visibility="{Binding RunningGame, Converter={StaticResource NullVis}}" Margin="0,0,0,12">
                 <Button Style="{StaticResource PrimaryButton}" Command="{Binding ReturnToBackgroundCommand}" local:Nav.InitialFocus="True"
-                        Margin="0,0,0,8">
+                        Margin="4,0,4,8" HorizontalAlignment="Stretch">
                     <StackPanel>
-                        <TextBlock Text="▶  게임으로 돌아가기" HorizontalAlignment="Center"/>
-                        <TextBlock Text="{Binding RunningGame.Title}" FontSize="13" FontWeight="Normal" HorizontalAlignment="Center"
-                                   TextTrimming="CharacterEllipsis" Opacity="0.8"/>
+                        <TextBlock HorizontalAlignment="Center"><Run Text="&#xE768;" FontFamily="{StaticResource IconFont}"/><Run Text="  게임으로 돌아가기"/></TextBlock>
+                        <TextBlock Text="{Binding RunningGame.Title}" FontSize="12" FontWeight="Normal" HorizontalAlignment="Center"
+                                   TextTrimming="CharacterEllipsis" Opacity="0.85"/>
                     </StackPanel>
                 </Button>
-                <Button Style="{StaticResource NavButton}" Command="{Binding QuitGameCommand}" Foreground="{StaticResource Danger}">
+                <Button Style="{StaticResource NavItem}" Command="{Binding QuitGameCommand}" Foreground="{DynamicResource Danger}">
                     <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE711;" Style="{StaticResource Icon}" Margin="0,0,14,0"/><TextBlock Text="게임 종료"/></StackPanel>
                 </Button>
+                <Border Height="1" Background="{DynamicResource Divider}" Margin="8,8"/>
             </StackPanel>
 
-            <StackPanel DockPanel.Dock="Bottom">
-                <TextBlock Text="전원" Style="{StaticResource Section}"/>
+            <!-- 하단: 전원 (시작 메뉴의 전원 단추 자리) -->
+            <Border DockPanel.Dock="Bottom" BorderBrush="{DynamicResource Divider}" BorderThickness="0,1,0,0" Padding="0,10,0,0">
                 <UniformGrid Columns="3">
-                    <Button Style="{StaticResource NavButton}" Command="{Binding SleepCommand}" Margin="0,0,6,0" HorizontalContentAlignment="Center" Padding="6,12">
-                        <StackPanel><TextBlock Text="&#xE708;" Style="{StaticResource Icon}" HorizontalAlignment="Center"/><TextBlock Text="절전" FontSize="14" HorizontalAlignment="Center" Margin="0,4,0,0"/></StackPanel>
+                    <Button Style="{StaticResource NavItem}" Command="{Binding SleepCommand}" HorizontalContentAlignment="Center" Height="56" Padding="0">
+                        <StackPanel><TextBlock Text="&#xE708;" Style="{StaticResource Icon}" HorizontalAlignment="Center"/><TextBlock Text="절전" FontSize="12" HorizontalAlignment="Center" Margin="0,4,0,0"/></StackPanel>
                     </Button>
-                    <Button Style="{StaticResource NavButton}" Command="{Binding RestartCommand}" Margin="3,0" HorizontalContentAlignment="Center" Padding="6,12">
-                        <StackPanel><TextBlock Text="&#xE72C;" Style="{StaticResource Icon}" HorizontalAlignment="Center"/><TextBlock Text="다시 시작" FontSize="14" HorizontalAlignment="Center" Margin="0,4,0,0"/></StackPanel>
+                    <Button Style="{StaticResource NavItem}" Command="{Binding RestartCommand}" HorizontalContentAlignment="Center" Height="56" Padding="0">
+                        <StackPanel><TextBlock Text="&#xE777;" Style="{StaticResource Icon}" HorizontalAlignment="Center"/><TextBlock Text="다시 시작" FontSize="12" HorizontalAlignment="Center" Margin="0,4,0,0"/></StackPanel>
                     </Button>
-                    <Button Style="{StaticResource NavButton}" Command="{Binding ShutdownCommand}" Margin="6,0,0,0" HorizontalContentAlignment="Center" Padding="6,12">
-                        <StackPanel><TextBlock Text="&#xE7E8;" Style="{StaticResource Icon}" HorizontalAlignment="Center"/><TextBlock Text="끄기" FontSize="14" HorizontalAlignment="Center" Margin="0,4,0,0"/></StackPanel>
+                    <Button Style="{StaticResource NavItem}" Command="{Binding ShutdownCommand}" HorizontalContentAlignment="Center" Height="56" Padding="0">
+                        <StackPanel><TextBlock Text="&#xE7E8;" Style="{StaticResource Icon}" HorizontalAlignment="Center"/><TextBlock Text="시스템 종료" FontSize="12" HorizontalAlignment="Center" Margin="0,4,0,0"/></StackPanel>
                     </Button>
                 </UniformGrid>
-            </StackPanel>
+            </Border>
 
             <ScrollViewer>
                 <StackPanel>
-                    <Button Style="{StaticResource NavButton}" Command="{Binding GoHomeCommand}" local:Nav.InitialFocus="True">
+                    <Button Style="{StaticResource NavItem}" Command="{Binding GoHomeCommand}" local:Nav.InitialFocus="True">
                         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE80F;" Style="{StaticResource Icon}" Margin="0,0,14,0"/><TextBlock Text="홈"/></StackPanel>
                     </Button>
-                    <Button Style="{StaticResource NavButton}" Command="{Binding OpenLibraryCommand}">
+                    <Button Style="{StaticResource NavItem}" Command="{Binding OpenLibraryCommand}">
                         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE8F1;" Style="{StaticResource Icon}" Margin="0,0,14,0"/><TextBlock Text="라이브러리"/></StackPanel>
                     </Button>
-                    <Button Style="{StaticResource NavButton}" Command="{Binding OpenProfilesCommand}">
-                        <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE7FC;" Style="{StaticResource Icon}" Margin="0,0,14,0"/><TextBlock Text="매핑 프로필"/></StackPanel>
+                    <Button Style="{StaticResource NavItem}" Command="{Binding OpenProfilesCommand}">
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE765;" Style="{StaticResource Icon}" Margin="0,0,14,0"/><TextBlock Text="키 매핑"/></StackPanel>
                     </Button>
-                    <Button Style="{StaticResource NavButton}" Command="{Binding OpenXboxAppCommand}">
-                        <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE990;" Style="{StaticResource Icon}" Margin="0,0,14,0"/><TextBlock Text="Xbox 앱"/></StackPanel>
-                    </Button>
-                    <Button Style="{StaticResource NavButton}" Command="{Binding OpenSettingsCommand}">
+                    <Button Style="{StaticResource NavItem}" Command="{Binding OpenSettingsCommand}">
                         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE713;" Style="{StaticResource Icon}" Margin="0,0,14,0"/><TextBlock Text="설정"/></StackPanel>
                     </Button>
-                    <Button Style="{StaticResource NavButton}" Command="{Binding GoToDesktopCommand}">
+                    <Border Height="1" Background="{DynamicResource Divider}" Margin="8,8"/>
+                    <Button Style="{StaticResource NavItem}" Command="{Binding OpenXboxAppCommand}">
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE990;" Style="{StaticResource Icon}" Margin="0,0,14,0"/><TextBlock Text="Xbox 앱"/></StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource NavItem}" Command="{Binding GoToDesktopCommand}">
                         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE7F4;" Style="{StaticResource Icon}" Margin="0,0,14,0"/><TextBlock Text="데스크톱으로"/></StackPanel>
                     </Button>
-                    <Button Style="{StaticResource NavButton}" Command="{Binding ExitAppCommand}" Foreground="{StaticResource TextDim}">
+                    <Button Style="{StaticResource NavItem}" Command="{Binding ExitAppCommand}" Foreground="{DynamicResource TextDim}">
                         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE8BB;" Style="{StaticResource Icon}" Margin="0,0,14,0"/><TextBlock Text="ClawHub 종료"/></StackPanel>
                     </Button>
                 </StackPanel>

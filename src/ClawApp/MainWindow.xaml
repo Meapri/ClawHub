@@ -3,103 +3,113 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:v="clr-namespace:ClawApp.Views"
         Title="ClawHub"
-        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
-        ResizeMode="NoResize" ShowInTaskbar="False" Topmost="True"
-        FontFamily="{StaticResource UiFont}" Foreground="{StaticResource Text}"
-        UseLayoutRounding="True" TextOptions.TextFormattingMode="Display">
+        WindowStyle="None" ResizeMode="NoResize" ShowInTaskbar="False" Topmost="True"
+        Background="Transparent"
+        FontFamily="{StaticResource UiFont}" FontSize="14" Foreground="{DynamicResource Text}"
+        UseLayoutRounding="True" SnapsToDevicePixels="True">
+    <!--
+      AllowsTransparency(레이어드 창)는 쓰지 않는다: ClearType이 꺼지고 글자가 뭉개진다.
+      대신 DWM 백드롭(셸 = Mica, 게임 위 오버레이 = Acrylic)을 코드에서 켠다.
+    -->
+    <WindowChrome.WindowChrome>
+        <WindowChrome GlassFrameThickness="-1" CaptionHeight="0" ResizeBorderThickness="0" CornerRadius="0" UseAeroCaptionButtons="False"/>
+    </WindowChrome.WindowChrome>
+
     <Grid>
         <!-- ── 셸 화면 ─────────────────────────────────────── -->
-        <Grid Visibility="{Binding IsShellVisible, Converter={StaticResource Vis}}" Background="{StaticResource Bg0}">
-            <!-- 배경: 현재 히어로 게임 아트를 흐리게 -->
-            <Image Source="{Binding Home.Hero.Hero}" Stretch="UniformToFill" Opacity="0.28">
-                <Image.Effect><BlurEffect Radius="48"/></Image.Effect>
-            </Image>
-            <Rectangle>
-                <Rectangle.Fill>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                        <GradientStop Color="#550B0F14" Offset="0"/>
-                        <GradientStop Color="#F00B0F14" Offset="0.75"/>
-                    </LinearGradientBrush>
-                </Rectangle.Fill>
-            </Rectangle>
+        <Grid Visibility="{Binding IsShellVisible, Converter={StaticResource Vis}}">
+            <!-- 플라이아웃이 열리면 뒤 화면을 흐리게 (앱 안의 Acrylic) -->
+            <Grid.Style>
+                <Style TargetType="Grid">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsAnyPanelOpen}" Value="True">
+                            <Setter Property="Effect">
+                                <Setter.Value><BlurEffect Radius="28" KernelType="Gaussian" RenderingBias="Performance"/></Setter.Value>
+                            </Setter>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Grid.Style>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="64"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="52"/>
+            </Grid.RowDefinitions>
 
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="60"/>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="54"/>
-                </Grid.RowDefinitions>
+            <!-- 상단: 페이지 제목 + 상태 -->
+            <DockPanel Margin="36,0,32,0">
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Background="{DynamicResource Accent}" CornerRadius="4" Padding="10,3" Margin="0,0,18,0"
+                            Visibility="{Binding RunningGame, Converter={StaticResource NullVis}}">
+                        <TextBlock Foreground="{DynamicResource AccentText}" FontSize="12" FontWeight="SemiBold">
+                            <Run Text="&#xE768;" FontFamily="{StaticResource IconFont}"/><Run Text="  "/><Run Text="{Binding RunningGame.Title, Mode=OneWay}"/>
+                        </TextBlock>
+                    </Border>
+                    <TextBlock Text="&#xE7BA;" Style="{StaticResource Icon}" Foreground="{DynamicResource Warn}" Margin="0,0,18,0"
+                               ToolTip="ClawHub 서비스 연결 안 됨"
+                               Visibility="{Binding ServiceConnected, Converter={StaticResource NotVis}}"/>
+                    <TextBlock Text="{Binding BatteryText}" Margin="0,0,18,0" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding Clock}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                </StackPanel>
+                <TextBlock Text="{Binding PageTitle}" Style="{StaticResource H1}" VerticalAlignment="Center"/>
+            </DockPanel>
 
-                <!-- 상단 바 -->
-                <DockPanel Margin="32,0">
-                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                        <Border Background="{StaticResource Accent}" CornerRadius="12" Padding="12,4" Margin="0,0,18,0"
-                                Visibility="{Binding RunningGame, Converter={StaticResource NullVis}}">
-                            <TextBlock Foreground="{StaticResource AccentText}" FontSize="13" FontWeight="SemiBold">
-                                <Run Text="▶ "/><Run Text="{Binding RunningGame.Title, Mode=OneWay}"/>
-                            </TextBlock>
-                        </Border>
-                        <TextBlock Text="&#xE7BA;" Style="{StaticResource Icon}" Foreground="{StaticResource Warn}" Margin="0,0,18,0"
-                                   ToolTip="ClawHub 서비스 연결 안 됨"
-                                   Visibility="{Binding ServiceConnected, Converter={StaticResource NotVis}}"/>
-                        <TextBlock Text="{Binding BatteryText}" FontSize="16" Margin="0,0,18,0" VerticalAlignment="Center"/>
-                        <TextBlock Text="{Binding Clock}" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                    </StackPanel>
-                    <TextBlock Text="{Binding PageTitle}" Style="{StaticResource H2}" VerticalAlignment="Center"/>
-                </DockPanel>
+            <!-- 페이지 -->
+            <ContentControl x:Name="PageHost" Grid.Row="1" Content="{Binding CurrentPage}" Focusable="False"/>
 
-                <!-- 페이지 -->
-                <ContentControl x:Name="PageHost" Grid.Row="1" Content="{Binding CurrentPage}" Focusable="False"/>
-
-                <!-- 하단 버튼 힌트 -->
-                <Border Grid.Row="2" Background="#CC0B0F14" BorderBrush="{StaticResource Stroke}" BorderThickness="0,1,0,0">
-                    <ItemsControl ItemsSource="{Binding Hints}" HorizontalAlignment="Right" Margin="0,0,32,0" Focusable="False">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate><StackPanel Orientation="Horizontal" VerticalAlignment="Center"/></ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <Border Style="{StaticResource HintGlyph}" MinWidth="26" Width="Auto" Padding="6,0">
-                                        <TextBlock Text="{Binding Glyph}" FontSize="12" FontWeight="Bold"
-                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    </Border>
-                                    <TextBlock Text="{Binding Label}" FontSize="15" VerticalAlignment="Center"/>
-                                </StackPanel>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </Border>
-            </Grid>
+            <!-- 하단 버튼 힌트 -->
+            <Border Grid.Row="2" BorderBrush="{DynamicResource Divider}" BorderThickness="0,1,0,0">
+                <ItemsControl ItemsSource="{Binding Hints}" HorizontalAlignment="Right" Margin="0,0,32,0" Focusable="False">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate><StackPanel Orientation="Horizontal" VerticalAlignment="Center"/></ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <Border Style="{StaticResource HintGlyph}">
+                                    <TextBlock Text="{Binding Glyph}" FontSize="11" FontWeight="SemiBold"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <TextBlock Text="{Binding Label}" VerticalAlignment="Center" Foreground="{DynamicResource TextDim}"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </Border>
         </Grid>
 
         <!-- ── 패널 뒤 어둡게 ─────────────────────────────── -->
-        <Border Background="{StaticResource Scrim}" Visibility="{Binding IsAnyPanelOpen, Converter={StaticResource Vis}}"
+        <Border Background="{DynamicResource Scrim}" Visibility="{Binding IsAnyPanelOpen, Converter={StaticResource Vis}}"
                 MouseDown="Scrim_MouseDown"/>
 
-        <!-- ── 메인 메뉴 (왼쪽) ───────────────────────────── -->
-        <v:MainMenuPanel x:Name="MainMenu" Width="340" HorizontalAlignment="Left"
+        <!-- ── 메인 메뉴 (왼쪽 플라이아웃) ───────────────────── -->
+        <v:MainMenuPanel x:Name="MainMenu" Width="320" HorizontalAlignment="Left" Margin="12"
                          Visibility="{Binding IsMainMenuOpen, Converter={StaticResource Vis}}"/>
 
-        <!-- ── 퀵 설정 (오른쪽) ───────────────────────────── -->
-        <v:QuickAccessPanel x:Name="QuickPanel" Width="400" HorizontalAlignment="Right"
+        <!-- ── 빠른 설정 (오른쪽 플라이아웃, Windows 11 빠른 설정 모양) ── -->
+        <v:QuickAccessPanel x:Name="QuickPanel" Width="380" HorizontalAlignment="Right" Margin="12"
                             DataContext="{Binding QuickAccess}"
                             Visibility="{Binding DataContext.IsQuickAccessOpen, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Vis}}"/>
 
         <!-- ── 실행 중 ────────────────────────────────────── -->
-        <Grid Background="{StaticResource Scrim}" Visibility="{Binding BusyText, Converter={StaticResource NullVis}}">
-            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                <ProgressBar IsIndeterminate="True" Width="240" Height="4" Foreground="{StaticResource Accent}"
-                             Background="{StaticResource Stroke}" BorderThickness="0" Margin="0,0,0,18"/>
-                <TextBlock Text="{Binding BusyText}" Style="{StaticResource H2}" HorizontalAlignment="Center"/>
-            </StackPanel>
+        <Grid Background="{DynamicResource Scrim}" Visibility="{Binding BusyText, Converter={StaticResource NullVis}}">
+            <Border Style="{StaticResource CardPanel}" Background="{DynamicResource Bg1}" VerticalAlignment="Center" HorizontalAlignment="Center" Padding="32,24">
+                <StackPanel>
+                    <ProgressBar IsIndeterminate="True" Width="240" Height="4" Foreground="{DynamicResource Accent}"
+                                 Background="{DynamicResource Stroke}" BorderThickness="0" Margin="0,0,0,16"/>
+                    <TextBlock Text="{Binding BusyText}" Style="{StaticResource H2}" HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Border>
         </Grid>
 
-        <!-- ── 토스트 ─────────────────────────────────────── -->
-        <Border VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,72,0,0" Padding="20,12" CornerRadius="12"
-                Background="{StaticResource SurfaceHi}" BorderBrush="{StaticResource Stroke}" BorderThickness="1"
+        <!-- ── 알림 (Windows 11 InfoBar 느낌) ─────────────── -->
+        <Border VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,72,0,0" Padding="16,10" CornerRadius="8"
+                Background="{DynamicResource Bg1}" BorderBrush="{DynamicResource CardStroke}" BorderThickness="1"
                 Visibility="{Binding Toast, Converter={StaticResource NullVis}}" IsHitTestVisible="False">
-            <TextBlock Text="{Binding Toast}" FontSize="16" TextWrapping="Wrap" MaxWidth="640"/>
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="&#xE946;" Style="{StaticResource Icon}" Foreground="{DynamicResource Accent}" Margin="0,0,10,0"/>
+                <TextBlock Text="{Binding Toast}" TextWrapping="Wrap" MaxWidth="640" VerticalAlignment="Center"/>
+            </StackPanel>
         </Border>
     </Grid>
 </Window>

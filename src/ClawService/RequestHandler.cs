@@ -9,10 +9,20 @@ public sealed class RequestHandler(ILogger<RequestHandler> log, ControllerManage
     private static readonly string? Bios =
         Registry.GetValue(@"HKEY_LOCAL_MACHINE\HARDWARE\DESCRIPTION\System\BIOS", "BIOSVersion", null) as string;
 
+    private static void Validate(Request req)
+    {
+        if (req.ChargeLimit is { } cl && !Enum.IsDefined(cl)) throw new ArgumentException("잘못된 충전 한도");
+        if (req.Performance is { } p && (!Enum.IsDefined(p.Mode) || !Enum.IsDefined(p.Fan)))
+            throw new ArgumentException("잘못된 성능 설정");
+        if (req.ControllerMode is { } m && m is not (GamepadMode.XInput or GamepadMode.Desktop))
+            throw new ArgumentException("허용되지 않은 컨트롤러 모드");
+    }
+
     public Response Handle(Request req)
     {
         try
         {
+            Validate(req);
             switch (req.Op)
             {
                 case Ops.GetStatus:

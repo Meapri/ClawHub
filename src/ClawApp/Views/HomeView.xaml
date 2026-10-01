@@ -21,30 +21,40 @@
 
         <!-- 히어로: 최근 게임 -->
         <Grid Visibility="{Binding IsEmpty, Converter={StaticResource NotVis}}" Margin="0,0,32,0" Height="300">
-            <Border CornerRadius="16" ClipToBounds="True" Background="{Binding Hero.Placeholder}">
-                <Grid>
-                    <Image Source="{Binding Hero.Hero}" Stretch="UniformToFill"/>
-                    <Rectangle>
-                        <Rectangle.Fill>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                <GradientStop Color="#E60B0F14" Offset="0"/>
-                                <GradientStop Color="#000B0F14" Offset="0.75"/>
-                            </LinearGradientBrush>
-                        </Rectangle.Fill>
-                    </Rectangle>
-                    <Image Source="{Binding Hero.Icon}" Width="96" Height="96" HorizontalAlignment="Right" Margin="0,0,64,0" Opacity="0.9"
-                           Visibility="{Binding Hero.HasCover, Converter={StaticResource NotVis}}"/>
-                </Grid>
-            </Border>
-            <StackPanel VerticalAlignment="Bottom" Margin="36,0,0,32">
-                <TextBlock Text="{Binding Hero.LastPlayedLabel}" Style="{StaticResource Caption}" Margin="0,0,0,4"/>
-                <TextBlock Text="{Binding Hero.Title}" Style="{StaticResource H1}" FontSize="40" MaxWidth="700" HorizontalAlignment="Left"/>
-                <TextBlock Text="{Binding Hero.ProfileLabel}" Style="{StaticResource Caption}" Margin="0,4,0,18"/>
+            <!-- 게임 아트 배너: 테마와 상관없이 아트 위 글자는 흰색 (아래쪽을 어둡게 깔아 가독성 확보) -->
+            <Grid>
+                <Border CornerRadius="8" Background="{Binding Hero.Placeholder}"/>
+                <Border CornerRadius="8" Visibility="{Binding Hero.HasHero, Converter={StaticResource Vis}}">
+                    <Border.Background>
+                        <ImageBrush ImageSource="{Binding Hero.Hero}" Stretch="UniformToFill" AlignmentY="Center"/>
+                    </Border.Background>
+                </Border>
+                <Image Source="{Binding Hero.Icon}" Width="96" Height="96" HorizontalAlignment="Right" Margin="0,0,64,0"
+                       Visibility="{Binding Hero.HasHero, Converter={StaticResource NotVis}}"/>
+                <Border CornerRadius="8" BorderBrush="{DynamicResource CardStroke}" BorderThickness="1">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,1" EndPoint="0.8,0">
+                            <GradientStop Color="#E0000000" Offset="0"/>
+                            <GradientStop Color="#00000000" Offset="0.75"/>
+                        </LinearGradientBrush>
+                    </Border.Background>
+                </Border>
+            </Grid>
+            <StackPanel VerticalAlignment="Bottom" Margin="32,0,0,28" TextElement.Foreground="White">
+                <TextBlock Text="{Binding Hero.LastPlayedLabel}" FontSize="12" Opacity="0.85" Margin="0,0,0,6"/>
+                <!-- 로고 아트가 있으면 로고, 없으면 제목 -->
+                <Image Source="{Binding Hero.Logo}" MaxWidth="360" MaxHeight="120" HorizontalAlignment="Left" Stretch="Uniform"
+                       Visibility="{Binding Hero.HasLogo, Converter={StaticResource Vis}}" Margin="0,0,0,8"/>
+                <TextBlock Text="{Binding Hero.Title}" FontFamily="{StaticResource DisplayFont}" FontSize="36" FontWeight="SemiBold"
+                           MaxWidth="700" HorizontalAlignment="Left" TextTrimming="CharacterEllipsis"
+                           Visibility="{Binding Hero.HasLogo, Converter={StaticResource NotVis}}"/>
+                <TextBlock Text="{Binding Hero.ProfileLabel}" FontSize="12" Opacity="0.85" Margin="0,2,0,16"/>
                 <StackPanel Orientation="Horizontal">
-                    <Button Style="{StaticResource PrimaryButton}" Command="{Binding Hero.PlayCommand}" local:Nav.InitialFocus="True" Margin="0,0,12,0">
+                    <Button Style="{StaticResource PrimaryButton}" Command="{Binding Hero.PlayCommand}" local:Nav.InitialFocus="True" Margin="0,0,10,0" MinWidth="140">
                         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE768;" Style="{StaticResource Icon}" Margin="0,0,10,0"/><TextBlock Text="플레이"/></StackPanel>
                     </Button>
-                    <Button Style="{StaticResource NavButton}" Command="{Binding Hero.OpenCommand}" Margin="0" Padding="22,14" FontSize="18">
+                    <Button Style="{StaticResource NavButton}" Command="{Binding Hero.OpenCommand}" Margin="0" Padding="20,10"
+                            Background="#33FFFFFF" BorderBrush="#40FFFFFF" Foreground="White">
                         <TextBlock Text="자세히"/>
                     </Button>
                 </StackPanel>

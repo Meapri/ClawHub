@@ -58,15 +58,24 @@ public sealed class EcManager : IDisposable
         }
     }
 
+    /// <summary>
+    /// 모든 EC 쓰기를 직렬화한다. 요청(여러 클라이언트)과 절전 복귀 재적용이 동시에 오면
+    /// PL1→8W→PL2→PL1 순서가 섞여 PL1 > PL2가 될 수 있다.
+    /// </summary>
+    private readonly object _ecLock = new();
+
     public void Reapply(string reason)
     {
         if (!Writable) return;
-        try
+        lock (_ecLock)
         {
-            _perf!.Apply(Temporary ?? _state.Performance);
-            _log.LogInformation("성능 설정 재적용 ({Reason}): {State}", reason, _state.Performance);
+            try
+            {
+                _perf!.Apply(Temporary ?? _state.Performance);
+                _log.LogInformation("성능 설정 재적용 ({Reason}): {State}", reason, _state.Performance);
+            }
+            catch (Exception ex) { _log.LogError(ex, "성능 설정 재적용 실패"); }
         }
-        catch (Exception ex) { _log.LogError(ex, "성능 설정 재적용 실패"); }
     }
 
     /// <summary>게임별 성능 모드가 적용 중이면 그 값 (사용자 기본값은 <see cref="Performance"/>).</summary>
@@ -75,30 +84,39 @@ public sealed class EcManager : IDisposable
     public void SetPerformance(PerformanceState state)
     {
         if (!Writable) throw new InvalidOperationException(Error ?? "EC 쓰기 불가");
-        _perf!.Apply(state);
-        _state.Performance = state;
-        Temporary = null;
-        JsonStore.Save(StatePath, _state);
+        lock (_ecLock)
+        {
+            _perf!.Apply(state);
+            _state.Performance = state;
+            Temporary = null;
+            JsonStore.Save(StatePath, _state);
+        }
     }
 
     public void ApplyTemporary(PerformanceState state)
     {
         if (!Writable) throw new InvalidOperationException(Error ?? "EC 쓰기 불가");
-        _perf!.Apply(state);
-        Temporary = state;
+        lock (_ecLock)
+        {
+            _perf!.Apply(state);
+            Temporary = state;
+        }
     }
 
     public void RestoreDefault()
     {
-        if (Temporary is null) return;
-        Temporary = null;
-        if (Writable) _perf!.Apply(_state.Performance);
+        lock (_ecLock)
+        {
+            if (Temporary is null) return;
+            Temporary = null;
+            if (Writable) _perf!.Apply(_state.Performance);
+        }
     }
 
     public void SetChargeLimit(ChargeLimit limit)
     {
         if (!Writable) throw new InvalidOperationException(Error ?? "EC 쓰기 불가");
-        _perf!.SetChargeLimit(limit);
+        lock (_ecLock) _perf!.SetChargeLimit(limit);
     }
 
     public void Dispose()

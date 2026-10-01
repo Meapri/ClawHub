@@ -53,7 +53,44 @@ public partial class MainWindow : Window
     private void OnVmChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName == nameof(ShellViewModel.IsWindowVisible)) ApplyWindowVisibility();
+        else if (e.PropertyName == nameof(ShellViewModel.IsShellVisible)) ApplyBackdrop();
     }
+
+    // ── Windows 11 백드롭 ─────────────────────────────────
+
+    private const int DwmwaUseImmersiveDarkMode = 20;
+    private const int DwmwaSystemBackdropType = 38;
+    private const int BackdropMica = 2, BackdropAcrylic = 3;
+
+    protected override void OnSourceInitialized(EventArgs e)
+    {
+        base.OnSourceInitialized(e);
+        var hwnd = new WindowInteropHelper(this).Handle;
+        // WPF가 칠하는 배경을 투명하게 → DWM 백드롭이 보이게
+        if (HwndSource.FromHwnd(hwnd)?.CompositionTarget is { } target) target.BackgroundColor = Colors.Transparent;
+        var margins = new Margins { Left = -1, Right = -1, Top = -1, Bottom = -1 };
+        DwmExtendFrameIntoClientArea(hwnd, ref margins);
+        var dark = Services.SystemTheme.IsLight ? 0 : 1;
+        DwmSetWindowAttribute(hwnd, DwmwaUseImmersiveDarkMode, ref dark, sizeof(int));
+        ApplyBackdrop();
+    }
+
+    /// <summary>셸 화면 = Mica(바탕화면 색이 은은히 비침), 게임 위 오버레이 = Acrylic(뒤 화면을 흐림).</summary>
+    private void ApplyBackdrop()
+    {
+        var hwnd = new WindowInteropHelper(this).Handle;
+        if (hwnd == IntPtr.Zero) return;
+        var type = _vm.IsShellVisible ? BackdropMica : BackdropAcrylic;
+        var ok = DwmSetWindowAttribute(hwnd, DwmwaSystemBackdropType, ref type, sizeof(int)) == 0;
+        // 백드롭을 못 쓰는 환경(원격 데스크톱 등)이면 단색 배경으로
+        Background = ok ? Brushes.Transparent : (Brush)FindResource("Bg0");
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct Margins { public int Left, Right, Top, Bottom; }
+
+    [DllImport("dwmapi.dll")] private static extern int DwmExtendFrameIntoClientArea(IntPtr hwnd, ref Margins margins);
+    [DllImport("dwmapi.dll")] private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int value, int size);
 
     private void ApplyWindowVisibility()
     {

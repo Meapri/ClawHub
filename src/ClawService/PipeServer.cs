@@ -41,9 +41,23 @@ public sealed class PipeServer(ILogger<PipeServer> log, RequestHandler handler)
                 await pipe.DisposeAsync();
                 return;
             }
+            catch (Exception ex) when (ex is IOException or ObjectDisposedException)
+            {
+                // 연결 직후 끊은 클라이언트(ERROR_NO_DATA 등) — 서비스는 계속
+                await pipe.DisposeAsync();
+                continue;
+            }
             _ = Task.Run(() => HandleClientAsync(pipe, ct), ct);
         }
     }
+
+    /// <summary>
+    /// 구독 중인 앱이 하나도 남지 않았을 때 (앱 종료·크래시·로그오프).
+    /// 서비스는 이때 게임 매핑과 게임별 성능을 원래대로 돌린다 — 앱 없이 매핑이 남는 일을 막는다.
+    /// </summary>
+    public event Action? LastSubscriberGone;
+
+    private const int MaxLineLength = 64 * 1024;
 
     public void Broadcast(Response evt)
     {
@@ -72,6 +86,7 @@ public sealed class PipeServer(ILogger<PipeServer> log, RequestHandler handler)
         {
             while (!ct.IsCancellationRequested && await reader.ReadLineAsync(ct) is { } line)
             {
+                if (line.Length > MaxLineLength) break; // 비정상 요청 → 연결 종료
                 Request? req;
                 try { req = JsonSerializer.Deserialize<Request>(line, JsonStore.Options); }
                 catch (JsonException) { continue; }
@@ -92,8 +107,12 @@ public sealed class PipeServer(ILogger<PipeServer> log, RequestHandler handler)
         }
         finally
         {
-            _subscribers.TryRemove(id, out var _);
-            log.LogDebug("클라이언트 연결 종료 {Id}", id);
+            if (_subscribers.TryRemove(id, out var _) && _subscribers.IsEmpty)
+            {
+                log.LogInformation("마지막 앱 연결 종료 → 매핑·게임별 성능 복원");
+                try { LastSubscriberGone?.Invoke(); }
+                catch (Exception ex) { log.LogError(ex, "복원 실패"); }
+            }
         }
     }
 

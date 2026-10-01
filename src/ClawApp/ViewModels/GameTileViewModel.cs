@@ -11,6 +11,9 @@ public sealed partial class GameTileViewModel(ShellViewModel shell, GameEntry ga
     public string Title => Game.Title;
     public ImageSource? Cover { get; } = ArtCache.LoadImage(game.CoverImage);
     public ImageSource? Hero { get; } = ArtCache.LoadImage(game.HeroImage) ?? ArtCache.LoadImage(game.CoverImage);
+    public ImageSource? Logo { get; } = ArtCache.LoadImage(game.LogoImage);
+    public bool HasLogo => Logo is not null;
+    public bool HasHero => Hero is not null;
     public ImageSource? Icon { get; } = ArtCache.LoadIcon(game.IconSource ?? (File.Exists(game.LaunchTarget) ? game.LaunchTarget : null));
     public Brush Placeholder { get; } = ArtCache.PlaceholderBrush(game.Title);
     public bool HasCover => Cover is not null;

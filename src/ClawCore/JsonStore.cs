@@ -8,7 +8,8 @@ public static class JsonStore
     public static readonly JsonSerializerOptions Options = new()
     {
         WriteIndented = true,
-        Converters = { new JsonStringEnumConverter() },
+        // 숫자로 된 enum 값은 받지 않는다 (예: "ChargeLimit": 5 → 검증 없이 EC로 가는 것 방지)
+        Converters = { new JsonStringEnumConverter(allowIntegerValues: false) },
     };
 
     /// <summary>사용자 데이터 (프로필, 라이브러리, 설정) — 앱이 소유.</summary>

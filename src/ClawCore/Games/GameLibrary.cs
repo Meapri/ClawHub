@@ -58,8 +58,12 @@ public sealed class GameLibrary
             g.LaunchArgs = o.LaunchArgs ?? g.LaunchArgs;
         }
 
+        foreach (var g in games) ArtFetcher.ApplyCached(g);
         Games = games.DistinctBy(g => g.Id).OrderBy(g => g.Title, StringComparer.CurrentCulture).ToList();
     }
+
+    /// <summary>아트가 없는 게임의 아트를 인터넷에서 받아 온다 (백그라운드에서 호출).</summary>
+    public Task<int> FetchArtAsync(CancellationToken ct = default) => new ArtFetcher().FetchMissingAsync(Games.ToList(), ct);
 
     public void MarkPlayed(GameEntry game) => Update(game, o => o.LastPlayed = game.LastPlayed = DateTime.Now);
 

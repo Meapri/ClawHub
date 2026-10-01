@@ -43,6 +43,7 @@ public sealed partial class SteamProvider : ILibraryProvider
                     Title = kv.GetValueOrDefault("name") ?? appId,
                     Source = GameSource.Steam,
                     LaunchTarget = $"steam://rungameid/{appId}",
+                    SteamAppId = int.TryParse(appId, out var id) ? id : null,
                     InstallDir = kv.TryGetValue("installdir", out var dir) ? Path.Combine(apps, "common", dir) : null,
                     CoverImage = FindArt(steam, appId, "library_600x900.jpg"),
                     HeroImage = FindArt(steam, appId, "library_hero.jpg"),
@@ -143,6 +144,7 @@ public sealed class InstalledGamesProvider : ILibraryProvider
             {
                 Id = $"installed:{e.Name}",
                 Title = known ? k.Title : e.Name,
+                SearchName = e.Name,
                 Source = GameSource.Installed,
                 LaunchTarget = exe,
                 InstallDir = e.Location is { Length: > 0 } ? e.Location : Path.GetDirectoryName(exe),
@@ -202,6 +204,7 @@ public sealed class GogProvider : ILibraryProvider
             {
                 Id = $"gog:{id}",
                 Title = g.GetValue("gameName") as string ?? id,
+                SearchName = g.GetValue("gameName") as string,
                 Source = GameSource.Installed,
                 LaunchTarget = exe,
                 LaunchArgs = g.GetValue("launchParam") as string,

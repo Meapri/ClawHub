@@ -99,10 +99,13 @@ public sealed class ControllerManager : IDisposable
 
     public void ApplyMapping(IReadOnlyDictionary<ClawButton, byte[]> bindings)
     {
+        if (bindings.Count > Enum.GetValues<ClawButton>().Length || bindings.Keys.Any(b => !Enum.IsDefined(b)))
+            throw new ArgumentException("알 수 없는 버튼");
         lock (_lock)
         {
+            // 검증(이미지 생성)이 성공한 뒤에만 상태를 바꾼다
+            WriteTarget(bindings, Settings);
             _activeBindings = bindings;
-            WriteTarget();
         }
         StatusChanged?.Invoke();
     }
@@ -112,18 +115,20 @@ public sealed class ControllerManager : IDisposable
         lock (_lock)
         {
             _activeBindings = null;
-            WriteTarget();
+            WriteTarget(null, Settings);
         }
         StatusChanged?.Invoke();
     }
 
     public void SetSettings(ControllerSettings settings)
     {
+        if (settings.LightColor is not { Length: 3 }) throw new ArgumentException("LightColor는 RGB 3바이트");
+        if (!Enum.IsDefined(settings.Light)) throw new ArgumentException("알 수 없는 조명 모드");
         lock (_lock)
         {
+            WriteTarget(_activeBindings, settings);
             Settings = settings;
             JsonStore.Save(SettingsPath, settings);
-            WriteTarget();
         }
         StatusChanged?.Invoke();
     }
@@ -139,19 +144,37 @@ public sealed class ControllerManager : IDisposable
         StatusChanged?.Invoke();
     }
 
-    private void WriteTarget()
+    private void WriteTarget() => WriteTarget(_activeBindings, Settings);
+
+    /// <summary>
+    /// baseline + 설정 + 매핑으로 목표 이미지를 만들어 RAM에 쓴다.
+    /// 이미지 생성(=입력 검증)은 쓰기 전에 끝나고, 표시 파일은 쓰기 전에 남긴다(중간에 죽어도 다음 시작 때 저장된 baseline 사용).
+    /// 쓰기가 실패하면 실제 RAM 상태를 다시 읽어서 다음 복원이 헛돌지 않게 한다.
+    /// </summary>
+    private void WriteTarget(IReadOnlyDictionary<ClawButton, byte[]>? bindings, ControllerSettings settings)
     {
         if (_ctl is null || _baseline is null || _current is null) return;
 
-        var target = _activeBindings is null ? (byte[])_baseline.Clone() : ProfileLayout.Apply(_baseline, _activeBindings);
-        SettingsLayout.Apply(target, Settings);
+        var target = bindings is null ? (byte[])_baseline.Clone() : ProfileLayout.Apply(_baseline, bindings);
+        SettingsLayout.Apply(target, settings);
 
-        if (_ctl.WriteProfileRam(_current, target) is { } range && SettingsLayout.TouchesLight(range.First, range.Last))
-            _ctl.SyncRgb();
-        _current = target;
+        var modified = !target.AsSpan().SequenceEqual(_baseline);
+        if (modified) File.WriteAllText(ModifiedMarkerPath, DateTime.Now.ToString("O"));
 
-        if (target.AsSpan().SequenceEqual(_baseline)) File.Delete(ModifiedMarkerPath);
-        else File.WriteAllText(ModifiedMarkerPath, DateTime.Now.ToString("O"));
+        try
+        {
+            if (_ctl.WriteProfileRam(_current, target) is { } range && SettingsLayout.TouchesLight(range.First, range.Last))
+                _ctl.SyncRgb();
+            _current = target;
+        }
+        catch (Exception)
+        {
+            try { _current = _ctl.ReadProfile(); }
+            catch (Exception) { /* 장치가 사라짐 → Reconnect가 처리 */ }
+            throw;
+        }
+
+        if (!modified) File.Delete(ModifiedMarkerPath);
     }
 
     public void Dispose()

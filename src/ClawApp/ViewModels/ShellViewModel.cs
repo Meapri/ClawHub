@@ -76,6 +76,9 @@ public sealed partial class ShellViewModel : ObservableObject
             _appliedMode = null;
             _appliedPerf = null;
             await RefreshStatusAsync();
+            // 서비스의 실제 상태로 장부를 맞춘다 (앱이 재시작돼도 남은 매핑/게임별 성능을 반드시 정리하도록)
+            if (Status?.MappingActive == true) _appliedProfileId = "__unknown__";
+            _appliedPerf = Status?.TemporaryPerformance?.Mode;
             await SyncControllerAsync();
         });
         Service.EventReceived += e => Ui(() =>
@@ -99,10 +102,23 @@ public sealed partial class ShellViewModel : ObservableObject
             IsShellVisible = false;
         }
 
+        _ = FetchArtAsync();
+
         // 어디서 실행했든(Xbox 앱, 넥슨 런처, 바탕화면) 라이브러리 게임이 뜨면 붙어서 매핑을 적용
         _watchTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
         _watchTimer.Tick += async (_, _) => await WatchExternalGamesAsync();
         _watchTimer.Start();
+    }
+
+    /// <summary>커버·배경·로고가 없는 게임의 아트를 받아 오고, 받았으면 화면을 새로 그린다.</summary>
+    public async Task FetchArtAsync()
+    {
+        var got = await Task.Run(() => Library.FetchArtAsync());
+        if (got > 0)
+        {
+            Home.Reload();
+            if (CurrentPage is LibraryViewModel lib) lib.Refresh();
+        }
     }
 
     /// <summary>Xbox 모드 등 다른 홈 화면 위에서 동작 중인지.</summary>

@@ -16,6 +16,16 @@ public partial class App : Application
             return;
         }
 
+        Services.SystemTheme.Apply(this);
+
+        // UI 이벤트 처리 중 예외로 앱이 죽지 않게 (죽으면 게임 매핑 정리가 늦어진다)
+        DispatcherUnhandledException += (_, ev) =>
+        {
+            ev.Handled = true;
+            ViewModels.ShellViewModel.Instance?.ShowToast($"오류: {ev.Exception.Message}");
+        };
+        TaskScheduler.UnobservedTaskException += (_, ev) => ev.SetObserved();
+
         // 패드로 포커스가 이동하면 스크롤 영역 안에서 자동으로 보이게
         EventManager.RegisterClassHandler(typeof(FrameworkElement), UIElement.GotKeyboardFocusEvent,
             new KeyboardFocusChangedEventHandler((s, _) => ((FrameworkElement)s).BringIntoView()));

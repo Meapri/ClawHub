@@ -20,7 +20,12 @@ public sealed class GameEntry
 
     public string? CoverImage { get; set; }
     public string? HeroImage { get; set; }
+    public string? LogoImage { get; set; }
     public string? IconSource { get; set; }
+
+    /// <summary>아트 검색용 원래 이름 (설치 목록의 DisplayName 등). 없으면 Title.</summary>
+    public string? SearchName { get; set; }
+    public int? SteamAppId { get; set; }
 
     // 사용자 데이터 (library.json에 저장)
     public DateTime? LastPlayed { get; set; }

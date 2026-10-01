@@ -35,6 +35,8 @@ public sealed partial class LibraryViewModel : ObservableObject, INavPage
 
     partial void OnTabIndexChanged(int value) => Apply();
 
+    public void Refresh() => Apply();
+
     private void Apply()
     {
         var filter = Tabs[TabIndex].Filter;
