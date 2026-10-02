@@ -47,6 +47,8 @@ namespace ClawWidget.Ipc
         public const string SetProfilePrefix = "SetProfile:";
         public const string QuitGame = "QuitGame";
         public const string ShowClawHub = "ShowClawHub";
+        /// <summary>지금 게임의 매핑 편집을 연다 (이어서 clawhub:로 런처를 앞으로).</summary>
+        public const string EditMapping = "EditMapping";
         /// <summary>Game Bar 스크린샷 (런처가 Win+Alt+PrtSc).</summary>
         public const string Screenshot = "Screenshot";
         /// <summary>Game Bar 녹화 시작/중지 (Win+Alt+R).</summary>

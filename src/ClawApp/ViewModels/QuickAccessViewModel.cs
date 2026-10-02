@@ -159,11 +159,15 @@ public sealed partial class QuickAccessViewModel : ObservableObject
     /// <summary>매핑 대상: 실행 중 게임, 없으면 본체 버튼으로 런처를 띄우기 직전에 앞에 있던 앱.</summary>
     public string? TargetTitle => _shell.RunningGame?.Title ?? _shell.ForegroundApp?.Name;
     public string ProfileText => _shell.RunningGame is { } g
-        ? _shell.Profiles.Find(g.MappingProfileId)?.Name ?? "사용 안 함 (게임패드 그대로)"
+        ? _shell.Profiles.LabelForGame(g.MappingProfileId)
         : "사용 안 함 — A로 프로필 지정";
 
     [CommunityToolkit.Mvvm.Input.RelayCommand]
     private void CycleProfile() => _shell.CycleTargetProfile();
+
+    /// <summary>지금 게임의 매핑 편집으로 (패널은 닫힌다).</summary>
+    [CommunityToolkit.Mvvm.Input.RelayCommand]
+    private void EditMapping() => _shell.EditRunningMapping();
 
     public void Refresh()
     {

@@ -38,6 +38,8 @@ public sealed partial class ShellViewModel : ObservableObject
     private DispatcherTimer? _toastTimer;
     private IntPtr _returnWindow;
     private bool _inDesktop;
+    /// <summary>"데스크톱으로" 중 (데스크톱 프로필이 쓰이는 때).</summary>
+    public bool IsInDesktop => _inDesktop;
     /// <summary>"데스크톱으로" 중에도 컨트롤러를 게임패드(XInput)로 둔다 (스틱 = 마우스 대신).</summary>
     private bool _desktopGamepad;
     private string? _appliedProfileId;
@@ -138,13 +140,16 @@ public sealed partial class ShellViewModel : ObservableObject
     {
         if (!ServiceConnected) return;
         var game = RunningGame;
-        var profile = Profiles.Find(game?.MappingProfileId);
+        // 위젯 목록: 기본 프로필(= "기본 따름") + 내 프로필·템플릿. 데스크톱 프로필은 게임에 고를 것이 아니라 뺀다.
+        // "사용 안 함"은 위젯이 따로 보여 주는 "매핑 없음"(ProfileId = null)
+        var followsDefault = game is not null && game.MappingProfileId != MappingProfile.NoneId && Profiles.Find(game.MappingProfileId) is not { IsSystem: false };
+        var profile = followsDefault ? Profiles.Default : game?.MappingProfileId == MappingProfile.NoneId ? null : Profiles.Find(game?.MappingProfileId);
         var state = new AppState
         {
             RunningGameTitle = game?.Title ?? ForegroundApp?.Name,
             ProfileId = profile?.Id,
             ProfileName = profile?.Name,
-            Profiles = [.. Profiles.All.Select(p => new ProfileItem { Id = p.Id, Name = p.Name })],
+            Profiles = [.. Profiles.All.Where(p => p.Id != MappingProfile.DesktopId).Select(p => new ProfileItem { Id = p.Id, Name = p.Name })],
             GamePerformanceMode = game?.PerformanceMode?.ToString(),
             GameFpsLimit = game?.FpsLimit,
             GamePerformanceModeOnBattery = game?.PerformanceModeOnBattery?.ToString(),
@@ -210,10 +215,18 @@ public sealed partial class ShellViewModel : ObservableObject
                 break;
             case var c when c.StartsWith(AppCommands.SetProfilePrefix, StringComparison.Ordinal):
                 var id = c[AppCommands.SetProfilePrefix.Length..];
-                var profileId = string.IsNullOrEmpty(id) ? null : Profiles.Find(id)?.Id;
+                // "" = 매핑 없음(기본 프로필도 안 씀), 기본 프로필 = 기본 따름(null), 그 밖 = 그 프로필
+                var profileId = string.IsNullOrEmpty(id) ? MappingProfile.NoneId
+                    : id == MappingProfile.DefaultId ? null
+                    : Profiles.Find(id) is { IsSystem: false } chosen ? chosen.Id : null;
                 if (RunningGame is { } g) Library.SetProfile(g, profileId);
-                else if (ForegroundApp is { } app && profileId is not null) BindForegroundApp(app, profileId);
+                else if (ForegroundApp is { } app && profileId is not null && profileId != MappingProfile.NoneId) BindForegroundApp(app, profileId);
                 break;
+            case AppCommands.EditMapping:
+                // 위젯의 "매핑 편집": 이어서 clawhub:로 런처가 앞에 오면(ShowFromOutside) 이 게임의 매핑 편집을 연다
+                _editMappingRequestedAt = DateTime.UtcNow;
+                if (IsWindowVisible) EditRunningMapping();
+                return;
         }
         _ = PushAppStateAsync();
         _ = SyncControllerAsync(); // 프로필이 바뀌었으면 매핑 다시 적용
@@ -311,7 +324,7 @@ public sealed partial class ShellViewModel : ObservableObject
             session.Ended += s => Ui(() => OnGameEnded(s));
             Session = session;
             RunningGame = game;
-            if (Profiles.Find(game.MappingProfileId) is { } p && !IsWindowVisible)
+            if (Profiles.ForGame(game.MappingProfileId) is { } p && !IsWindowVisible)
                 ShowToast($"{game.Title} 감지 — '{p.Name}' 매핑 적용");
             await SyncControllerAsync();
         }
@@ -466,20 +479,13 @@ public sealed partial class ShellViewModel : ObservableObject
     /// <summary>퀵 설정에서 A를 누를 때마다: 실행 중 게임(또는 앞에 있던 앱)의 프로필을 다음 것으로.</summary>
     public void CycleTargetProfile()
     {
-        var all = Profiles.All;
-        string? Next(string? current)
-        {
-            var i = all.ToList().FindIndex(p => p.Id == current);
-            return i + 1 < all.Count ? all[i + 1].Id : null;
-        }
-
         if (RunningGame is { } game)
         {
-            Library.SetProfile(game, Next(game.MappingProfileId));
+            Library.SetProfile(game, Profiles.NextForGame(game.MappingProfileId));
         }
-        else if (ForegroundApp is { } app)
+        else if (ForegroundApp is { } app && Profiles.NextForGame(null) is { } first && first != MappingProfile.NoneId)
         {
-            BindForegroundApp(app, Next(null));
+            BindForegroundApp(app, first);
         }
         QuickAccess.Refresh(); // 패널을 닫으면 SyncControllerAsync가 새 프로필을 적용
     }
@@ -508,7 +514,40 @@ public sealed partial class ShellViewModel : ObservableObject
         if (IsWindowVisible) RequestFocus();
         else IsWindowVisible = true;
         AfterPanelChange();
+        // 위젯의 "매핑 편집" 바로 뒤에 불려 온 것이면 이 게임의 매핑 편집으로
+        if (DateTime.UtcNow - _editMappingRequestedAt < TimeSpan.FromSeconds(5)) EditRunningMapping();
         _ = SyncControllerAsync();
+    }
+
+    private DateTime _editMappingRequestedAt = DateTime.MinValue;
+
+    /// <summary>
+    /// 지금 게임(없으면 프로필 목록)의 매핑 편집을 연다 — 홈·빠른 설정·위젯의 "이 게임 매핑 편집".
+    /// 게임이 기본 프로필을 따르거나 "사용 안 함"이면 이 게임 전용 프로필을 새로 만든다 (기본 프로필에 키가 있으면 그것을 복사해서).
+    /// </summary>
+    [RelayCommand]
+    public void EditRunningMapping()
+    {
+        _editMappingRequestedAt = DateTime.MinValue;
+        CloseMenus();
+        if (RunningGame is not { } game)
+        {
+            Navigate(new ProfilesViewModel(this));
+            return;
+        }
+        Navigate(new MappingEditorViewModel(this, ProfileForEditing(game)));
+    }
+
+    /// <summary>이 게임이 쓰는 전용 프로필 (없으면 새로 만들어 붙인다).</summary>
+    public MappingProfile ProfileForEditing(GameEntry game)
+    {
+        if (Profiles.Find(game.MappingProfileId) is { IsSystem: false } own) return own;
+        var start = game.MappingProfileId != MappingProfile.NoneId && !Profiles.Default.IsEmpty ? Profiles.Default.Clone() : new MappingProfile();
+        start.Name = game.Title;
+        Profiles.Upsert(start);
+        Library.SetProfile(game, start.Id);
+        _ = PushAppStateAsync();
+        return start;
     }
 
     /// <summary>화면의 빠른 설정 버튼(터치/마우스용) — 오른쪽 본체 버튼과 같다.</summary>
@@ -907,7 +946,11 @@ public sealed partial class ShellViewModel : ObservableObject
         try
         {
             var handedOff = _handoff != Handoff.None;
-            MappingProfile? profile = RunningGame is not null && !IsWindowVisible && !handedOff ? Profiles.Find(RunningGame.MappingProfileId) : null;
+            // 게임 중 = 게임 전용 → 기본 프로필, "데스크톱으로"(스틱 = 마우스) 중 = 데스크톱 프로필. 런처·Game Bar가 앞이면 매핑 없음
+            var free = !IsWindowVisible && !handedOff;
+            MappingProfile? profile = RunningGame is not null ? (free ? Profiles.ForGame(RunningGame.MappingProfileId) : null)
+                : free && _inDesktop && !_desktopGamepad && !Profiles.Desktop.IsEmpty ? Profiles.Desktop
+                : null;
 
             // Xbox 모드(동반)는 항상 패드 조작이므로 XInput, "데스크톱으로"를 고른 경우만 Desktop
             // Game Bar 위젯/Xbox 앱이 앞에 있는 동안도 패드로 조작해야 하므로 XInput

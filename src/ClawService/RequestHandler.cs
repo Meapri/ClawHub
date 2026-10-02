@@ -14,7 +14,7 @@ public sealed class RequestHandler(ILogger<RequestHandler> log, ControllerManage
     private static readonly HashSet<string> KnownCommands =
         [AppCommands.CycleProfile, AppCommands.QuitGame, AppCommands.ShowClawHub,
          AppCommands.Screenshot, AppCommands.ToggleRecording, AppCommands.SaveClip,
-         AppCommands.WidgetShown, AppCommands.WidgetHidden];
+         AppCommands.WidgetShown, AppCommands.WidgetHidden, AppCommands.EditMapping];
 
     /// <summary>"SetVolume:0"–"SetVolume:100"만 통과시킨다.</summary>
     private static bool IsVolumeCommand(string cmd) =>

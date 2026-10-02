@@ -37,7 +37,11 @@ public sealed partial class MappingEditorViewModel : IKeyCapture
 
     public bool IsCapturing => IsTesting;
 
-    partial void OnIsTestingChanged(bool value) => _shell.UpdateHints();
+    partial void OnIsTestingChanged(bool value)
+    {
+        _shell.UpdateHints();
+        OnPropertyChanged(nameof(CanEditName));
+    }
 
     private async Task Test()
     {

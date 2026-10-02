@@ -24,6 +24,9 @@ public sealed partial class ProfileRow(MappingProfile profile, string summary, I
         <= 3 => string.Join(", ", Games),
         _ => $"{string.Join(", ", Games.Take(3))} 외 {Games.Count - 3}개",
     };
+    /// <summary>기본·데스크톱 프로필 (늘 있고 이름 바꾸기·삭제가 없다).</summary>
+    public bool IsSystem => Profile.IsSystem;
+    public bool IsDesktop => Profile.Id == MappingProfile.DesktopId;
     /// <summary>처음부터 들어 있던 템플릿 (지우면 다시 생기지 않음).</summary>
     public bool IsPreset { get; } = isPreset;
     /// <summary>지금 실행 중인 게임이 쓰는 프로필.</summary>
@@ -51,6 +54,8 @@ public sealed partial class ProfilesViewModel : ObservableObject, INavPage
         _shell = shell;
     }
 
+    /// <summary>맨 위 고정: 기본(모든 게임) · 데스크톱.</summary>
+    [ObservableProperty] private ObservableCollection<ProfileRow> _systemRows = [];
     [ObservableProperty] private ObservableCollection<ProfileRow> _userRows = [];
     [ObservableProperty] private ObservableCollection<ProfileRow> _presetRows = [];
 
@@ -94,34 +99,50 @@ public sealed partial class ProfilesViewModel : ObservableObject, INavPage
     private void Reload()
     {
         var presetIds = MappingPresets.All.Select(p => p.Id).ToHashSet();
-        var activeId = _shell.RunningGame?.MappingProfileId;
-        var rows = _shell.Profiles.All.Select(p =>
+        // 실행 중 게임이 실제로 쓰는 프로필 (기본 프로필을 따르면 기본 프로필), "데스크톱으로" 중이면 데스크톱
+        var activeId = _shell.RunningGame is { } running ? _shell.Profiles.ForGame(running.MappingProfileId)?.Id : null;
+        var store = _shell.Profiles;
+        var rows = store.All.Select(p =>
         {
-            var games = _shell.Library.Games.Where(g => g.MappingProfileId == p.Id && !g.Hidden).Select(g => g.Title).ToList();
+            // 기본 프로필을 쓰는 게임 = 프로필을 따로 정하지 않은(또는 지워진 프로필을 가리키는) 게임
+            var games = _shell.Library.Games
+                .Where(g => !g.Hidden && (p.Id == MappingProfile.DefaultId
+                    ? g.MappingProfileId != MappingProfile.NoneId && store.Find(g.MappingProfileId) is not { IsSystem: false }
+                    : g.MappingProfileId == p.Id))
+                .Select(g => g.Title).ToList();
             var preview = PreviewOrder
                 .Where(b => p.Bindings.TryGetValue(b, out var l) && l.Count > 0)
                 .Take(6)
                 .Select(b => new Pair(b, string.Join("+", p.Bindings[b].Select(id => KeyCodes.Find(id)?.Label ?? id))))
                 .ToList();
             var keys = p.Bindings.Count(kv => kv.Value.Count > 0) + p.Macros.Count(kv => kv.Value.Count > 0);
-            return new ProfileRow(p, $"버튼 {keys}개 · {(p.Mode == GamepadMode.Desktop ? "데스크톱 모드" : "XInput 모드")}",
-                games, presetIds.Contains(p.Id), p.Id == activeId, preview);
+            var summary = p.Id switch
+            {
+                MappingProfile.DefaultId when keys == 0 => "비어 있음 · 프로필을 따로 정하지 않은 게임은 게임패드 그대로",
+                MappingProfile.DefaultId => $"버튼 {keys}개 · 프로필을 따로 정하지 않은 모든 게임에 써요",
+                MappingProfile.DesktopId => $"버튼 {keys}개 · '데스크톱으로'(스틱 = 마우스)에서 Windows를 쓸 때",
+                _ => $"버튼 {keys}개 · {(p.Mode == GamepadMode.Desktop ? "데스크톱 모드" : "XInput 모드")}",
+            };
+            if (p.Id == MappingProfile.DesktopId) games = []; // 게임이 아니라 Windows 화면용
+            return new ProfileRow(p, summary, games, presetIds.Contains(p.Id),
+                p.Id == activeId || (p.Id == MappingProfile.DesktopId && _shell.IsInDesktop), preview);
         }).ToList();
-        UserRows = new ObservableCollection<ProfileRow>(rows.Where(r => !r.IsPreset));
-        PresetRows = new ObservableCollection<ProfileRow>(rows.Where(r => r.IsPreset));
+        SystemRows = new ObservableCollection<ProfileRow>(rows.Where(r => r.IsSystem));
+        UserRows = new ObservableCollection<ProfileRow>(rows.Where(r => !r.IsPreset && !r.IsSystem));
+        PresetRows = new ObservableCollection<ProfileRow>(rows.Where(r => r.IsPreset && !r.IsSystem));
         OnPropertyChanged(nameof(HasUserRows));
         OnPropertyChanged(nameof(HasPresetRows));
         OnPropertyChanged(nameof(CountText));
     }
 
-    private ProfileRow? FindRow(string id) => UserRows.Concat(PresetRows).FirstOrDefault(r => r.Profile.Id == id);
+    private ProfileRow? FindRow(string id) => SystemRows.Concat(UserRows).Concat(PresetRows).FirstOrDefault(r => r.Profile.Id == id);
 
     [RelayCommand] private void Edit(ProfileRow row) => _shell.Navigate(new MappingEditorViewModel(_shell, row.Profile));
 
     [RelayCommand]
     private void New()
     {
-        var profile = new MappingProfile { Name = $"프로필 {_shell.Profiles.All.Count + 1}" };
+        var profile = new MappingProfile { Name = $"프로필 {_shell.Profiles.All.Count(p => !p.IsSystem) + 1}" };
         _shell.Profiles.Upsert(profile);
         _shell.Navigate(new MappingEditorViewModel(_shell, profile));
     }
@@ -141,9 +162,10 @@ public sealed partial class ProfilesViewModel : ObservableObject, INavPage
     private async Task Delete(ProfileRow? row)
     {
         if ((row ?? FocusedRow) is not { } r) return;
+        if (r.IsSystem) { _shell.ShowToast("기본·데스크톱 프로필은 지울 수 없어요 — 비우려면 편집에서 버튼을 지우세요"); return; }
         var ok = await _shell.ConfirmAsync($"'{r.Name}' 프로필을 지울까요?",
             r.IsPreset ? "기본 제공 템플릿은 지우면 다시 생기지 않아요."
-            : r.InUse ? $"이 프로필을 쓰는 게임 {r.Games.Count}개는 매핑 없이 실행돼요." : "",
+            : r.InUse ? $"이 프로필을 쓰는 게임 {r.Games.Count}개는 기본 프로필로 실행돼요." : "",
             "삭제", danger: true);
         if (!ok) return;
 
@@ -171,6 +193,7 @@ public sealed partial class ProfilesViewModel : ObservableObject, INavPage
     private void BeginRename(ProfileRow? row)
     {
         if ((row ?? FocusedRow) is not { } r) return;
+        if (r.IsSystem) { _shell.ShowToast("기본·데스크톱 프로필은 이름을 바꿀 수 없어요"); return; }
         RenameText = r.Name;
         RenameRow = r;
         RenameRequested?.Invoke();

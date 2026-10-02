@@ -173,7 +173,7 @@
                 <StackPanel VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,16,0">
                     <!-- 이름: 평소엔 버튼(지나가도 터치 키보드가 뜨지 않게), A를 누르면 입력칸 -->
                     <v:InlineEdit Text="{Binding ProfileName}" FontSize="18" FontWeight="SemiBold" InnerPadding="14,8" MinWidth="320"
-                                  IsEnabled="{Binding IsTesting, Converter={x:Static local:InvertBool.Instance}}"/>
+                                  IsEnabled="{Binding CanEditName}"/>
                     <TextBlock Text="{Binding SummaryText}" Style="{StaticResource Caption}" Margin="2,4,0,0"/>
                 </StackPanel>
             </DockPanel>
@@ -238,7 +238,7 @@
                     <StackPanel>
                         <TextBlock Text="프로필 옵션" Style="{StaticResource H2}" Margin="0,0,0,14"/>
 
-                        <TextBlock Text="게임 중 컨트롤러 모드" Style="{StaticResource Section}" Margin="2,0,0,8"/>
+                        <TextBlock Text="{Binding ModeTitle}" Style="{StaticResource Section}" Margin="2,0,0,8"/>
                         <Button Style="{StaticResource NavButton}" Command="{Binding ToggleModeCommand}" HorizontalContentAlignment="Stretch">
                             <DockPanel>
                                 <TextBlock DockPanel.Dock="Right" Text="A로 변경" Style="{StaticResource Caption}" VerticalAlignment="Center"/>
@@ -272,7 +272,8 @@
                             <Button Style="{StaticResource SmallAction}" Command="{Binding DuplicateCommand}">
                                 <StackPanel Orientation="Horizontal"><TextBlock Text="{StaticResource Icon.Copy}" Style="{StaticResource Icon}" FontSize="16" Margin="0,0,8,0"/><TextBlock Text="복제"/></StackPanel>
                             </Button>
-                            <Button Style="{StaticResource SmallAction}" Command="{Binding DeleteCommand}" Foreground="{DynamicResource Danger}" Margin="0,0,0,8">
+                            <Button Style="{StaticResource SmallAction}" Command="{Binding DeleteCommand}" Foreground="{DynamicResource Danger}" Margin="0,0,0,8"
+                                    Visibility="{Binding CanDelete, Converter={StaticResource Vis}}">
                                 <StackPanel Orientation="Horizontal"><TextBlock Text="{StaticResource Icon.Trash2}" Style="{StaticResource Icon}" FontSize="16" Margin="0,0,8,0"/><TextBlock Text="삭제"/></StackPanel>
                             </Button>
                         </UniformGrid>

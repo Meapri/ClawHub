@@ -57,6 +57,8 @@ public static class AppCommands
     public const string SetProfilePrefix = "SetProfile:";
     public const string QuitGame = "QuitGame";
     public const string ShowClawHub = "ShowClawHub";
+    /// <summary>지금 게임의 매핑 편집을 연다 (위젯이 이어서 clawhub:로 런처를 앞으로 부른다).</summary>
+    public const string EditMapping = "EditMapping";
     /// <summary>Game Bar 스크린샷 (Win+Alt+PrtSc). 런처가 떠 있으면 숨긴 뒤 보낸다.</summary>
     public const string Screenshot = "Screenshot";
     /// <summary>Game Bar 녹화 시작/중지 (Win+Alt+R).</summary>

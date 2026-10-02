@@ -69,6 +69,14 @@
                                 </StackPanel>
                             </DockPanel>
                         </Button>
+                        <!-- 게임 도중 바로 리매핑: 편집하고 게임으로 돌아가면 바로 적용된다 -->
+                        <Button Style="{StaticResource NavButton}" Command="{Binding EditMappingCommand}" HorizontalContentAlignment="Stretch" Margin="0">
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Right" Text="{StaticResource Icon.ChevronRight}" Style="{StaticResource Icon}" FontSize="16"/>
+                                <TextBlock Text="{StaticResource Icon.Pencil}" Style="{StaticResource Icon}" FontSize="16" Margin="0,0,14,0"/>
+                                <TextBlock Text="이 게임 매핑 편집" VerticalAlignment="Center"/>
+                            </DockPanel>
+                        </Button>
                     </StackPanel>
 
                     <!-- 성능 타일 -->

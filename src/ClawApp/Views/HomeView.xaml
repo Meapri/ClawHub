@@ -321,11 +321,14 @@
                         </StackPanel>
                     </Grid>
                 </Button>
+                <!-- 실행 중 게임 아래 세 칸 (344 = 3 × 109 + 간격 8 × 2): 종료 · 이 게임 매핑 편집 · 정보 -->
                 <StackPanel Orientation="Horizontal">
                     <!-- 실수로 끄지 않게 두 번 눌러야 종료 (토스트로 안내) -->
-                    <Button Style="{StaticResource DangerTile}" Tag="{StaticResource Icon.CircleStop}" Content="게임 종료"
+                    <Button Style="{StaticResource DangerTile}" Tag="{StaticResource Icon.CircleStop}" Content="게임 종료" Width="109" Height="109"
                             Command="{Binding DataContext.QuitGameCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
-                    <Button Style="{StaticResource GlassTile}" Tag="{StaticResource Icon.Info}" Content="게임 정보"
+                    <Button Style="{StaticResource GlassTile}" Tag="{StaticResource Icon.Keyboard}" Content="매핑 편집" Width="109" Height="109"
+                            Command="{Binding DataContext.EditRunningMappingCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                    <Button Style="{StaticResource GlassTile}" Tag="{StaticResource Icon.Info}" Content="게임 정보" Width="109" Height="109" Margin="0,0,0,8"
                             Command="{Binding DataContext.RunningTile.OpenCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
                 </StackPanel>
             </StackPanel>

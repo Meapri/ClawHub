@@ -45,7 +45,7 @@ namespace ClawWidget.Sections
                 GameSubtitle.Text = string.Join(" · ", parts);
             }
 
-            ProfileButton.IsEnabled = app != null;
+            ProfileButton.IsEnabled = EditMappingButton.IsEnabled = app != null;
             ProfileText.Text = app == null ? "–" : string.IsNullOrEmpty(app.ProfileId) ? "매핑 없음" : (app.ProfileName ?? app.ProfileId);
             QuitButton.IsEnabled = !string.IsNullOrEmpty(game);
             QuitQuestion.Text = string.IsNullOrEmpty(game) ? "게임을 종료할까요?" : "'" + game + "' 게임을 종료할까요?";
@@ -55,7 +55,7 @@ namespace ClawWidget.Sections
         public override void OnDensity(bool compact)
         {
             base.OnDensity(compact);
-            ProfileButton.MinHeight = OpenAppButton.MinHeight = QuitButton.MinHeight = ItemHeight(compact);
+            ProfileButton.MinHeight = EditMappingButton.MinHeight = OpenAppButton.MinHeight = QuitButton.MinHeight = ItemHeight(compact);
         }
 
         private void ProfileFlyout_Opening(object sender, object e)
@@ -95,6 +95,18 @@ namespace ClawWidget.Sections
             // (이미 실행 중이면 두 번째 인스턴스가 기존 창을 홈으로 불러온다).
             if (await Host.LaunchUriAsync(new Uri("clawhub:"))) return;
             // 실행 실패 시에만 서비스 경유 명령으로 대체 (Game Bar는 열린 채로 남는다)
+            await Run(Requests.AppCommand(AppCommands.ShowClawHub), "ClawHub를 열지 못했어요");
+        }
+
+        /// <summary>
+        /// 이 게임 매핑 편집: 앱에 "매핑 편집을 열어 줘"를 먼저 알리고, clawhub:로 런처를 앞으로 부른다
+        /// (Game Bar가 닫히고 런처가 매핑 화면으로 뜬다). 편집하고 게임으로 돌아가면 바로 적용된다.
+        /// </summary>
+        private async void EditMappingButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (Host == null) return;
+            if (!await Run(Requests.AppCommand(AppCommands.EditMapping), "매핑 편집을 열지 못했어요")) return;
+            if (await Host.LaunchUriAsync(new Uri("clawhub:"))) return;
             await Run(Requests.AppCommand(AppCommands.ShowClawHub), "ClawHub를 열지 못했어요");
         }
 

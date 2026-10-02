@@ -49,7 +49,7 @@ public partial class ProfilesView : UserControl
         var row = (id is null ? null : _vm.UserRows.Concat(_vm.PresetRows).FirstOrDefault(r => r.Profile.Id == id))
                   ?? _vm.UserRows.Concat(_vm.PresetRows).FirstOrDefault();
         if (row is null) return;
-        var list = _vm.UserRows.Contains(row) ? UserList : PresetList;
+        var list = _vm.SystemRows.Contains(row) ? SystemList : _vm.UserRows.Contains(row) ? UserList : PresetList;
         if (list.ItemContainerGenerator.ContainerFromItem(row) is DependencyObject c && FindMain(c) is { } b) Keyboard.Focus(b);
     }, DispatcherPriority.ContextIdle);
 

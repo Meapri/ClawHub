@@ -28,8 +28,9 @@ public sealed partial class GameViewModel(ShellViewModel shell, GameTileViewMode
         }
     }
 
-    public MappingProfile? Profile => shell.Profiles.Find(Tile.Game.MappingProfileId);
-    public string ProfileText => Profile?.Name ?? "사용 안 함 (게임패드 그대로)";
+    /// <summary>실제로 적용되는 프로필 (게임 전용 → 기본 프로필).</summary>
+    public MappingProfile? Profile => shell.Profiles.ForGame(Tile.Game.MappingProfileId);
+    public string ProfileText => shell.Profiles.LabelForGame(Tile.Game.MappingProfileId);
     public bool IsRunning => shell.RunningGame?.Id == Tile.Game.Id;
 
     [RelayCommand]
@@ -40,14 +41,11 @@ public sealed partial class GameViewModel(ShellViewModel shell, GameTileViewMode
         return Task.CompletedTask;
     }
 
-    /// <summary>A를 누를 때마다 다음 프로필로 (마지막 다음은 "사용 안 함").</summary>
+    /// <summary>A를 누를 때마다 다음으로: 기본 프로필 따름 → 프로필들 → 사용 안 함 → 처음으로.</summary>
     [RelayCommand]
     private void CycleProfile()
     {
-        var all = shell.Profiles.All;
-        var i = all.ToList().FindIndex(p => p.Id == Tile.Game.MappingProfileId);
-        var next = i + 1 < all.Count ? all[i + 1].Id : null;
-        shell.Library.SetProfile(Tile.Game, next);
+        shell.Library.SetProfile(Tile.Game, shell.Profiles.NextForGame(Tile.Game.MappingProfileId));
         OnPropertyChanged(nameof(Profile));
         OnPropertyChanged(nameof(ProfileText));
         RefreshApplied();
@@ -56,15 +54,8 @@ public sealed partial class GameViewModel(ShellViewModel shell, GameTileViewMode
     [RelayCommand]
     private void EditMapping()
     {
-        var profile = Profile;
-        if (profile is null)
-        {
-            // 프로필이 없으면 이 게임 전용으로 새로 만든다
-            profile = new MappingProfile { Name = Tile.Title };
-            shell.Profiles.Upsert(profile);
-            shell.Library.SetProfile(Tile.Game, profile.Id);
-        }
-        shell.Navigate(new MappingEditorViewModel(shell, profile));
+        // 기본 프로필을 따르거나 "사용 안 함"이면 이 게임 전용으로 새로 만든다 (기본 프로필의 배치에서 시작)
+        shell.Navigate(new MappingEditorViewModel(shell, shell.ProfileForEditing(Tile.Game)));
     }
 
     private static string ModeName(PerformanceMode m) => m switch

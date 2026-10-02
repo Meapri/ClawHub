@@ -65,7 +65,7 @@
 
                 <!-- 줄 동작 (터치·패드 →). 패드는 X/Y로 바로도 된다 -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
-                    <Button Style="{StaticResource RowActionButton}" ToolTip="이름 바꾸기 (Y)"
+                    <Button x:Name="RenameButton" Style="{StaticResource RowActionButton}" ToolTip="이름 바꾸기 (Y)"
                             Command="{Binding DataContext.BeginRenameCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                             CommandParameter="{Binding}">
                         <StackPanel>
@@ -105,6 +105,16 @@
                 <DataTrigger Binding="{Binding InUse}" Value="True">
                     <Setter TargetName="GamesLine" Property="Foreground" Value="{DynamicResource Text}"/>
                 </DataTrigger>
+                <!-- 기본·데스크톱: 이름 고정, 지울 수 없음 (복제는 된다) -->
+                <DataTrigger Binding="{Binding IsSystem}" Value="True">
+                    <Setter TargetName="KindIcon" Property="Text" Value="{StaticResource Icon.Layers}"/>
+                    <Setter TargetName="RenameButton" Property="Visibility" Value="Collapsed"/>
+                    <Setter TargetName="DeleteButton" Property="Visibility" Value="Collapsed"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsDesktop}" Value="True">
+                    <Setter TargetName="KindIcon" Property="Text" Value="{StaticResource Icon.Monitor}"/>
+                    <Setter TargetName="GamesLine" Property="Text" Value="스틱이 마우스가 되는 '데스크톱으로' 중에 써요"/>
+                </DataTrigger>
             </DataTemplate.Triggers>
         </DataTemplate>
     </UserControl.Resources>
@@ -141,6 +151,13 @@
 
         <ScrollViewer Margin="-6,-6,-6,0">
             <StackPanel Margin="6">
+                <!-- 늘 있는 두 프로필: 기본(프로필을 정하지 않은 모든 게임) · 데스크톱(Windows 화면) -->
+                <TextBlock Text="기본 · 데스크톱" Style="{StaticResource Section}" Margin="2,0,0,4"/>
+                <TextBlock Style="{StaticResource Caption}" Margin="2,0,0,8"
+                           Text="게임에 프로필을 따로 정하지 않으면 기본 프로필을 써요. 비워 두면 그 게임은 게임패드 그대로예요."/>
+                <ItemsControl x:Name="SystemList" ItemsSource="{Binding SystemRows}" ItemTemplate="{StaticResource ProfileRowTemplate}"
+                              Focusable="False" m:Entrance.Stagger="Items" Margin="0,0,0,12"/>
+
                 <TextBlock Text="내 프로필" Style="{StaticResource Section}" Margin="2,0,0,8"/>
                 <TextBlock Style="{StaticResource Caption}" FontSize="16" Margin="2,0,0,8"
                            Text="아직 직접 만든 프로필이 없어요. '새 프로필'로 만들거나, 아래 템플릿을 X로 복제해서 시작해 보세요."

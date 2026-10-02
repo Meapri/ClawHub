@@ -144,7 +144,7 @@ public sealed partial class MappingEditorViewModel : ObservableObject, INavPage
         get => Profile.Name;
         set
         {
-            if (string.IsNullOrWhiteSpace(value) || value == Profile.Name) return;
+            if (Profile.IsSystem || string.IsNullOrWhiteSpace(value) || value == Profile.Name) return; // 기본·데스크톱은 이름 고정
             Profile.Name = value.Trim();
             Save();
             OnPropertyChanged();
@@ -152,6 +152,11 @@ public sealed partial class MappingEditorViewModel : ObservableObject, INavPage
             _shell.OnPropertyChangedPageTitle();
         }
     }
+
+    /// <summary>기본·데스크톱 프로필은 이름 고정 · 지울 수 없음.</summary>
+    public bool CanEditName => !IsTesting && !Profile.IsSystem;
+    public bool CanDelete => !Profile.IsSystem;
+    public string ModeTitle => Profile.Id == MappingProfile.DesktopId ? "데스크톱에서 컨트롤러 모드" : "게임 중 컨트롤러 모드";
 
     public string ModeText => Profile.Mode == GamepadMode.Desktop ? "데스크톱 (스틱 = 마우스)" : "XInput (기본)";
     public string SummaryText
@@ -412,7 +417,8 @@ public sealed partial class MappingEditorViewModel : ObservableObject, INavPage
     [RelayCommand(AllowConcurrentExecutions = true)]
     private async Task Delete()
     {
-        if (!await _shell.ConfirmAsync($"'{Profile.Name}' 프로필을 삭제할까요?", "이 프로필을 쓰던 게임은 매핑 없이 실행돼요. 되돌릴 수 없어요.", "삭제", danger: true)) return;
+        if (Profile.IsSystem) return; // 기본·데스크톱 프로필은 지울 수 없다
+        if (!await _shell.ConfirmAsync($"'{Profile.Name}' 프로필을 삭제할까요?", "이 프로필을 쓰던 게임은 기본 프로필로 실행돼요. 되돌릴 수 없어요.", "삭제", danger: true)) return;
         _shell.Profiles.Delete(Profile.Id);
         foreach (var g in _shell.Library.Games.Where(g => g.MappingProfileId == Profile.Id))
             _shell.Library.SetProfile(g, null);
