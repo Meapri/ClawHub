@@ -56,7 +56,8 @@
                 <Button x:Name="Tile" Style="{StaticResource MetroTile}" Width="{Binding Pixels}" Height="{Binding Pixels}" Margin="0"
                         Command="{Binding DataContext.ActivateCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                         CommandParameter="{Binding}" m:Backdrop.FocusSource="{Binding Art}">
-                    <Grid ClipToBounds="True">
+                    <Grid x:Name="LiveRoot" ClipToBounds="True">
+                    <Grid>
                         <!-- 게임 아트 (정사각형으로 가운데를 잘라 씀) -->
                         <Border Visibility="{Binding HasArt, Converter={StaticResource Vis}}">
                             <Border.Background><ImageBrush ImageSource="{Binding Art}" Stretch="UniformToFill"/></Border.Background>
@@ -148,6 +149,17 @@
                             </StackPanel>
                         </Border>
                     </Grid>
+                        <!-- 뒷면 (라이브 타일): 이름 · 마지막 플레이 — 아트가 있는 보통·크게 게임 타일만 몇 초마다 넘어간다 -->
+                        <Grid x:Name="BackFace" Background="{DynamicResource TileAccent}" Visibility="Hidden"
+                              TextElement.Foreground="{DynamicResource TileAccentText}">
+                            <TextBlock Text="{Binding Title}" FontSize="18" FontWeight="Bold" TextWrapping="Wrap" TextTrimming="CharacterEllipsis"
+                                       MaxHeight="100" Margin="14,12,14,0" VerticalAlignment="Top"/>
+                            <StackPanel VerticalAlignment="Bottom" Margin="14,0,14,12">
+                                <TextBlock Text="{Binding Game.SourceLabel}" FontSize="13" Opacity="0.85"/>
+                                <TextBlock Text="{Binding Game.LastPlayedLabel}" FontSize="14" FontWeight="SemiBold" Margin="0,2,0,0"/>
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
                 </Button>
 
                 <!-- 끌어 온 타일을 놓으면 폴더가 됨 -->
@@ -188,6 +200,15 @@
                     <Setter TargetName="Tile" Property="Foreground" Value="White"/>
                     <Setter TargetName="Glyph" Property="Visibility" Value="Collapsed"/>
                 </DataTrigger>
+                <!-- 라이브 타일: 아트가 있는 게임 (보통·크게) -->
+                <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                        <Condition Binding="{Binding IsGame}" Value="True"/>
+                        <Condition Binding="{Binding HasArt}" Value="True"/>
+                        <Condition Binding="{Binding IsSmall}" Value="False"/>
+                    </MultiDataTrigger.Conditions>
+                    <Setter TargetName="LiveRoot" Property="m:LiveTile.IsLive" Value="True"/>
+                </MultiDataTrigger>
                 <!-- 게임·앱: 글리프 대신 실행 파일 아이콘 (아트가 없을 때) -->
                 <DataTrigger Binding="{Binding Kind}" Value="Game">
                     <Setter TargetName="Glyph" Property="Visibility" Value="Collapsed"/>

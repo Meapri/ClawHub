@@ -70,7 +70,10 @@ public static class LiveTile
 
         var now = Environment.TickCount64;
         if (now - _lastFlip < 1800) return; // 연달아 넘어가지 않게
-        var next = Tiles.Where(t => t.Due <= now && t.Panel.IsVisible).MinBy(t => t.Due);
+        if (ViewModels.ShellViewModel.Instance?.Home is { IsEditing: true }) return; // 배치를 고치는 동안은 가만히
+        // 작게 줄인 타일(80px)은 넘기지 않는다 — 앞면으로 돌려놓기만
+        foreach (var small in Tiles.Where(t => t.ShowingBack && !t.Busy && t.Panel.ActualWidth < 100)) Flip(small);
+        var next = Tiles.Where(t => t.Due <= now && t.Panel.IsVisible && t.Panel.ActualWidth >= 100).MinBy(t => t.Due);
         if (next is null) return;
         Flip(next);
         _lastFlip = now;
