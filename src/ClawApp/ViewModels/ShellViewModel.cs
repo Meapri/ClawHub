@@ -23,7 +23,8 @@ public sealed partial class ShellViewModel : ObservableObject
     public static ShellViewModel Instance { get; private set; } = null!;
 
     public ServiceClient Service { get; } = new();
-    public GameLibrary Library { get; } = new();
+    /// <summary>게임 라이브러리. 시작할 때는 App.OnStartup이 뒤에서 미리 검색해 둔 것을 받는다.</summary>
+    public GameLibrary Library { get; } = StartupPrewarm.TakeLibrary();
     public ProfileStore Profiles { get; } = new();
     public AppSettings Settings { get; } = AppSettings.Load();
     public QuickAccessViewModel QuickAccess { get; }
@@ -43,8 +44,13 @@ public sealed partial class ShellViewModel : ObservableObject
     private GamepadMode? _appliedMode;
     private PerformanceMode? _appliedPerf;
     private int? _appliedFps;
-    /// <summary>ClawHub가 손대기 전 드라이버의 FPS 제한 (사용자가 Intel 앱에서 정한 값 보존).</summary>
-    private readonly int? _fpsBaseline = Gpu.GetFrameLimit();
+    /// <summary>
+    /// ClawHub가 손대기 전 드라이버의 FPS 제한 (사용자가 Intel 앱에서 정한 값 보존).
+    /// 드라이버 호출(DLL 로드 + 초기화 ~15–30ms)은 시작을 막지 않게 뒤에서 읽고, FPS를 바꾸기 전에 반드시 기다린다.
+    /// </summary>
+    private readonly Task<int?> _fpsBaselineRead = Task.Run(Gpu.GetFrameLimit);
+
+    private int? FpsBaseline => _fpsBaselineRead.GetAwaiter().GetResult();
 
     /// <summary>빠른 설정에서 기본 FPS 제한을 바꿈 → 저장하고 바로 적용 (게임별 값이 있으면 그게 우선).</summary>
     public async Task SetDefaultFpsAsync(int fps)
@@ -57,14 +63,15 @@ public sealed partial class ShellViewModel : ObservableObject
     }
 
     /// <summary>설정상 FPS 제한 (런처가 보이는 동안 잠깐 풀어 둔 값이 아니라 게임에 걸리는 값).</summary>
-    public int CurrentFps => EffectiveFps() ?? _fpsBaseline ?? 0;
+    public int CurrentFps => EffectiveFps() ?? FpsBaseline ?? 0;
 
     /// <summary>FPS 제한: 게임별 값 > 사용자 기본값 > ClawHub 시작 때 드라이버 값 (배터리 전용 값은 EffectiveFps 참고).</summary>
     private async Task SyncFpsAsync()
     {
         // 드라이버 FPS 제한은 모든 앱에 걸린다 — 런처가 앞에 있는 동안은 풀어서 ClawHub 화면이 끊기지 않게,
         // 게임(또는 데스크톱)으로 돌아가면 다시 건다
-        var fps = IsWindowVisible ? 0 : EffectiveFps() ?? _fpsBaseline;
+        await _fpsBaselineRead; // 원래 값을 읽기 전에 드라이버 값을 바꾸지 않는다
+        var fps = IsWindowVisible ? 0 : EffectiveFps() ?? FpsBaseline;
         if (fps is not { } f || f == _appliedFps || !Gpu.Available) return;
         if (await Task.Run(() => Gpu.SetFrameLimit(f))) _appliedFps = f;
     }
@@ -119,6 +126,13 @@ public sealed partial class ShellViewModel : ObservableObject
 
     // ── Game Bar 위젯 연동 (서비스가 중계) ─────────────────
 
+    /// <summary>
+    /// 서비스에 마지막으로 맡긴 상태 (JSON). 같으면 다시 보내지 않는다 — 요청마다 서비스가 전체 상태(컨트롤러 HID·EC WMI·
+    /// 드라이버 조회)를 만들어 돌려주므로, 게임 중 10초마다 같은 값을 보내면 그만큼 배터리를 쓴다.
+    /// 재연결·서비스가 상태를 비웠을 때(세션 전환 등)는 null로 돌려 다시 보낸다.
+    /// </summary>
+    private string? _sentAppState;
+
     /// <summary>위젯이 보여 줄 현재 게임·매핑 정보를 서비스에 맡긴다.</summary>
     public async Task PushAppStateAsync()
     {
@@ -138,8 +152,22 @@ public sealed partial class ShellViewModel : ObservableObject
             OnBattery = OnBattery,
             RunningGamePid = game is null ? null : await Task.Run(() => GameProcessPicker.Pick(Session)), // FPS 측정 대상
         };
-        try { await Service.SendAsync(new Request { Op = Ops.SetAppState, AppState = state }, TimeSpan.FromSeconds(3)); }
+        var json = System.Text.Json.JsonSerializer.Serialize(state, ClawCore.JsonStore.Options);
+        if (json == _sentAppState) return; // 바뀐 것 없음
+        try
+        {
+            var resp = await Service.SendAsync(new Request { Op = Ops.SetAppState, AppState = state }, TimeSpan.FromSeconds(3));
+            if (resp.Ok) _sentAppState = json;
+        }
         catch (Exception) { /* 연결 끊김 — 재연결 때 다시 보냄 */ }
+    }
+
+    /// <summary>서비스가 앱 상태를 잃었으면(서비스 재시작·세션 전환·앱 연결 끊김 처리) 다음에 반드시 다시 보낸다.</summary>
+    private void CheckServiceAppState(ServiceStatus? status)
+    {
+        if (status is not { AppState: null } || _sentAppState is null || !ServiceConnected) return;
+        _sentAppState = null;
+        _ = PushAppStateAsync();
     }
 
     /// <summary>위젯에서 온 명령. 위젯이 이미 확인을 받았으므로 여기서는 바로 실행한다.</summary>
@@ -180,7 +208,7 @@ public sealed partial class ShellViewModel : ObservableObject
     public ShellViewModel()
     {
         Instance = this;
-        Library.Refresh();
+        // Library는 이미 검색돼 있다 (StartupPrewarm.TakeLibrary)
         QuickAccess = new QuickAccessViewModel(this);
         Start = new StartScreen(Settings);
         Home = new HomeViewModel(this);
@@ -190,6 +218,7 @@ public sealed partial class ShellViewModel : ObservableObject
         Service.ConnectionChanged += c => Ui(async () =>
         {
             ServiceConnected = c;
+            _sentAppState = null; // 새 연결(서비스 재시작 포함)에는 상태를 다시 맡긴다
             if (!c) return;
             _appliedProfileId = null;
             _appliedMode = null;
@@ -199,6 +228,7 @@ public sealed partial class ShellViewModel : ObservableObject
             if (Status?.MappingActive == true) _appliedProfileId = "__unknown__";
             _appliedPerf = Status?.TemporaryPerformance?.Mode;
             await SyncControllerAsync();
+            await PushAppStateAsync(); // 위젯 상태 (예전에는 다음 10초 틱까지 비어 있었다)
         });
         Service.EventReceived += e => Ui(() =>
         {
@@ -358,6 +388,8 @@ public sealed partial class ShellViewModel : ObservableObject
         IReadOnlyList<Hint> hints = IsAnyPanelOpen
             ? [new("A", "선택"), new("B", "닫기")]
             : CurrentPage?.Hints ?? [];
+        // 같은 힌트면 그대로 둔다 — 새 목록을 넣으면 하단 힌트(패드 그림 + 글자)를 전부 다시 만든다 (홈 재구성마다 불림)
+        if (Hints.SequenceEqual(hints)) return;
         Hints = new ObservableCollection<Hint>(hints);
     }
 
@@ -934,7 +966,7 @@ public sealed partial class ShellViewModel : ObservableObject
 
     private void UpdateClock()
     {
-        _ = PushAppStateAsync(); // 위젯 표시용 상태: 10초마다 갱신 (프로필 이름 변경 등도 반영)
+        _ = PushAppStateAsync(); // 위젯 표시용 상태: 10초마다 확인해 바뀌었을 때만 보낸다 (프로필 이름 변경·게임 PID 등)
         Clock = DateTime.Now.ToString("tt h:mm");
         _ = RefreshStatusBarAsync();
     }

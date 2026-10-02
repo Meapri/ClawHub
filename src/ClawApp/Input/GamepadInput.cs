@@ -13,7 +13,8 @@ public enum NavAction
 
 /// <summary>
 /// XInput 폴링 → 내비게이션 액션. 방향은 누르고 있으면 반복된다.
-/// <see cref="Enabled"/>가 false면(게임 실행 중 등) 입력을 무시한다.
+/// <see cref="Enabled"/>가 false면(게임 실행 중 등) 폴링 자체를 멈춘다 — 창이 숨어 있는 동안
+/// 16ms 타이머가 UI 스레드를 초당 60번 깨우지 않게 (배터리).
 /// </summary>
 public sealed class GamepadInput
 {
@@ -27,9 +28,23 @@ public sealed class GamepadInput
     private DateTime _nextRepeat;
     private int? _slot;
     private DateTime _nextScan;
+    private bool _started;
+    private bool _enabled = true;
 
     public event Action<NavAction>? Action;
-    public bool Enabled { get; set; } = true;
+
+    /// <summary>false면 입력을 무시하고 폴링 타이머도 멈춘다 (창이 비활성일 때).</summary>
+    public bool Enabled
+    {
+        get => _enabled;
+        set
+        {
+            if (_enabled == value) return;
+            _enabled = value;
+            ApplyTimer();
+        }
+    }
+
     public bool Connected { get; private set; }
 
     public GamepadInput()
@@ -38,7 +53,29 @@ public sealed class GamepadInput
         _timer.Tick += (_, _) => Poll();
     }
 
-    public void Start() => _timer.Start();
+    public void Start()
+    {
+        _started = true;
+        ApplyTimer();
+    }
+
+    private void ApplyTimer()
+    {
+        var run = _started && _enabled;
+        if (run == _timer.IsEnabled) return;
+        // 멈춰 있던 동안의 상태는 버린다 (예전처럼: 다시 켜진 첫 틱에 눌려 있는 버튼은 새로 누른 것으로 본다)
+        _prevButtons = 0;
+        _heldDir = null;
+        if (run)
+        {
+            _nextScan = DateTime.MinValue; // 멈춘 사이 연결이 바뀌었을 수 있으니 바로 다시 찾는다
+            _timer.Start();
+        }
+        else
+        {
+            _timer.Stop();
+        }
+    }
 
     private void Poll()
     {

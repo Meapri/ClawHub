@@ -85,10 +85,21 @@ public sealed class AppSettings
     {
         StartupMode.Companion => true,
         StartupMode.Shell => false,
-        _ => System.Diagnostics.Process.GetProcesses()
-            .Where(p => p.ProcessName.Contains("Xbox", StringComparison.OrdinalIgnoreCase))
-            .Any(IsXboxAppProcess),
+        _ => AnyXboxAppRunning(),
     };
+
+    private static bool AnyXboxAppRunning()
+    {
+        var all = System.Diagnostics.Process.GetProcesses();
+        try
+        {
+            return all.Where(p => p.ProcessName.Contains("Xbox", StringComparison.OrdinalIgnoreCase)).Any(IsXboxAppProcess);
+        }
+        finally
+        {
+            foreach (var p in all) p.Dispose(); // 프로세스 핸들(MainModule로 연 것)을 GC까지 들고 있지 않게
+        }
+    }
 
     private static bool IsXboxAppProcess(System.Diagnostics.Process p)
     {
@@ -97,6 +108,21 @@ public sealed class AppSettings
     }
 
     public static AppSettings Load() => JsonStore.Load<AppSettings>(FilePath);
+
+    /// <summary>
+    /// 뒤에서 미리 읽기용 (StartupPrewarm). 없거나 깨졌으면 null — <see cref="Load"/>와 달리 깨진 파일을 .broken으로 복사하지 않는다
+    /// (그건 UI 스레드의 Load가 한다). 읽는 동안 이 파일을 저장(바꿔치기)하면 실패하므로 부르는 시점은 StartupPrewarm이 정한다.
+    /// </summary>
+    public static AppSettings? TryLoadShared()
+    {
+        try
+        {
+            if (!File.Exists(FilePath)) return null;
+            using var stream = new FileStream(FilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+            return System.Text.Json.JsonSerializer.Deserialize<AppSettings>(stream, JsonStore.Options);
+        }
+        catch (Exception) { return null; }
+    }
     public void Save() => JsonStore.Save(FilePath, this);
 
     public static bool StartWithWindows

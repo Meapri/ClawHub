@@ -11,9 +11,25 @@ namespace ClawService;
 public sealed class SystemManager(ILogger<SystemManager> log, EcManager ec, FrameMonitor frames) : IDisposable
 {
     private const int HistoryLength = 60; // 2초 × 60 = 2분
+    /// <summary>그래프 기간 (초). 느리게 재던 구간이 있어도 2분 창은 그대로.</summary>
+    private const long HistorySeconds = 120;
+
+    /// <summary>
+    /// 측정 간격: 누가 보고 있으면(최근 30초 안에 GetTelemetry — 위젯 2초, 런처 상태 표시줄 10초) 2초,
+    /// 아무도 안 보면(게임 중 등) 10초. 한 번 재는 데 EC WMI 3번 + 배터리 WMI 쿼리 2번(~25ms, WmiPrvSE 포함)이라
+    /// 아무도 안 볼 때 2초마다 재면 그만큼 배터리를 쓴다. 다시 보기 시작하면 바로 재서 첫 값도 최신이다.
+    /// </summary>
+    private static readonly TimeSpan WatchedInterval = TimeSpan.FromSeconds(2);
+    private static readonly TimeSpan IdleInterval = TimeSpan.FromSeconds(10);
+    private static readonly TimeSpan WatchTimeout = TimeSpan.FromSeconds(30);
+
     private readonly object _lock = new();
+    private readonly object _sampleLock = new();
     private readonly Queue<TelemetrySample> _history = new();
     private Telemetry _latest = new();
+    private DateTime _sampledAt = DateTime.MinValue;
+    private DateTime _lastWatched = DateTime.MinValue;
+    private bool _watchedRate;
     private GraphicsState? _graphics;
     private DateTime _graphicsReadAt;
     private Timer? _timer;
@@ -32,42 +48,79 @@ public sealed class SystemManager(ILogger<SystemManager> log, EcManager ec, Fram
 
     public void Start()
     {
-        _timer = new Timer(_ => Sample(), null, TimeSpan.Zero, TimeSpan.FromSeconds(2));
+        _timer = new Timer(_ => OnTimer(), null, TimeSpan.Zero, IdleInterval);
         frames.Start();
     }
 
     // ── 측정값 ──────────────────────────────────────────
 
-    private void Sample()
+    private void OnTimer()
     {
-        try
+        Sample(onlyIfStale: false);
+        bool nobodyWatching;
+        lock (_lock) nobodyWatching = _watchedRate && DateTime.UtcNow - _lastWatched > WatchTimeout;
+        if (nobodyWatching) SetRate(watched: false);
+    }
+
+    private void SetRate(bool watched)
+    {
+        lock (_lock)
         {
-            var t = ec.ReadTelemetry();
-            ReadBattery(t);
-            var sample = new TelemetrySample
-            {
-                Time = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
-                CpuTemp = t.CpuTemp,
-                CpuWatts = t.CpuWatts,
-                BatteryWatts = t.BatteryWatts,
-                Fps = frames.Current?.Fps,
-            };
-            lock (_lock)
-            {
-                _latest = t;
-                _history.Enqueue(sample);
-                while (_history.Count > HistoryLength) _history.Dequeue();
-            }
+            if (_watchedRate == watched) return;
+            _watchedRate = watched;
         }
-        catch (Exception ex)
+        var period = watched ? WatchedInterval : IdleInterval;
+        try { _timer?.Change(period, period); }
+        catch (ObjectDisposedException) { /* 서비스 종료 중 */ }
+    }
+
+    /// <param name="onlyIfStale">true면 마지막 측정이 2초 주기보다 오래됐을 때만 (느리게 재다가 다시 보기 시작한 첫 조회).</param>
+    private void Sample(bool onlyIfStale)
+    {
+        lock (_sampleLock) // 타이머와 조회가 동시에 재지 않게
         {
-            log.LogDebug(ex, "측정 실패");
+            if (onlyIfStale)
+            {
+                lock (_lock)
+                {
+                    if (DateTime.UtcNow - _sampledAt <= WatchedInterval + TimeSpan.FromSeconds(1)) return;
+                }
+            }
+            try
+            {
+                var t = ec.ReadTelemetry();
+                ReadBattery(t);
+                var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                var sample = new TelemetrySample
+                {
+                    Time = now,
+                    CpuTemp = t.CpuTemp,
+                    CpuWatts = t.CpuWatts,
+                    BatteryWatts = t.BatteryWatts,
+                    Fps = frames.Current?.Fps,
+                };
+                lock (_lock)
+                {
+                    _latest = t;
+                    _sampledAt = DateTime.UtcNow;
+                    _history.Enqueue(sample);
+                    while (_history.Count > HistoryLength || (_history.Count > 0 && _history.Peek().Time <= now - HistorySeconds))
+                        _history.Dequeue();
+                }
+            }
+            catch (Exception ex)
+            {
+                log.LogDebug(ex, "측정 실패");
+            }
         }
     }
 
     public Telemetry GetTelemetry()
     {
         frames.NotePoll(); // 누가 보고 있을 때만 PresentMon을 돌린다
+        lock (_lock) _lastWatched = DateTime.UtcNow;
+        Sample(onlyIfStale: true); // 느리게 재던 중이었으면 지금 값을 바로
+        SetRate(watched: true);
         var fps = frames.Current;
         lock (_lock)
         {
@@ -91,22 +144,31 @@ public sealed class SystemManager(ILogger<SystemManager> log, EcManager ec, Fram
     {
         try
         {
+            // 측정마다 불리므로 WMI 결과(COM 개체)는 GC를 기다리지 않고 바로 놓는다
             using var s = new ManagementObjectSearcher(@"root\WMI", "SELECT Charging, PowerOnline, DischargeRate FROM BatteryStatus");
-            foreach (ManagementObject o in s.Get())
+            using var results = s.Get();
+            foreach (ManagementObject o in results)
             {
-                t.Charging = o["Charging"] is true || o["PowerOnline"] is true;
-                if (!t.Charging && Convert.ToInt32(o["DischargeRate"]) is > 0 and var mw) t.BatteryWatts = Math.Round(mw / 1000.0, 1);
+                using (o)
+                {
+                    t.Charging = o["Charging"] is true || o["PowerOnline"] is true;
+                    if (!t.Charging && Convert.ToInt32(o["DischargeRate"]) is > 0 and var mw) t.BatteryWatts = Math.Round(mw / 1000.0, 1);
+                }
             }
         }
         catch (Exception) { /* 미지원 */ }
         try
         {
             using var s = new ManagementObjectSearcher("SELECT EstimatedChargeRemaining, EstimatedRunTime FROM Win32_Battery");
-            foreach (ManagementObject o in s.Get())
+            using var results = s.Get();
+            foreach (ManagementObject o in results)
             {
-                t.BatteryPercent = Convert.ToInt32(o["EstimatedChargeRemaining"]);
-                // 71582788 = 전원 연결(계산 안 함)
-                if (Convert.ToInt64(o["EstimatedRunTime"]) is > 0 and < 71582788 and var min && !t.Charging) t.RemainingMinutes = (int)min;
+                using (o)
+                {
+                    t.BatteryPercent = Convert.ToInt32(o["EstimatedChargeRemaining"]);
+                    // 71582788 = 전원 연결(계산 안 함)
+                    if (Convert.ToInt64(o["EstimatedRunTime"]) is > 0 and < 71582788 and var min && !t.Charging) t.RemainingMinutes = (int)min;
+                }
             }
         }
         catch (Exception) { /* 미지원 */ }

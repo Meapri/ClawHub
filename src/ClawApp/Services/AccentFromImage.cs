@@ -13,9 +13,33 @@ public static class AccentFromImage
 {
     public readonly record struct Palette(Color Accent, Color AccentHover, Color TileAccent);
 
+    private static readonly object CacheLock = new();
+    private static (string Path, DateTime Written, bool Light, Palette? Result)? _last;
+
+    /// <summary>
+    /// 같은 사진(경로·수정 시각)·같은 테마면 지난 결과를 그대로 쓴다. 큰 PNG는 64px로 줄여 읽어도 전체를 디코딩해야 해서
+    /// 한 번에 ~110ms (10MB PNG 실측) — 홈 화면 설정의 슬라이더를 움직일 때마다 다시 계산하면 그만큼 멈칫한다.
+    /// 다른 스레드에서 불러도 된다 (시작할 때 미리 계산).
+    /// </summary>
     public static Palette? FromFile(string? path, bool lightTheme)
     {
         if (string.IsNullOrEmpty(path) || !File.Exists(path)) return null;
+        DateTime written;
+        try { written = File.GetLastWriteTimeUtc(path); }
+        catch (Exception) { return null; }
+        // 계산하는 동안에도 잠가 둔다: 시작할 때 뒤에서 계산 중이면 UI 스레드는 같은 계산을 또 하지 않고 그 결과를 기다린다
+        lock (CacheLock)
+        {
+            if (_last is { } c && c.Light == lightTheme && c.Written == written && string.Equals(c.Path, path, StringComparison.OrdinalIgnoreCase))
+                return c.Result;
+            var result = Compute(path, lightTheme);
+            _last = (path, written, lightTheme, result);
+            return result;
+        }
+    }
+
+    private static Palette? Compute(string path, bool lightTheme)
+    {
         try
         {
             var bmp = new BitmapImage();

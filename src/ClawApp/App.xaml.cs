@@ -18,6 +18,9 @@ public partial class App : Application
             return;
         }
 
+        // 첫 창을 만드는 동안 라이브러리 검색·배경 그림 디코딩을 뒤에서 미리 (시작 시간 단축)
+        Services.StartupPrewarm.Begin();
+
         // WPF 애니메이션 기본값은 60fps — 화면 주사율(Claw 8: 120Hz)에 맞춰 부드럽게
         var hz = Services.DisplayControls.Current()?.Hz is > 0 and var h ? h : 60;
         System.Windows.Media.Animation.Timeline.DesiredFrameRateProperty.OverrideMetadata(

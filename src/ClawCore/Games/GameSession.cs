@@ -78,7 +78,8 @@ public sealed class GameSession : IDisposable
         var dirs = candidates.Select(g => (Dir: ProcessScanner.SafeInstallDir(g.InstallDir), Game: g))
             .Where(x => x.Dir is not null).ToList();
 
-        foreach (var p in ProcessScanner.List())
+        // 한 프로세스만 볼 때는 전체 목록을 만들지 않는다 (2초마다 불림)
+        foreach (var p in onlyPid is { } pid ? ProcessScanner.Single(pid) : ProcessScanner.List())
         {
             if (onlyPid is { } only && p.Id != only) continue;
             if (byName.TryGetValue(p.Name, out var hit)) return hit;
@@ -151,15 +152,56 @@ public sealed class GameSession : IDisposable
         }
     }
 
+    /// <summary>
+    /// 마지막으로 찾은 게임 프로세스들의 핸들. 하나라도 살아 있으면 "실행 중"이 확실하므로 1.5초마다 전체 프로세스 목록
+    /// (수백 개 + 스레드 정보, ≈3ms·0.5MB)을 다시 만들지 않는다 — 게임하는 동안 런처가 거의 아무 일도 하지 않게.
+    /// 모두 끝났거나(또는 열 수 없는 프로세스뿐이면) 예전처럼 목록을 훑는다. _pollLock 안에서만 만진다.
+    /// </summary>
+    private readonly List<WaitHandle> _watched = [];
+
+    private bool AnyWatchedAliveLocked()
+    {
+        foreach (var w in _watched)
+        {
+            try
+            {
+                if (!w.WaitOne(0)) return true; // 신호 없음 = 아직 실행 중
+            }
+            catch (Exception ex) when (ex is ObjectDisposedException or AbandonedMutexException) { /* 끝난 것으로 본다 */ }
+        }
+        return false;
+    }
+
+    private void ReplaceWatchedLocked(List<WaitHandle> next)
+    {
+        foreach (var w in _watched) w.Dispose();
+        _watched.Clear();
+        _watched.AddRange(next);
+    }
+
     private void Poll()
     {
         try
         {
+            bool running;
             lock (_pollLock)
             {
                 if (_disposed) return;
+                running = _seenRunning && AnyWatchedAliveLocked();
             }
-            var running = FindGameProcesses().Count > 0;
+            if (!running)
+            {
+                var found = FindGameProcesses();
+                running = found.Count > 0;
+                var watch = new List<WaitHandle>();
+                foreach (var p in found)
+                    if (ProcessScanner.Watch(p) is { } h) watch.Add(h);
+                lock (_pollLock)
+                {
+                    if (_disposed) { foreach (var h in watch) h.Dispose(); return; }
+                    ReplaceWatchedLocked(watch);
+                }
+            }
 
             if (running && !_seenRunning)
             {
@@ -209,6 +251,7 @@ public sealed class GameSession : IDisposable
         {
             _disposed = true;
             _timer.Dispose();
+            ReplaceWatchedLocked([]);
         }
     }
 }

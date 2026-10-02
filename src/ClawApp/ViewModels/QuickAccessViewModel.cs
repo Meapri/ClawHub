@@ -103,10 +103,21 @@ public sealed partial class QuickAccessViewModel : ObservableObject
         MarkFps();
     }
 
-    [CommunityToolkit.Mvvm.Input.RelayCommand]
-    private void PickFrameGen(ChoiceItem item)
+    /// <summary>
+    /// 드라이버 호출은 부를 때마다 IGCL 초기화가 있어 ~15ms(실측) — 패널·설정을 열 때 UI 스레드가 멈칫하지 않게 뒤에서 읽는다.
+    /// </summary>
+    private async Task LoadFrameGenerationAsync()
     {
-        if (ClawCore.Gpu.IntelGraphics.SetFrameGeneration((int)item.Value))
+        var fg = await Task.Run(() => ClawCore.Gpu.IntelGraphics.GetFrameGeneration() ?? 0);
+        foreach (var c in FrameGenChoices) c.IsSelected = (int)c.Value == fg;
+    }
+
+    // 실행 중에도 칩이 비활성(흐림)으로 바뀌지 않게 (예전 동기 명령과 같은 모양)
+    [CommunityToolkit.Mvvm.Input.RelayCommand(AllowConcurrentExecutions = true)]
+    private async Task PickFrameGen(ChoiceItem item)
+    {
+        var level = (int)item.Value;
+        if (await Task.Run(() => ClawCore.Gpu.IntelGraphics.SetFrameGeneration(level)))
             foreach (var c in FrameGenChoices) c.IsSelected = c == item;
         else
             _shell.ShowToast("프레임 생성을 바꾸지 못했어요 (드라이버 미지원)");
@@ -178,8 +189,7 @@ public sealed partial class QuickAccessViewModel : ObservableObject
         _ = LoadSystemValuesAsync();
 
         MarkFps();
-        var fg = ClawCore.Gpu.IntelGraphics.GetFrameGeneration() ?? 0;
-        foreach (var c in FrameGenChoices) c.IsSelected = (int)c.Value == fg;
+        _ = LoadFrameGenerationAsync();
         _ = RefreshTelemetryAsync();
         _telemetryTimer.Start();
         Power.Refresh();

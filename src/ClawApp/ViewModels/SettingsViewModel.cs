@@ -313,9 +313,15 @@ public sealed partial class SettingsViewModel : ObservableObject, INavPage
     [ObservableProperty] private ObservableCollection<ChoiceItem> _resolutions = [];
     [ObservableProperty] private ObservableCollection<ChoiceItem> _refreshRates = [];
 
+    /// <summary>
+    /// 지원 모드 목록 (EnumDisplaySettings 90번 남짓 ≈ 12–28ms 실측). 설정을 열 때 뒤에서 미리 읽어 두고 이 화면 동안 다시 쓴다 —
+    /// LB/RB로 분류를 넘기다 디스플레이를 지날 때마다 UI 스레드가 멈칫하지 않게. 지금 모드(Current)는 매번 새로 읽는다.
+    /// </summary>
+    private readonly Task<IReadOnlyList<DisplayControls.DisplayMode>> _modes = Task.Run(DisplayControls.Modes);
+
     private void LoadDisplayModes()
     {
-        var modes = DisplayControls.Modes();
+        var modes = _modes.GetAwaiter().GetResult();
         var cur = DisplayControls.Current();
         Resolutions = new(modes.DistinctBy(m => (m.Width, m.Height)).Take(6)
             .Select(m => new ChoiceItem(m.ToString(), m) { IsSelected = cur is { } c && c.Width == m.Width && c.Height == m.Height }));
@@ -330,7 +336,7 @@ public sealed partial class SettingsViewModel : ObservableObject, INavPage
         var mode = (DisplayControls.DisplayMode)item.Value;
         // 해상도를 고르면 그 해상도의 가장 높은 주사율로
         if (Resolutions.Contains(item))
-            mode = DisplayControls.Modes().Where(m => m.Width == mode.Width && m.Height == mode.Height).MaxBy(m => m.Hz);
+            mode = _modes.GetAwaiter().GetResult().Where(m => m.Width == mode.Width && m.Height == mode.Height).MaxBy(m => m.Hz);
         if (DisplayControls.Apply(mode) is { } err) _shell.ShowToast(err);
         LoadDisplayModes();
         _shell.RequestFocus();
