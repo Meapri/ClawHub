@@ -36,6 +36,8 @@ public sealed partial class ButtonRowViewModel(ClawButton button, string name, b
     [ObservableProperty] private int _version;
     /// <summary>테스트 중 이 버튼의 키가 눌려 있음.</summary>
     [ObservableProperty] private bool _isLive;
+    /// <summary>같은 키를 내는 다른 버튼이 있으면 "A와 같은 키" (없으면 null).</summary>
+    [ObservableProperty] private string? _conflict;
 }
 
 /// <summary>"함께 누를 키" 토글 (Ctrl·Shift·Alt·Win).</summary>
@@ -121,10 +123,13 @@ public sealed partial class MappingEditorViewModel : ObservableObject, INavPage
     public string Title => $"매핑 · {Profile.Name}";
     public IReadOnlyList<Hint> Hints => IsTesting
         ? [new("B", "테스트 끝내기")]
-        : IsPickerOpen
-            ? [new("A", MultiKey ? "넣기/빼기" : "지정"), new("B", MultiKey ? "완료" : "취소"), new("X", "게임패드 그대로"),
-               new("Y", MultiKey ? "한 키씩" : "여러 키"), new("LB", "이전 탭"), new("RB", "다음 탭")]
-            : [new("A", "키 지정"), new("X", "지우기"), new("Y", "15초 테스트"), new("B", "뒤로")];
+        : IsListening
+            ? [] // 어떤 버튼이든 "찾을 버튼"으로 쓰이므로 힌트를 비운다 (가운데 안내 참고)
+            : IsPickerOpen
+                ? [new("A", MultiKey ? "넣기/빼기" : "지정"), new("B", MultiKey ? "완료" : "취소"), new("X", "게임패드 그대로"),
+                   new("Y", MultiKey ? "한 키씩" : "여러 키"), new("LB", "이전 탭"), new("RB", "다음 탭")]
+                : [new("A", "키 지정"), new("X", "지우기"), new("Y", "15초 테스트"), new("RB", "눌러서 찾기"),
+                   .. CanUndo ? new Hint[] { new("LB", "되돌리기") } : [], new("B", "뒤로")];
 
     /// <summary>TextBox에서 벗어날 때 저장된다.</summary>
     public string ProfileName
@@ -180,6 +185,7 @@ public sealed partial class MappingEditorViewModel : ObservableObject, INavPage
                 row.Version++;
             }
         }
+        MarkConflicts();
         OnPropertyChanged(nameof(SummaryText));
     }
 
@@ -194,7 +200,9 @@ public sealed partial class MappingEditorViewModel : ObservableObject, INavPage
     [RelayCommand]
     private void EditRow(ButtonRowViewModel row)
     {
+        StopListening();
         EditingRow = row;
+        FocusedButton = row.Button;
         var current = Current(row.Button);
         // 지금 바인딩의 보조 키를 토글에 미리 켜 둔다 (Ctrl+Q → Ctrl 켜짐, Q만 다시 고르면 됨)
         var others = current.Where(id => Modifiers.All(m => m.Id != id)).ToList();
@@ -276,6 +284,7 @@ public sealed partial class MappingEditorViewModel : ObservableObject, INavPage
     {
         var list = Modifiers.Where(m => m.IsOn && m.Id != keyId).Select(m => m.Id).ToList();
         list.Add(keyId);
+        if (!Current(row.Button).SequenceEqual(list) || Profile.Macros.ContainsKey(row.Button)) Remember();
         Profile.Bindings[row.Button] = list;
         Profile.Macros.Remove(row.Button); // 키를 고르면 매크로 대신 키
         Save();
@@ -297,6 +306,7 @@ public sealed partial class MappingEditorViewModel : ObservableObject, INavPage
             }
             list.Add(id);
         }
+        Remember();
         if (list.Count == 0) Profile.Bindings.Remove(button);
         else Profile.Bindings[button] = list;
         Profile.Macros.Remove(button);
@@ -337,6 +347,7 @@ public sealed partial class MappingEditorViewModel : ObservableObject, INavPage
 
     private void ResetRow(ClawButton button)
     {
+        if (Profile.Bindings.ContainsKey(button) || Profile.Macros.ContainsKey(button)) Remember();
         Profile.Bindings.Remove(button);
         Profile.Macros.Remove(button);
         Save();
@@ -350,6 +361,7 @@ public sealed partial class MappingEditorViewModel : ObservableObject, INavPage
     {
         string[] ids = kind == "wasd" ? ["KB_W", "KB_S", "KB_A", "KB_D"] : ["KB_UP", "KB_DOWN", "KB_LEFT", "KB_RIGHT"];
         ClawButton[] pads = [ClawButton.DpadUp, ClawButton.DpadDown, ClawButton.DpadLeft, ClawButton.DpadRight];
+        Remember();
         for (var i = 0; i < 4; i++) Profile.Bindings[pads[i]] = [ids[i]];
         Save();
         _shell.ShowToast(kind == "wasd" ? "방향 버튼 → W A S D" : "방향 버튼 → 방향키");
@@ -360,6 +372,7 @@ public sealed partial class MappingEditorViewModel : ObservableObject, INavPage
     private async Task ApplyPreset(MappingProfile preset)
     {
         if (!await _shell.ConfirmAsync($"'{preset.Name}' 배치를 불러올까요?", "지금 프로필의 버튼 배치를 모두 덮어써요.", "불러오기", danger: true)) return;
+        Remember();
         Profile.Bindings = preset.Bindings.ToDictionary(kv => kv.Key, kv => kv.Value.ToList());
         Profile.Mode = preset.Mode;
         Save();
@@ -372,6 +385,7 @@ public sealed partial class MappingEditorViewModel : ObservableObject, INavPage
     [RelayCommand]
     private void ToggleMode()
     {
+        Remember();
         Profile.Mode = Profile.Mode == GamepadMode.XInput ? GamepadMode.Desktop : GamepadMode.XInput;
         Save();
         OnPropertyChanged(nameof(ModeText));
@@ -399,6 +413,12 @@ public sealed partial class MappingEditorViewModel : ObservableObject, INavPage
 
     public bool Handle(NavAction action)
     {
+        if (IsListening)
+        {
+            // 찾는 중에 화면 이동(스틱·키보드·힌트 바)이 오면 찾기를 그만둔다
+            StopListening();
+            return true;
+        }
         if (IsTesting)
         {
             if (action == NavAction.Back) StopTest();
@@ -426,6 +446,12 @@ public sealed partial class MappingEditorViewModel : ObservableObject, INavPage
                 return true;
             case NavAction.Options:
                 _ = Test();
+                return true;
+            case NavAction.TabPrev:
+                Undo();
+                return true;
+            case NavAction.TabNext:
+                ToggleListen();
                 return true;
         }
         return false;

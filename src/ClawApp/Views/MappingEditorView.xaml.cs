@@ -25,6 +25,25 @@ public partial class MappingEditorView : UserControl
             _vm = DataContext as MappingEditorViewModel;
             if (_vm is not null) _vm.PropertyChanged += OnVmChanged;
         };
+
+        // 버튼 줄에 포커스가 가거나 마우스가 올라가면 가운데 그림에서 그 버튼을 밝힌다
+        foreach (var list in new[] { LeftList, RightList })
+        {
+            list.AddHandler(Keyboard.GotKeyboardFocusEvent, new KeyboardFocusChangedEventHandler((_, e) => Spotlight(e.NewFocus as DependencyObject)), true);
+            list.MouseMove += (_, e) => Spotlight(e.OriginalSource as DependencyObject);
+            list.MouseLeave += (_, _) => Spotlight(Keyboard.FocusedElement as DependencyObject);
+        }
+    }
+
+    private void Spotlight(DependencyObject? from)
+    {
+        if (_vm is null) return;
+        for (var d = from; d is not null; d = d is Visual ? VisualTreeHelper.GetParent(d) : LogicalTreeHelper.GetParent(d))
+            if (d is FrameworkElement { DataContext: ButtonRowViewModel row })
+            {
+                _vm.Spotlight(row);
+                return;
+            }
     }
 
     private void OnVmChanged(object? sender, PropertyChangedEventArgs e)

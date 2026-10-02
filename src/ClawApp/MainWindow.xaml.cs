@@ -40,6 +40,9 @@ public partial class MainWindow : Window
         _vm.PropertyChanged += OnVmChanged;
 
         _pad.Action += a => { if (IsActive) Route(a); };
+        // 매핑 편집 "눌러서 찾기": 다음에 누른 물리 버튼을 화면 이동보다 먼저 페이지가 받는다
+        _pad.Capture = b => IsActive && !_vm.IsAnyPanelOpen && !_vm.IsConfirmOpen &&
+                            _vm.CurrentPage is ViewModels.IPadButtonListener { IsListeningForPad: true } l && l.OnPadButton(b);
         // 창이 활성일 때만 폴링한다 (Activated에서 켜짐). 숨은 채로 시작하는 Xbox 모드에서도 타이머가 돌지 않게
         _pad.Enabled = false;
         _pad.Start();

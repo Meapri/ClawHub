@@ -35,6 +35,35 @@ public sealed class GamepadInput
 
     public event Action<NavAction>? Action;
 
+    /// <summary>
+    /// 설정되어 있으면 새로 누른 물리 버튼을 먼저 받는다 (매핑 편집의 "눌러서 찾기"). true를 돌려주면 그 틱의
+    /// 화면 이동 동작은 보내지 않는다 — 찾으려고 누른 A가 동시에 "선택"이 되지 않게.
+    /// </summary>
+    public Func<ClawCore.Controller.ClawButton, bool>? Capture { get; set; }
+
+    /// <summary>XInput 버튼 비트 → 본체 버튼 (M1·M2는 XInput에 없다).</summary>
+    private static readonly (ushort Mask, ClawCore.Controller.ClawButton Button)[] PadButtons =
+    [
+        (0x1000, ClawCore.Controller.ClawButton.A), (0x2000, ClawCore.Controller.ClawButton.B),
+        (0x4000, ClawCore.Controller.ClawButton.X), (0x8000, ClawCore.Controller.ClawButton.Y),
+        (0x0100, ClawCore.Controller.ClawButton.LB), (0x0200, ClawCore.Controller.ClawButton.RB),
+        (0x0040, ClawCore.Controller.ClawButton.L3), (0x0080, ClawCore.Controller.ClawButton.R3),
+        (0x0001, ClawCore.Controller.ClawButton.DpadUp), (0x0002, ClawCore.Controller.ClawButton.DpadDown),
+        (0x0004, ClawCore.Controller.ClawButton.DpadLeft), (0x0008, ClawCore.Controller.ClawButton.DpadRight),
+    ];
+
+    /// <summary>찾기용: 새로 누른 버튼을 <see cref="Capture"/>에 넘긴다. 하나라도 받아 가면 true.</summary>
+    private bool Captured(ushort pressed, bool ltPressed, bool rtPressed)
+    {
+        if (Capture is not { } capture) return false;
+        var taken = false;
+        foreach (var (mask, button) in PadButtons)
+            if ((pressed & mask) != 0) taken |= capture(button);
+        if (ltPressed) taken |= capture(ClawCore.Controller.ClawButton.LT);
+        if (rtPressed) taken |= capture(ClawCore.Controller.ClawButton.RT);
+        return taken;
+    }
+
     /// <summary>false면 입력을 무시하고 폴링 타이머도 멈춘다 (창이 비활성일 때).</summary>
     public bool Enabled
     {
@@ -103,6 +132,21 @@ public sealed class GamepadInput
         var b = state.Gamepad.Buttons;
         var pressed = (ushort)(b & ~_prevButtons);
         _prevButtons = b;
+
+        if (Capture is not null)
+        {
+            var lt = !_ltDown && state.Gamepad.LeftTrigger > 160;
+            var rt = !_rtDown && state.Gamepad.RightTrigger > 160;
+            if (Captured(pressed, lt, rt))
+            {
+                // 받아 간 입력은 화면 이동으로 쓰지 않는다. 트리거·방향은 놓을 때까지 다시 발동하지 않게 눌린 상태로 둔다
+                if (lt) _ltDown = true;
+                if (rt) _rtDown = true;
+                _heldDir = Direction(state.Gamepad);
+                _nextRepeat = DateTime.MaxValue;
+                return;
+            }
+        }
 
         void Fire(ushort mask, NavAction a)
         {
