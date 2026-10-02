@@ -967,6 +967,7 @@ public sealed partial class ShellViewModel : ObservableObject
                     : await Service.SendAsync(new Request { Op = Ops.ApplyMapping, Bindings = profile.ToCodes().ToDictionary(), Macros = profile.ToMacros(), Tuning = profile.Tuning });
                 if (!resp.Ok) { ShowToast($"매핑 적용 실패: {resp.Error}"); return; }
                 _appliedProfileId = profile?.Id;
+                Input.AdvancedInputEngine.Instance.Use(profile); // 고급 입력(길게·연사·원형 메뉴…) — 없으면 멈춤
                 if (resp.Status is { } st) Status = st;
             }
 
@@ -1034,6 +1035,7 @@ public sealed partial class ShellViewModel : ObservableObject
     {
         if (!await SendAsync(new Request { Op = Ops.ApplyMapping, Bindings = profile.ToCodes().ToDictionary(), Macros = profile.ToMacros(), Tuning = profile.Tuning })) return;
         _appliedProfileId = "__test__"; // 다음 동기화 때 반드시 복원되도록
+        Input.AdvancedInputEngine.Instance.Use(profile);
         try { await Task.Delay(duration, cancel); }
         catch (OperationCanceledException) { /* 사용자가 끝냄 */ }
         await SyncControllerAsync();
@@ -1110,6 +1112,7 @@ public sealed partial class ShellViewModel : ObservableObject
             try { await Service.SendAsync(new Request { Op = Ops.RestoreMapping }, TimeSpan.FromSeconds(3)); }
             catch (Exception) { /* 종료 중 */ }
         }
+        Input.AdvancedInputEngine.Instance.Use(null);
         Application.Current.Shutdown();
     }
 

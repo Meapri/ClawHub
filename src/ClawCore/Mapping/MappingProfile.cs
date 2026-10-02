@@ -18,7 +18,8 @@ public sealed class MappingProfile
 
     /// <summary>지정한 버튼이 하나도 없음.</summary>
     [System.Text.Json.Serialization.JsonIgnore]
-    public bool IsEmpty => Bindings.All(kv => kv.Value.Count == 0) && Macros.All(kv => kv.Value.Count == 0) && Tuning is null or { IsEmpty: true };
+    public bool IsEmpty => Bindings.All(kv => kv.Value.Count == 0) && Macros.All(kv => kv.Value.Count == 0) && Tuning is null or { IsEmpty: true }
+        && Advanced is null or { Enabled: false } or { Buttons.Count: 0 };
 
     public string Id { get; set; } = Guid.NewGuid().ToString("N");
     public string Name { get; set; } = "새 프로필";
@@ -28,6 +29,9 @@ public sealed class MappingProfile
 
     /// <summary>펌웨어 조정: 자이로 조준·스틱/트리거 데드존·스틱 바꾸기 (null = 전역 컨트롤러 설정 그대로).</summary>
     public ControllerTuning? Tuning { get; set; }
+
+    /// <summary>고급 입력 (길게·두 번·연사·토글·레이어·원형 메뉴 — 소프트웨어, 프로필마다 켬). null = 없음.</summary>
+    public AdvancedInput? Advanced { get; set; }
 
     /// <summary>M1/M2 매크로 (있으면 그 버튼의 일반 바인딩보다 우선).</summary>
     public Dictionary<ClawButton, List<MacroStepDef>> Macros { get; set; } = [];
@@ -40,14 +44,14 @@ public sealed class MappingProfile
     }
 
     public Dictionary<ClawButton, MacroStep[]> ToMacros() =>
-        Macros.Where(kv => kv.Value.Count > 0 && kv.Key is ClawButton.M1 or ClawButton.M2).ToDictionary(
+        Macros.Where(kv => kv.Value.Count > 0 && kv.Key is ClawButton.M1 or ClawButton.M2 && Advanced?.EngineButtons().Contains(kv.Key) != true).ToDictionary(
             kv => kv.Key,
             kv => kv.Value.Select(s => new MacroStep(
                 KeyCodes.Find(s.Key)?.Code ?? throw new InvalidOperationException($"알 수 없는 키 {s.Key}"),
                 (ushort)Math.Clamp(s.HoldMs, 10, 10000), (ushort)Math.Clamp(s.GapMs, 0, 10000))).ToArray());
 
     public IReadOnlyDictionary<ClawButton, byte[]> ToCodes() =>
-        Bindings.Where(kv => kv.Value.Count > 0).ToDictionary(
+        AdvancedInput.FirmwareBindings(this).ToDictionary( // 고급 입력이 맡는 버튼은 운반 키
             kv => kv.Key,
             kv => kv.Value.Select(id => KeyCodes.Find(id)?.Code
                 ?? throw new InvalidOperationException($"알 수 없는 키 {id}")).ToArray());
@@ -60,6 +64,7 @@ public sealed class MappingProfile
         Bindings = Bindings.ToDictionary(kv => kv.Key, kv => kv.Value.ToList()),
         Macros = Macros.ToDictionary(kv => kv.Key, kv => kv.Value.Select(s => new MacroStepDef { Key = s.Key, HoldMs = s.HoldMs, GapMs = s.GapMs }).ToList()),
         Tuning = Tuning?.Clone(),
+        Advanced = Advanced?.Clone(),
     };
 
 }

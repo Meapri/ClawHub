@@ -55,6 +55,7 @@ public partial class App : Application
 
         base.OnStartup(e);
         _window = new MainWindow(); // 표시 여부는 창이 직접 결정 (Xbox 모드면 숨은 채로 시작)
+        Input.AdvancedInputEngine.Instance.RadialView = new Views.RadialMenuWindow();
     }
 
     /// <summary>처리 못 한 UI 예외 기록 (%LocalAppData%\ClawHub\app-errors.log, 1MB 넘으면 새로).</summary>
@@ -78,6 +79,7 @@ public partial class App : Application
     protected override void OnExit(ExitEventArgs e)
     {
         _single?.Dispose();
+        Input.AdvancedInputEngine.Instance.Dispose(); // 누르고 있던 키를 떼고 훅을 푼다
         base.OnExit(e);
     }
 }

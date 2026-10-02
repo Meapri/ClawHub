@@ -23,13 +23,13 @@ public sealed partial class MappingEditorViewModel
     private void ApplyCombo(KeyComboViewModel combo)
     {
         if (EditingRow is not { } row) return;
-        if (Current(row.Button).SequenceEqual(combo.Combo.Keys))
+        if (SlotKeys(row.Button).SequenceEqual(combo.Combo.Keys))
         {
             ClearEditing();
             return;
         }
-        Profile.Bindings[row.Button] = [.. combo.Combo.Keys];
-        Profile.Macros.Remove(row.Button);
+        Remember();
+        SetSlotKeys(row.Button, [.. combo.Combo.Keys]);
         Save();
         _shell.ShowToast($"{row.Name} → {combo.Label}");
         ClosePicker();

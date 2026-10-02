@@ -41,6 +41,11 @@
                         <TextBlock Text="{Binding Summary}" FontSize="15" FontWeight="SemiBold"/>
                     </StackPanel>
                 </Grid>
+                <!-- 고급 동작 (길게 · 두 번 · 연사 · 토글 · 레이어 · 원형 메뉴) -->
+                <StackPanel Orientation="Horizontal" Margin="0,3,0,0" Visibility="{Binding Advanced, Converter={StaticResource NullVis}}">
+                    <TextBlock Text="{StaticResource Icon.Layers}" Style="{StaticResource Icon}" FontSize="12" Foreground="{DynamicResource Accent}" Margin="0,0,5,0"/>
+                    <TextBlock Text="{Binding Advanced}" FontSize="12" Foreground="{DynamicResource Accent}" TextTrimming="CharacterEllipsis" MaxWidth="200"/>
+                </StackPanel>
                 <!-- 다른 버튼과 같은 키를 내면 게임에서 구분이 안 된다 -->
                 <StackPanel Orientation="Horizontal" Margin="0,3,0,0" Visibility="{Binding Conflict, Converter={StaticResource NullVis}}">
                     <TextBlock Text="{StaticResource Icon.TriangleAlert}" Style="{StaticResource Icon}" FontSize="12" Foreground="{DynamicResource Warn}" Margin="0,0,5,0"/>
@@ -394,6 +399,19 @@
                             </DockPanel>
                         </Button>
 
+                        <!-- 고급 입력 (2단계 · 소프트웨어): 켜야 선택판에 '언제' 칩이 생긴다 -->
+                        <TextBlock Text="고급 입력" Style="{StaticResource Section}" Margin="2,14,0,8"/>
+                        <Button Style="{StaticResource NavButton}" Command="{Binding ToggleAdvancedCommand}" HorizontalContentAlignment="Stretch">
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Right" Text="A로 변경" Style="{StaticResource Caption}" VerticalAlignment="Center"/>
+                                <StackPanel>
+                                    <TextBlock Text="{Binding AdvancedText}" FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                    <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,2,0,0"
+                                               Text="Steam Input처럼 버튼 하나에 여러 동작. 소프트웨어 입력이라 일부 온라인 게임 안티치트와 맞지 않을 수 있어요."/>
+                                </StackPanel>
+                            </DockPanel>
+                        </Button>
+
                         <TextBlock Text="빠른 채우기" Style="{StaticResource Section}" Margin="2,14,0,8"/>
                         <WrapPanel>
                             <Button Style="{StaticResource SmallAction}" Command="{Binding FillDpadCommand}" CommandParameter="arrows">
@@ -459,16 +477,45 @@
                     <v:ControllerMap DockPanel.Dock="Left" Width="300" Height="128" Margin="-6,-4,20,-4" VerticalAlignment="Center"
                                      Rows="{Binding Rows}" Focused="{Binding EditingRow.Button}" ZoomToFocus="True"/>
                     <StackPanel VerticalAlignment="Center">
-                        <TextBlock Style="{StaticResource Caption}"><Run Text="{Binding EditingRow.Name, Mode=OneWay}"/><Run Text=" 버튼을 누르면"/></TextBlock>
+                        <TextBlock Style="{StaticResource Caption}" Text="{Binding EditingSlotCaption}"/>
                         <Grid Margin="0,4,0,0">
                             <ItemsControl ItemsSource="{Binding EditingKeyLabels}" AlternationCount="8" Focusable="False" ItemsPanel="{StaticResource Row}"
                                           ItemTemplate="{StaticResource KeycapLabel}" TextElement.FontSize="18"/>
-                            <TextBlock Text="게임패드 그대로" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource TextDim}"
+                            <TextBlock Text="{Binding EditingEmptyText}" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource TextDim}"
                                        Visibility="{Binding EditingHasKeys, Converter={StaticResource NotVis}}"/>
                         </Grid>
                     </StackPanel>
                 </DockPanel>
             </Border>
+
+            <!-- 고급 입력: 언제 낼 키인지 (칩) + 이 버튼의 동작 스위치. 프로필에서 고급 입력을 켰을 때만 -->
+            <DockPanel x:Name="AdvancedStrip" DockPanel.Dock="Top" Margin="0,-2,0,14"
+                       m:Reveal.IsShown="{Binding AdvancedEnabled}" m:Reveal.Kind="Inline">
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    <v:ChoiceChip Style="{StaticResource Chip}" IsChecked="{Binding EditingTurbo, Mode=OneWay}" Command="{Binding CycleTurboCommand}"
+                                  Content="{Binding TurboText}" Margin="0,0,6,0"/>
+                    <v:ChoiceChip Style="{StaticResource Chip}" IsChecked="{Binding EditingToggle, Mode=OneWay}" Command="{Binding ToggleToggleCommand}"
+                                  Content="토글" Margin="0,0,6,0"/>
+                    <v:ChoiceChip Style="{StaticResource Chip}" IsChecked="{Binding EditingLayerShift, Mode=OneWay}" Command="{Binding ToggleLayerShiftCommand}"
+                                  Content="레이어 버튼" Margin="0,0,6,0"/>
+                    <v:ChoiceChip Style="{StaticResource Chip}" IsChecked="{Binding EditingRadial, Mode=OneWay}" Command="{Binding ToggleRadialCommand}"
+                                  Content="원형 메뉴" Margin="0"/>
+                </StackPanel>
+                <ItemsControl ItemsSource="{Binding Slots}" Focusable="False" ItemsPanel="{StaticResource Row}" VerticalAlignment="Center">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <v:ChoiceChip Style="{StaticResource Chip}" IsChecked="{Binding IsSelected, Mode=OneWay}" Margin="0,0,6,0" MinWidth="72"
+                                          Command="{Binding DataContext.SelectSlotCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                          CommandParameter="{Binding}">
+                                <StackPanel>
+                                    <TextBlock Text="{Binding Label}" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="{Binding Keys}" FontSize="11" Opacity="0.75" HorizontalAlignment="Center" MaxWidth="110" TextTrimming="CharacterEllipsis"/>
+                                </StackPanel>
+                            </v:ChoiceChip>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </DockPanel>
 
             <!-- 탭 (LB/RB) -->
             <DockPanel DockPanel.Dock="Top" Margin="0,0,0,14">

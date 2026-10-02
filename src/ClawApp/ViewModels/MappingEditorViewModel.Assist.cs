@@ -97,7 +97,7 @@ public sealed partial class MappingEditorViewModel : IPadButtonListener
     /// <summary>바꾸기 직전의 버튼 배치(바인딩·매크로·모드)를 기억한다. 바꾸는 모든 명령의 처음에서 부른다.</summary>
     private void Remember()
     {
-        var snapshot = JsonSerializer.Serialize(new Snapshot(Profile.Bindings, Profile.Macros, Profile.Mode, Profile.Tuning), ClawCore.JsonStore.Options);
+        var snapshot = JsonSerializer.Serialize(new Snapshot(Profile.Bindings, Profile.Macros, Profile.Mode, Profile.Tuning, Profile.Advanced), ClawCore.JsonStore.Options);
         if (_undo.TryPeek(out var last) && last == snapshot) return;
         _undo.Push(snapshot);
         if (_undo.Count > MaxUndo)
@@ -126,7 +126,9 @@ public sealed partial class MappingEditorViewModel : IPadButtonListener
         Profile.Macros = s.Macros ?? [];
         Profile.Mode = s.Mode;
         Profile.Tuning = s.Tuning;
+        Profile.Advanced = s.Advanced;
         Save();
+        RefreshAdvanced();
         MarkKeys();
         OnPropertyChanged(nameof(ModeText));
         Tuning.Reload();
@@ -138,7 +140,8 @@ public sealed partial class MappingEditorViewModel : IPadButtonListener
         Dictionary<ClawButton, List<string>>? Bindings,
         Dictionary<ClawButton, List<MappingProfile.MacroStepDef>>? Macros,
         GamepadMode Mode,
-        ControllerTuning? Tuning);
+        ControllerTuning? Tuning,
+        AdvancedInput? Advanced);
 
     // ── 겹치는 키 ──────────────────────────────────────────
 

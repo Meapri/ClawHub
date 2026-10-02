@@ -40,6 +40,8 @@ public sealed partial class ButtonRowViewModel(ClawButton button, string name, b
     public bool IsFirst { get; set; }
     /// <summary>같은 키를 내는 다른 버튼이 있으면 "A와 같은 키" (없으면 null).</summary>
     [ObservableProperty] private string? _conflict;
+    /// <summary>고급 동작 요약 (길게 Esc · 연사 …), 없으면 null.</summary>
+    [ObservableProperty] private string? _advanced;
 }
 
 /// <summary>"함께 누를 키" 토글 (Ctrl·Shift·Alt·Win).</summary>
@@ -198,6 +200,7 @@ public sealed partial class MappingEditorViewModel : ObservableObject, INavPage
             }
         }
         MarkConflicts();
+        MarkAdvanced();
         OnPropertyChanged(nameof(SummaryText));
     }
 
@@ -217,8 +220,17 @@ public sealed partial class MappingEditorViewModel : ObservableObject, INavPage
         IsTuningOpen = false;
         EditingRow = row;
         FocusedButton = row.Button;
-        var current = Current(row.Button);
-        // 지금 바인딩의 보조 키를 토글에 미리 켜 둔다 (Ctrl+Q → Ctrl 켜짐, Q만 다시 고르면 됨)
+        EditingSlot = "press";
+        RefreshSlots(); // 고급 입력: 원형 메뉴 버튼이면 첫 칸으로
+        PrimeModifiers(SlotKeys(row.Button));
+        MarkKeys();
+        IsPickerOpen = true; // 포커스는 뷰가 옮긴다 (선택된 키 또는 첫 키)
+        _shell.UpdateHints();
+    }
+
+    /// <summary>지금 키의 보조 키를 토글에 미리 켜 두고 맞는 탭을 연다 (Ctrl+Q → Ctrl 켜짐, Q만 다시 고르면 됨).</summary>
+    private void PrimeModifiers(List<string> current)
+    {
         var others = current.Where(id => Modifiers.All(m => m.Id != id)).ToList();
         foreach (var m in Modifiers) m.IsOn = others.Count > 0 && current.Contains(m.Id);
         MultiKey = current.Count > 2 || others.Count > 1; // 자유 조합이던 버튼은 그 모드로
@@ -229,9 +241,6 @@ public sealed partial class MappingEditorViewModel : ObservableObject, INavPage
             KeyCategory.Gamepad => 3,
             _ => 0,
         };
-        MarkKeys();
-        IsPickerOpen = true; // 포커스는 뷰가 옮긴다 (선택된 키 또는 첫 키)
-        _shell.UpdateHints();
     }
 
     partial void OnCategoryIndexChanged(int value)
@@ -245,7 +254,7 @@ public sealed partial class MappingEditorViewModel : ObservableObject, INavPage
     private void MarkKeys()
     {
         if (EditingRow is not { } row) return;
-        var selected = Current(row.Button);
+        var selected = SlotKeys(row.Button);
         var usedBy = new Dictionary<string, List<string>>();
         foreach (var other in AllRows.Where(r => r != row))
             foreach (var id in Current(other.Button))
@@ -258,12 +267,16 @@ public sealed partial class MappingEditorViewModel : ObservableObject, INavPage
         }
         foreach (var c in ComboPresets) c.IsSelected = selected.SequenceEqual(c.Combo.Keys);
         ComboText = selected.Count > 0 ? string.Join(" + ", selected.Select(Label)) : "게임패드 그대로";
+        foreach (var s in Slots) s.Keys = s.Id == EditingSlot ? Describe(selected) : s.Keys;
         OnPropertyChanged(nameof(EditingKeyLabels));
         OnPropertyChanged(nameof(EditingHasKeys));
+        OnPropertyChanged(nameof(EditingEmptyText));
     }
 
     /// <summary>선택판 위쪽 미리보기 키캡.</summary>
-    public IReadOnlyList<KeycapItem> EditingKeyLabels => EditingRow is { } r ? KeycapItem.From(Current(r.Button).Select(Label)) : [];
+    public IReadOnlyList<KeycapItem> EditingKeyLabels => EditingRow is { } r ? KeycapItem.From(SlotKeys(r.Button).Select(Label)) : [];
+    /// <summary>키가 없을 때: 누를 때 = 게임패드 그대로, 다른 칸 = 없음.</summary>
+    public string EditingEmptyText => !AdvancedEnabled || EditingSlot == "press" ? "게임패드 그대로" : "없음";
     public bool EditingHasKeys => EditingKeyLabels.Count > 0;
 
     [RelayCommand]
@@ -281,7 +294,7 @@ public sealed partial class MappingEditorViewModel : ObservableObject, INavPage
         }
         mod.IsOn = !mod.IsOn;
         // 이미 일반 키가 있으면 그 키와 다시 묶어서 바로 반영 (Q → Ctrl 켬 → Ctrl+Q)
-        var main = Current(row.Button).Where(id => Modifiers.All(m => m.Id != id)).ToList();
+        var main = SlotKeys(row.Button).Where(id => Modifiers.All(m => m.Id != id)).ToList();
         if (main.Count == 1) Assign(row, main[0], close: false);
     }
 
@@ -290,7 +303,7 @@ public sealed partial class MappingEditorViewModel : ObservableObject, INavPage
     {
         if (EditingRow is not { } row || slot.Key is null) return;
         if (MultiKey) Toggle(row.Button, slot.Key.Id);
-        else Assign(row, slot.Key.Id, close: true);
+        else Assign(row, slot.Key.Id, close: !AdvancedEnabled || (EditingSlot == "press" && Adv(row.Button) is null)); // 고급 칸은 이어서 고르게 머문다
     }
 
     /// <summary>보조 키 토글 + 이 키로 바인딩을 바꾼다. close면 버튼 목록으로 돌아간다.</summary>
@@ -298,19 +311,19 @@ public sealed partial class MappingEditorViewModel : ObservableObject, INavPage
     {
         var list = Modifiers.Where(m => m.IsOn && m.Id != keyId).Select(m => m.Id).ToList();
         list.Add(keyId);
-        if (!Current(row.Button).SequenceEqual(list) || Profile.Macros.ContainsKey(row.Button)) Remember();
-        Profile.Bindings[row.Button] = list;
-        Profile.Macros.Remove(row.Button); // 키를 고르면 매크로 대신 키
+        if (RejectPad(row.Button, list)) return;
+        if (!SlotKeys(row.Button).SequenceEqual(list) || Profile.Macros.ContainsKey(row.Button)) Remember();
+        SetSlotKeys(row.Button, list); // 누를 때 칸이면 매크로 대신 키
         Save();
         MarkKeys();
         if (!close) return;
-        _shell.ShowToast($"{row.Name} → {string.Join(" + ", list.Select(Label))}");
+        _shell.ShowToast($"{row.Name}{SlotShortName} → {string.Join(" + ", list.Select(Label))}");
         ClosePicker();
     }
 
     private bool Toggle(ClawButton button, string id)
     {
-        var list = Current(button).ToList();
+        var list = SlotKeys(button).ToList();
         if (!list.Remove(id))
         {
             if (list.Count >= ProfileLayout.MaxKeysPerBinding)
@@ -318,12 +331,11 @@ public sealed partial class MappingEditorViewModel : ObservableObject, INavPage
                 _shell.ShowToast($"한 버튼에 최대 {ProfileLayout.MaxKeysPerBinding}개까지 동시에 누를 수 있어요");
                 return false;
             }
+            if (RejectPad(button, [id])) return false;
             list.Add(id);
         }
         Remember();
-        if (list.Count == 0) Profile.Bindings.Remove(button);
-        else Profile.Bindings[button] = list;
-        Profile.Macros.Remove(button);
+        SetSlotKeys(button, list);
         Save();
         MarkKeys();
         return list.Contains(id);
@@ -333,6 +345,16 @@ public sealed partial class MappingEditorViewModel : ObservableObject, INavPage
     private void ClearEditing()
     {
         if (EditingRow is not { } row) return;
+        if (AdvancedEnabled && EditingSlot != "press")
+        {
+            // 고급 칸만 비운다 (누를 때 키는 그대로)
+            if (SlotKeys(row.Button).Count > 0) Remember();
+            SetSlotKeys(row.Button, []);
+            Save();
+            RefreshSlots();
+            MarkKeys();
+            return;
+        }
         ResetRow(row.Button);
         _shell.ShowToast($"{row.Name} → 게임패드 그대로");
         ClosePicker();
@@ -340,7 +362,11 @@ public sealed partial class MappingEditorViewModel : ObservableObject, INavPage
 
     public bool EditingIsMKey => EditingRow?.Button is ClawButton.M1 or ClawButton.M2;
 
-    partial void OnEditingRowChanged(ButtonRowViewModel? value) => OnPropertyChanged(nameof(EditingIsMKey));
+    partial void OnEditingRowChanged(ButtonRowViewModel? value)
+    {
+        OnPropertyChanged(nameof(EditingIsMKey));
+        OnPropertyChanged(nameof(EditingSlotCaption));
+    }
 
     [RelayCommand]
     private void OpenMacro()

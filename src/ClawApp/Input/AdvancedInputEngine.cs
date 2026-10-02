@@ -1,0 +1,458 @@
+using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
+using ClawCore.Controller;
+using ClawCore.Mapping;
+
+namespace ClawApp.Input;
+
+/// <summary>
+/// 고급 입력 엔진 (2단계, 드라이버 없음). 펌웨어가 엔진 버튼을 "F23 + 글자"로 보내면(<see cref="AdvancedInput.CarrierLetter"/>)
+/// 저수준 키보드 훅이 게임보다 먼저 받아 삼키고, 작업 스레드가 길게·두 번 누르기·연사·토글·레이어·원형 메뉴로 바꿔
+/// SendInput으로 낸다. 우리가 낸 입력(injected)은 훅이 다시 받지 않는다.
+/// <para>
+/// 스레드: 훅 스레드(메시지 루프 — 콜백은 줄에 넣기만 하고 바로 돌아간다, 늦으면 Windows가 훅을 떼어 낸다) +
+/// 작업 스레드(2ms 간격으로 줄·타이머 처리). 원형 메뉴 화면은 UI 스레드가 그린다(<see cref="RadialMenu"/>).
+/// </para>
+/// </summary>
+public sealed class AdvancedInputEngine : IDisposable
+{
+    public static AdvancedInputEngine Instance { get; } = new();
+
+    /// <summary>원형 메뉴를 보여 줄 곳 (UI 스레드에서 그린다). 엔진 스레드에서 부르므로 받는 쪽이 Dispatcher로 넘긴다.</summary>
+    public interface IRadialView
+    {
+        void Show(IReadOnlyList<RadialSlice> slices);
+        void Select(int index);
+        void Hide();
+    }
+
+    public IRadialView? RadialView { get; set; }
+
+    private sealed record Config(MappingProfile Profile, Dictionary<ClawButton, AdvancedButton> Buttons, Dictionary<int, ClawButton> ByVk);
+
+    private volatile Config? _config;
+    private MappingProfile? _source;
+    private readonly BlockingCollection<(ClawButton Button, bool Down)> _events = new();
+    private Thread? _hookThread, _worker;
+    private uint _hookThreadId;
+    private IntPtr _hook;
+    private HookProc? _proc; // GC가 콜백을 치우지 않게 붙잡아 둔다
+    private bool _f23Down;
+    private readonly HashSet<int> _carrierDown = []; // 훅 스레드 전용
+
+    /// <summary>엔진이 지금 버튼을 맡고 있는지.</summary>
+    public bool IsActive => _config is not null;
+
+    /// <summary>
+    /// 이 프로필로 시작/교체 (null = 멈춤 — 누르고 있던 키를 모두 뗀다). 펌웨어에는 이미 운반 키 매핑이 들어가 있어야 한다.
+    /// </summary>
+    public void Use(MappingProfile? profile)
+    {
+        if (profile is not null && ReferenceEquals(profile, _source)) return; // 같은 프로필 다시 동기화 — 누르고 있던 것 유지
+        _source = profile;
+        profile = profile?.Clone(); // 엔진 스레드가 읽는 동안 편집기가 바꿔도 안전하게
+        foreach (var a in profile?.Advanced?.Buttons.Values.AsEnumerable() ?? [])
+            if (a.Radial is { Count: 8 } r && new[] { 1, 3, 5, 7 }.All(i => r[i].Keys.Count == 0))
+                a.Radial = [r[0], r[2], r[4], r[6]]; // 대각선 칸이 비었으면 상하좌우 4칸 메뉴 (고르기 쉽게)
+        var buttons = profile?.Advanced?.EngineButtons().ToList() ?? [];
+        if (profile?.Advanced is not { Enabled: true } adv || buttons.Count == 0)
+        {
+            if (_config is null) return;
+            _config = null;
+            _events.Add((default, false)); // 작업 스레드가 깨어나 정리하게
+            return;
+        }
+        _config = new Config(profile, buttons.ToDictionary(b => b, b => adv.Buttons[b]),
+            buttons.ToDictionary(b => (int)AdvancedInput.CarrierLetter[b], b => b));
+        EnsureThreads();
+    }
+
+    private void EnsureThreads()
+    {
+        if (_worker is null)
+        {
+            _worker = new Thread(WorkerLoop) { IsBackground = true, Name = "ClawHub.AdvancedInput", Priority = ThreadPriority.AboveNormal };
+            _worker.Start();
+        }
+        if (_hookThread is null)
+        {
+            _hookThread = new Thread(HookLoop) { IsBackground = true, Name = "ClawHub.KeyHook", Priority = ThreadPriority.Highest };
+            _hookThread.Start();
+        }
+    }
+
+    // ── 훅 ─────────────────────────────────────────────────
+
+    private void HookLoop()
+    {
+        _hookThreadId = GetCurrentThreadId();
+        _proc = HookCallback;
+        _hook = SetWindowsHookEx(WhKeyboardLl, _proc, GetModuleHandle(null), 0);
+        while (GetMessage(out var msg, IntPtr.Zero, 0, 0) > 0)
+        {
+            TranslateMessage(ref msg);
+            DispatchMessage(ref msg);
+        }
+        if (_hook != IntPtr.Zero) UnhookWindowsHookEx(_hook);
+    }
+
+    private const int VkF23 = 0x86;
+
+    private IntPtr HookCallback(int code, IntPtr wParam, IntPtr lParam)
+    {
+        if (code >= 0 && _config is { } cfg)
+        {
+            var k = Marshal.PtrToStructure<KbdLlHookStruct>(lParam);
+            var injected = (k.Flags & 0x10) != 0;
+            if (!injected)
+            {
+                var msg = (int)wParam;
+                var down = msg is WmKeydown or WmSyskeydown;
+                if (k.VkCode == VkF23)
+                {
+                    if (down && !_f23Down) Rescue(cfg, k.Time);
+                    _f23Down = down;
+                    return 1; // 운반 키의 머리는 게임에 보이지 않게
+                }
+                if (cfg.ByVk.TryGetValue(k.VkCode, out var button) && (_f23Down || _carrierDown.Contains(k.VkCode)))
+                {
+                    if (down)
+                    {
+                        if (_carrierDown.Add(k.VkCode)) _events.Add((button, true)); // 키 반복은 무시
+                    }
+                    else if (_carrierDown.Remove(k.VkCode)) _events.Add((button, false));
+                    return 1;
+                }
+                if (down && cfg.ByVk.ContainsKey(k.VkCode)) { _strayVk = k.VkCode; _strayAt = k.Time; }
+            }
+        }
+        else if (_config is null)
+        {
+            _f23Down = false;
+            _carrierDown.Clear();
+        }
+        return CallNextHookEx(_hook, code, wParam, lParam);
+    }
+
+    private int _strayVk;
+    private int _strayAt;
+
+    /// <summary>
+    /// 펌웨어가 글자를 F23보다 먼저 보낸 경우: 방금(20ms 안) 지나간 운반 글자를 이 버튼으로 되돌린다.
+    /// 이미 게임에 간 글자 눌림은 바로 떼어 준다 (아주 짧은 한 번 — 순서가 늘 F23 먼저면 일어나지 않는다).
+    /// </summary>
+    private void Rescue(Config cfg, int time)
+    {
+        if (_strayVk == 0 || unchecked(time - _strayAt) > 20 || !cfg.ByVk.TryGetValue(_strayVk, out var button)) return;
+        var vk = _strayVk;
+        _strayVk = 0;
+        if (!_carrierDown.Add(vk)) return;
+        SoftInput.UpVk((ushort)vk);
+        _events.Add((button, true));
+    }
+
+    // ── 작업 스레드: 동작 판정 ──────────────────────────────
+
+    private enum Phase { Idle, Holding, Waiting, LongHolding, PendingDouble, Turbo, Radial, Layer }
+
+    private sealed class State
+    {
+        public Phase Phase;
+        public long Since;            // 이 단계에 들어간 시각 (ms)
+        public long Next;             // 연사 다음 시각 · 두 번 누르기 마감
+        public IReadOnlyList<string> Keys = [];
+        public bool Toggled;
+        public IReadOnlyList<string> ToggleKeys = [];
+    }
+
+    private readonly Dictionary<ClawButton, State> _states = [];
+    private readonly List<(long At, IReadOnlyList<string> Keys)> _pendingUps = []; // 짧게 누름(탭)의 뗌 예약
+    private readonly Stopwatch _clock = Stopwatch.StartNew();
+    private bool _layer;
+    private ClawButton? _radialButton;
+    private int _radialPick = -1;
+    private Config? _lastConfig;
+
+    private long Now => _clock.ElapsedMilliseconds;
+    private const int TapMs = 30;
+
+    private void WorkerLoop()
+    {
+        timeBeginPeriod(1); // 2ms 주기가 실제로 2ms이게
+        while (true)
+        {
+            var cfg = _config;
+            if (!ReferenceEquals(cfg, _lastConfig))
+            {
+                ReleaseAll(); // 프로필이 바뀌거나 멈춤 → 누르던 것 정리
+                Volatile.Write(ref _lastConfig, cfg);
+            }
+            if (_events.TryTake(out var e, cfg is null ? 200 : 2) && cfg is not null && cfg.Buttons.ContainsKey(e.Button))
+            {
+                if (e.Down) OnDown(cfg, e.Button);
+                else OnUp(cfg, e.Button);
+            }
+            if (cfg is not null) Tick(cfg);
+        }
+    }
+
+    private State S(ClawButton b) => _states.TryGetValue(b, out var s) ? s : _states[b] = new State();
+
+    private static IReadOnlyList<string> Sendable(IEnumerable<string> keys) => [.. keys.Where(SoftInput.CanSend)];
+
+    private IReadOnlyList<string> PressKeys(Config cfg, ClawButton b) =>
+        Sendable(cfg.Profile.Bindings.TryGetValue(b, out var l) ? l : []);
+
+    private void OnDown(Config cfg, ClawButton b)
+    {
+        var a = cfg.Buttons[b];
+        var s = S(b);
+        var now = Now;
+
+        if (a.LayerShift)
+        {
+            _layer = true;
+            s.Phase = Phase.Layer;
+            return;
+        }
+        if (a.Radial is { Count: > 0 } slices)
+        {
+            _radialButton = b;
+            _radialPick = -1;
+            s.Phase = Phase.Radial;
+            RadialView?.Show(slices);
+            return;
+        }
+        // 레이어 버튼을 누르고 있으면 "레이어 중" 키 (단순히 누르는 동안)
+        if (_layer && a.Layer.Count > 0)
+        {
+            s.Keys = Sendable(a.Layer);
+            SoftInput.Down(s.Keys);
+            s.Phase = Phase.Holding;
+            return;
+        }
+        var press = PressKeys(cfg, b);
+        if (a.Toggle)
+        {
+            if (s.Toggled) SoftInput.Up(s.ToggleKeys);
+            else SoftInput.Down(s.ToggleKeys = press);
+            s.Toggled = !s.Toggled;
+            return;
+        }
+        if (s.Phase == Phase.PendingDouble && a.Double.Count > 0)
+        {
+            s.Phase = Phase.Idle; // 두 번째 누름 → 두 번 누르기
+            Tap(Sendable(a.Double));
+            return;
+        }
+        if (a.Long.Count > 0 || a.Double.Count > 0)
+        {
+            s.Phase = Phase.Waiting; // 길게인지·두 번인지 아직 모른다
+            s.Since = now;
+            return;
+        }
+        if (a.TurboMs > 0)
+        {
+            s.Phase = Phase.Turbo;
+            s.Keys = press;
+            s.Next = now; // 바로 한 번
+            return;
+        }
+        s.Keys = press;
+        SoftInput.Down(press);
+        s.Phase = Phase.Holding;
+    }
+
+    private void OnUp(Config cfg, ClawButton b)
+    {
+        var a = cfg.Buttons[b];
+        var s = S(b);
+        switch (s.Phase)
+        {
+            case Phase.Layer:
+                _layer = false;
+                s.Phase = Phase.Idle;
+                break;
+            case Phase.Radial:
+                RadialView?.Hide();
+                if (_radialPick >= 0 && a.Radial is { } slices && _radialPick < slices.Count) Tap(Sendable(slices[_radialPick].Keys));
+                _radialButton = null;
+                s.Phase = Phase.Idle;
+                break;
+            case Phase.Holding:
+                SoftInput.Up(s.Keys);
+                s.Phase = Phase.Idle;
+                break;
+            case Phase.LongHolding:
+                SoftInput.Up(s.Keys);
+                s.Phase = Phase.Idle;
+                break;
+            case Phase.Turbo:
+                s.Phase = Phase.Idle;
+                break;
+            case Phase.Waiting:
+                // 길게가 되기 전에 뗐다 → 짧게 (두 번 누르기가 있으면 잠깐 기다려 본다)
+                if (a.Double.Count > 0)
+                {
+                    s.Phase = Phase.PendingDouble;
+                    s.Next = Now + Math.Clamp(a.DoubleMs, 100, 600);
+                }
+                else
+                {
+                    Tap(PressKeys(cfg, b));
+                    s.Phase = Phase.Idle;
+                }
+                break;
+        }
+    }
+
+    private void Tick(Config cfg)
+    {
+        var now = Now;
+        for (var i = _pendingUps.Count - 1; i >= 0; i--)
+            if (now >= _pendingUps[i].At)
+            {
+                SoftInput.Up(_pendingUps[i].Keys);
+                _pendingUps.RemoveAt(i);
+            }
+
+        foreach (var (b, s) in _states)
+        {
+            if (!cfg.Buttons.TryGetValue(b, out var a)) continue;
+            switch (s.Phase)
+            {
+                case Phase.Waiting when a.Long.Count > 0 && now - s.Since >= Math.Clamp(a.LongMs, 150, 2000):
+                    s.Keys = Sendable(a.Long);
+                    SoftInput.Down(s.Keys); // 길게: 누르고 있는 동안 계속 눌림
+                    s.Phase = Phase.LongHolding;
+                    break;
+                case Phase.PendingDouble when now >= s.Next:
+                    Tap(PressKeys(cfg, b)); // 두 번째가 안 왔다 → 짧게 한 번
+                    s.Phase = Phase.Idle;
+                    break;
+                case Phase.Turbo when now >= s.Next:
+                    var hold = Math.Max(10, Math.Min(TapMs, a.TurboMs / 2));
+                    SoftInput.Down(s.Keys);
+                    _pendingUps.Add((now + hold, s.Keys));
+                    s.Next = now + Math.Clamp(a.TurboMs, 20, 2000);
+                    break;
+            }
+        }
+
+        if (_radialButton is { } rb && cfg.Buttons.TryGetValue(rb, out var ra) && ra.Radial is { Count: > 0 } sl)
+        {
+            var pick = RadialPick(sl.Count);
+            if (pick >= 0 && pick != _radialPick)
+            {
+                _radialPick = pick;
+                RadialView?.Select(pick);
+            }
+        }
+    }
+
+    private void Tap(IReadOnlyList<string> keys)
+    {
+        if (keys.Count == 0) return;
+        SoftInput.Down(keys);
+        _pendingUps.Add((Now + TapMs, keys));
+    }
+
+    /// <summary>누르고 있던 것을 모두 뗀다 (멈출 때·프로필 바뀔 때 — 키가 눌린 채 남지 않게).</summary>
+    private void ReleaseAll()
+    {
+        foreach (var s in _states.Values)
+        {
+            if (s.Phase is Phase.Holding or Phase.LongHolding) SoftInput.Up(s.Keys);
+            if (s.Toggled) SoftInput.Up(s.ToggleKeys);
+        }
+        foreach (var (_, keys) in _pendingUps) SoftInput.Up(keys);
+        _pendingUps.Clear();
+        _states.Clear();
+        _layer = false;
+        if (_radialButton is not null) RadialView?.Hide();
+        _radialButton = null;
+    }
+
+    // ── 원형 메뉴: 오른쪽 스틱 방향으로 고른다 (XInput — 스틱은 펌웨어 매핑과 상관없이 늘 나온다) ──
+
+    private int _padSlot = -1;
+
+    private int RadialPick(int count)
+    {
+        XInputState st = default;
+        if (_padSlot < 0 || XInputGetState(_padSlot, ref st) != 0)
+        {
+            _padSlot = -1;
+            for (var i = 0; i < 4; i++)
+                if (XInputGetState(i, ref st) == 0) { _padSlot = i; break; }
+            if (_padSlot < 0) return -1;
+        }
+        double x = st.Gamepad.ThumbRX, y = st.Gamepad.ThumbRY;
+        if (Math.Sqrt(x * x + y * y) < 16000) return -1; // 가운데 = 지금 고른 칸 그대로
+        // 위(0)부터 시계 방향
+        var angle = Math.Atan2(x, y); // 위 = 0, 오른쪽 = +π/2
+        if (angle < 0) angle += 2 * Math.PI;
+        var sector = 2 * Math.PI / count;
+        return (int)Math.Floor((angle + sector / 2) / sector) % count;
+    }
+
+    public void Dispose()
+    {
+        Use(null);
+        // 작업 스레드가 누르던 키를 떼어 놓을 때까지 잠깐 기다린다 (앱이 꺼지며 키가 눌린 채 남지 않게)
+        var until = Environment.TickCount64 + 200;
+        while (_worker is not null && Volatile.Read(ref _lastConfig) is not null && Environment.TickCount64 < until) Thread.Sleep(5);
+        if (_hookThreadId != 0) PostThreadMessage(_hookThreadId, 0x0012 /* WM_QUIT */, IntPtr.Zero, IntPtr.Zero);
+    }
+
+    // ── Win32 ──────────────────────────────────────────────
+
+    private const int WhKeyboardLl = 13, WmKeydown = 0x0100, WmSyskeydown = 0x0104;
+
+    private delegate IntPtr HookProc(int code, IntPtr wParam, IntPtr lParam);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct KbdLlHookStruct
+    {
+        public int VkCode, ScanCode, Flags, Time;
+        public IntPtr ExtraInfo;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct Msg
+    {
+        public IntPtr Hwnd;
+        public uint Message;
+        public IntPtr WParam, LParam;
+        public uint Time;
+        public int X, Y;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct XInputGamepad
+    {
+        public ushort Buttons;
+        public byte LeftTrigger, RightTrigger;
+        public short ThumbLX, ThumbLY, ThumbRX, ThumbRY;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct XInputState
+    {
+        public uint PacketNumber;
+        public XInputGamepad Gamepad;
+    }
+
+    [DllImport("user32.dll", SetLastError = true)] private static extern IntPtr SetWindowsHookEx(int id, HookProc proc, IntPtr mod, uint threadId);
+    [DllImport("user32.dll")] private static extern bool UnhookWindowsHookEx(IntPtr hook);
+    [DllImport("user32.dll")] private static extern IntPtr CallNextHookEx(IntPtr hook, int code, IntPtr wParam, IntPtr lParam);
+    [DllImport("user32.dll")] private static extern int GetMessage(out Msg msg, IntPtr hwnd, uint min, uint max);
+    [DllImport("user32.dll")] private static extern bool TranslateMessage(ref Msg msg);
+    [DllImport("user32.dll")] private static extern IntPtr DispatchMessage(ref Msg msg);
+    [DllImport("user32.dll")] private static extern bool PostThreadMessage(uint threadId, uint msg, IntPtr wParam, IntPtr lParam);
+    [DllImport("kernel32.dll")] private static extern IntPtr GetModuleHandle(string? name);
+    [DllImport("kernel32.dll")] private static extern uint GetCurrentThreadId();
+    [DllImport("winmm.dll")] private static extern uint timeBeginPeriod(uint ms);
+    [DllImport("xinput1_4.dll")] private static extern int XInputGetState(int index, ref XInputState state);
+}
