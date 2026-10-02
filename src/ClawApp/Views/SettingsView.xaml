@@ -334,8 +334,11 @@
 
                 <!-- ── 라이브러리 ────────────────────────── -->
                 <StackPanel Visibility="{Binding Selected.Key, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=library}" m:Entrance.Stagger="Items">
+                    <Button Style="{StaticResource NavButton}" Command="{Binding OpenAppPickerCommand}">
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="{StaticResource Icon.Plus}" Style="{StaticResource Icon}" Margin="0,0,16,0"/><TextBlock Text="프로그램 추가 (설치된 프로그램 목록)"/></StackPanel>
+                    </Button>
                     <Button Style="{StaticResource NavButton}" Command="{Binding AddGameCommand}">
-                        <StackPanel Orientation="Horizontal"><TextBlock Text="{StaticResource Icon.Plus}" Style="{StaticResource Icon}" Margin="0,0,16,0"/><TextBlock Text="게임 직접 추가 (exe·바로가기)"/></StackPanel>
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="{StaticResource Icon.FileSearch}" Style="{StaticResource Icon}" Margin="0,0,16,0"/><TextBlock Text="파일에서 직접 고르기 (exe·바로가기)"/></StackPanel>
                     </Button>
                     <Button Style="{StaticResource NavButton}" Command="{Binding RescanCommand}">
                         <StackPanel Orientation="Horizontal"><TextBlock Text="{StaticResource Icon.RefreshCw}" Style="{StaticResource Icon}" Margin="0,0,16,0"/><TextBlock Text="설치된 게임 다시 찾기"/></StackPanel>

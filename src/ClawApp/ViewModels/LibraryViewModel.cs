@@ -30,12 +30,18 @@ public sealed partial class LibraryViewModel : ObservableObject, INavPage
     }
 
     public string Title => "라이브러리";
-    public IReadOnlyList<Hint> Hints => [new("A", "열기"), new("B", "뒤로"), new("LB", "이전 탭"), new("RB", "다음 탭")];
+    public IReadOnlyList<Hint> Hints => [new("A", "열기"), new("Y", "프로그램 추가"), new("B", "뒤로"), new("LB", "이전 탭"), new("RB", "다음 탭")];
     public bool IsEmpty => Tiles.Count == 0;
 
     partial void OnTabIndexChanged(int value) => Apply();
 
     public void Refresh() => Apply();
+
+    /// <summary>프로그램 추가 화면에서 돌아오면 새로 넣은 것이 보이게.</summary>
+    public void OnShown() => Apply();
+
+    [CommunityToolkit.Mvvm.Input.RelayCommand]
+    private void AddProgram() => _shell.OpenAppPickerCommand.Execute(null);
 
     private void Apply()
     {
@@ -51,6 +57,7 @@ public sealed partial class LibraryViewModel : ObservableObject, INavPage
         {
             case NavAction.TabPrev: TabIndex = (TabIndex + Tabs.Count - 1) % Tabs.Count; break;
             case NavAction.TabNext: TabIndex = (TabIndex + 1) % Tabs.Count; break;
+            case NavAction.Options: AddProgram(); return true;
             default: return false;
         }
         _shell.RequestFocus();

@@ -24,6 +24,7 @@
             <DataTemplate DataType="{x:Type vm:MacroEditorViewModel}"><v:MacroEditorView/></DataTemplate>
             <DataTemplate DataType="{x:Type vm:ProfilesViewModel}"><v:ProfilesView/></DataTemplate>
             <DataTemplate DataType="{x:Type vm:SettingsViewModel}"><v:SettingsView/></DataTemplate>
+            <DataTemplate DataType="{x:Type vm:AppPickerViewModel}"><v:AppPickerView/></DataTemplate>
 
             <!-- 게임 커버 앞면: 커버 아트, 없으면 제목 색 그라데이션 + 아이콘 + 제목 -->
             <DataTemplate x:Key="CoverFace" DataType="{x:Type vm:GameTileViewModel}">

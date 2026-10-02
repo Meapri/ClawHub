@@ -3,11 +3,21 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:ClawApp"
              xmlns:m="clr-namespace:ClawApp.Motion"
+             xmlns:v="clr-namespace:ClawApp.Views"
              KeyboardNavigation.DirectionalNavigation="Contained">
     <DockPanel Margin="48,0,40,0">
+        <DockPanel DockPanel.Dock="Top">
+        <!-- 프로그램 추가 (Y): 시작 메뉴 목록에서 고른다 -->
+        <Button DockPanel.Dock="Right" Style="{StaticResource NavButton}" Command="{Binding AddProgramCommand}" VerticalAlignment="Top"
+                Padding="16,10" Margin="0,2,0,0">
+            <StackPanel Orientation="Horizontal">
+                <v:ButtonGlyph Key="Y" Width="22" Height="22" Margin="0,0,10,0"/>
+                <TextBlock Text="프로그램 추가" VerticalAlignment="Center"/>
+            </StackPanel>
+        </Button>
         <!-- 피벗 머리글 (LB/RB): 고른 분류만 밝게. 바뀌면 이동 방향으로 미끄러진다 -->
         <!-- 표시 전용 Selector: SelectedIndex = TabIndex, 패드 포커스는 받지 않는다 -->
-        <ListBox DockPanel.Dock="Top" ItemsSource="{Binding Tabs}" SelectedIndex="{Binding TabIndex, Mode=OneWay}"
+        <ListBox ItemsSource="{Binding Tabs}" SelectedIndex="{Binding TabIndex, Mode=OneWay}"
                  Focusable="False" IsHitTestVisible="False" Margin="0,0,0,16"
                  m:Entrance.Stagger="Items" m:Entrance.Key="{Binding TabIndex}" m:Entrance.Offset="36">
             <ListBox.Template>
@@ -40,6 +50,7 @@
                 </Style>
             </ListBox.ItemContainerStyle>
         </ListBox>
+        </DockPanel>
 
         <Grid>
             <TextBlock Text="이 분류에는 게임이 없어요" Style="{StaticResource H2}" Foreground="{DynamicResource TextDim}"

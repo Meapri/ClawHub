@@ -249,7 +249,9 @@ public sealed partial class ShellViewModel : ObservableObject
         try
         {
             var candidates = Library.Visible.ToList();
-            var game = await Task.Run(() => GameSession.FindRunning(candidates));
+            // 앞에 떠 있는 창의 프로세스만 본다: 트레이에 상주하는 프로그램(메신저 등)을 라이브러리에 넣어도 "실행 중 게임"이 되지 않게
+            if (SystemControls.ForegroundProcessId() is not { } fg || fg == Environment.ProcessId) return;
+            var game = await Task.Run(() => GameSession.FindRunning(candidates, fg));
             if (game is null || RunningGame is not null) return;
 
             var session = GameSession.Attach(game);
@@ -330,6 +332,8 @@ public sealed partial class ShellViewModel : ObservableObject
     [RelayCommand] private void OpenLibrary() { IsShellVisible = true; Navigate(new LibraryViewModel(this)); }
     [RelayCommand] private void OpenProfiles() { IsShellVisible = true; Navigate(new ProfilesViewModel(this)); }
     [RelayCommand] private void OpenSettings() { IsShellVisible = true; Navigate(new SettingsViewModel(this)); }
+    /// <summary>라이브러리에 프로그램 추가 (시작 메뉴 목록).</summary>
+    [RelayCommand] private void OpenAppPicker() { IsShellVisible = true; Navigate(new AppPickerViewModel(this)); }
 
     /// <summary>앱 안 빠른 설정 패널에서 전체 설정으로. 셸을 띄우고 매핑은 풀린다.</summary>
     public void OpenSettingsEverywhere()

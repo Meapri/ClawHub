@@ -103,6 +103,17 @@ public static class SystemControls
 
     public static IntPtr ForegroundWindow() => GetForegroundWindow();
 
+    /// <summary>앞에 떠 있는 창의 프로세스 ID (없으면 null).</summary>
+    public static int? ForegroundProcessId()
+    {
+        var hwnd = GetForegroundWindow();
+        if (hwnd == IntPtr.Zero) return null;
+        GetWindowThreadProcessId(hwnd, out var pid);
+        return pid == 0 ? null : (int)pid;
+    }
+
+    [DllImport("user32.dll")] private static extern uint GetWindowThreadProcessId(IntPtr hwnd, out uint pid);
+
     public static void Activate(IntPtr hwnd)
     {
         if (hwnd == IntPtr.Zero) return;

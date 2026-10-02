@@ -67,8 +67,9 @@ public sealed class GameSession : IDisposable
 
     /// <summary>
     /// 후보 게임 중 지금 실행 중인 첫 번째를 찾는다. 프로세스 목록은 한 번만 훑는다.
+    /// <paramref name="onlyPid"/>를 주면 그 프로세스만 본다 (앞에 떠 있는 창 — 트레이에 상주하는 메신저 등이 "실행 중 게임"이 되지 않게).
     /// </summary>
-    public static GameEntry? FindRunning(IReadOnlyCollection<GameEntry> candidates)
+    public static GameEntry? FindRunning(IReadOnlyCollection<GameEntry> candidates, int? onlyPid = null)
     {
         if (candidates.Count == 0) return null;
         var byName = new Dictionary<string, GameEntry>(StringComparer.OrdinalIgnoreCase);
@@ -79,6 +80,7 @@ public sealed class GameSession : IDisposable
 
         foreach (var p in ProcessScanner.List())
         {
+            if (onlyPid is { } only && p.Id != only) continue;
             if (byName.TryGetValue(p.Name, out var hit)) return hit;
             if (dirs.Count == 0 || ProcessScanner.IsHelper(p.Name) || ProcessScanner.PathOf(p) is not { } path) continue;
             foreach (var (dir, game) in dirs)

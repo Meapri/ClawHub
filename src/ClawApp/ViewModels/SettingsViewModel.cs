@@ -347,18 +347,10 @@ public sealed partial class SettingsViewModel : ObservableObject, INavPage
     // ── 라이브러리 ─────────────────────────────────────────
 
     [RelayCommand]
-    private void AddGame()
-    {
-        var dlg = new OpenFileDialog
-        {
-            Title = "라이브러리에 추가할 게임 실행 파일",
-            Filter = "실행 파일 (*.exe;*.lnk;*.url)|*.exe;*.lnk;*.url",
-        };
-        if (dlg.ShowDialog() != true) return;
-        var game = _shell.Library.AddCustom(Path.GetFileNameWithoutExtension(dlg.FileName), dlg.FileName);
-        _shell.ShowToast($"{game.Title}을(를) 추가했어요");
-        _shell.Home.Reload();
-    }
+    private void AddGame() => AppPickerViewModel.AddFromFile(_shell);
+
+    [RelayCommand]
+    private void OpenAppPicker() => _shell.OpenAppPickerCommand.Execute(null);
 
     [RelayCommand]
     private void Rescan()

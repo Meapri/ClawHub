@@ -169,16 +169,18 @@ public sealed class GameLibrary
         return hidden.Count;
     }
 
-    public GameEntry AddCustom(string title, string launchTarget)
+    /// <param name="targetExe">바로가기면 그 대상 실행 파일 — 설치 폴더(실행 감지)·아이콘에 쓴다. 없으면 launchTarget 기준.</param>
+    public GameEntry AddCustom(string title, string launchTarget, string? targetExe = null)
     {
+        var exe = targetExe is not null && File.Exists(targetExe) ? targetExe : File.Exists(launchTarget) ? launchTarget : null;
         var game = new GameEntry
         {
             Id = $"custom:{Guid.NewGuid():N}",
             Title = title,
             Source = GameSource.Custom,
             LaunchTarget = launchTarget,
-            InstallDir = File.Exists(launchTarget) ? Path.GetDirectoryName(launchTarget) : null,
-            IconSource = File.Exists(launchTarget) ? launchTarget : null,
+            InstallDir = exe is null ? null : Path.GetDirectoryName(exe),
+            IconSource = exe,
         };
         _data.CustomGames.Add(game);
         JsonStore.Save(FilePath, _data);
