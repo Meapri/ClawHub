@@ -40,6 +40,9 @@ public sealed class GameEntry
     public int? FpsLimitOnBattery { get; set; }
     public bool Hidden { get; set; }
 
+    /// <summary>게임이 아닌 프로그램 (메신저·브라우저 등). 앱 분류로 따로 보이고, 실행해도 게임 세션(매핑·성능·실행 감지)이 없다.</summary>
+    public bool IsApp { get; set; }
+
     /// <summary>지금 전원 상태에서 이 게임이 쓸 성능 모드 (null = 사용자 기본값).</summary>
     public Ec.PerformanceMode? EffectivePerformanceMode(bool onBattery) =>
         onBattery && PerformanceModeOnBattery is { } b ? b : PerformanceMode;

@@ -176,6 +176,7 @@ public sealed partial class ShellViewModel : ObservableObject
         Library.Refresh();
         QuickAccess = new QuickAccessViewModel(this);
         Home = new HomeViewModel(this);
+        InitBackdrop();
         CurrentPage = Home;
 
         Service.ConnectionChanged += c => Ui(async () =>
@@ -248,7 +249,7 @@ public sealed partial class ShellViewModel : ObservableObject
         _watching = true;
         try
         {
-            var candidates = Library.Visible.ToList();
+            var candidates = Library.Visible.Where(g => !g.IsApp).ToList(); // 앱은 "실행 중 게임"으로 잡지 않는다
             // 앞에 떠 있는 창의 프로세스만 본다: 트레이에 상주하는 프로그램(메신저 등)을 라이브러리에 넣어도 "실행 중 게임"이 되지 않게
             if (SystemControls.ForegroundProcessId() is not { } fg || fg == Environment.ProcessId) return;
             var game = await Task.Run(() => GameSession.FindRunning(candidates, fg));
@@ -675,8 +676,40 @@ public sealed partial class ShellViewModel : ObservableObject
 
     // ── 게임 실행 ──────────────────────────────────────────
 
+    /// <summary>
+    /// 앱(게임이 아닌 프로그램) 실행: 게임 세션(매핑·성능·실행 감지) 없이 띄우고, "데스크톱으로"처럼
+    /// 런처를 숨기고 스틱을 마우스로 바꾼다. 왼쪽 버튼으로 돌아온다.
+    /// </summary>
+    public void LaunchApp(GameEntry app)
+    {
+        try
+        {
+            using var _ = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(app.LaunchTarget, app.LaunchArgs ?? "")
+            {
+                UseShellExecute = true,
+                WorkingDirectory = File.Exists(app.LaunchTarget) ? Path.GetDirectoryName(app.LaunchTarget)! : "",
+            });
+        }
+        catch (Exception ex)
+        {
+            ShowToast($"실행 실패: {ex.Message}");
+            return;
+        }
+        Library.MarkPlayed(app);
+        Home.Reload();
+        _inDesktop = true;
+        _returnWindow = IntPtr.Zero;
+        HideWindow(); // 방금 띄운 앱이 앞으로 온다
+        _ = SyncControllerAsync();
+    }
+
     public async Task LaunchAsync(GameEntry game)
     {
+        if (game.IsApp)
+        {
+            LaunchApp(game);
+            return;
+        }
         if (RunningGame is not null)
         {
             ShowToast($"{RunningGame.Title}이(가) 이미 실행 중이에요");

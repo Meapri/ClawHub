@@ -96,6 +96,90 @@
                     <s:DesktopModeSection Margin="0,20,0,0"/>
                 </StackPanel>
 
+                <!-- ── 홈 화면 (배경·타일) ───────────────── -->
+                <StackPanel Visibility="{Binding Selected.Key, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=home}" m:Entrance.Stagger="Items">
+                    <TextBlock Text="배경" Style="{StaticResource Section}" Margin="2,0,0,8"/>
+                    <Border Style="{StaticResource CardPanel}">
+                        <StackPanel>
+                            <WrapPanel>
+                                <RadioButton Style="{StaticResource ChipRadio}" GroupName="bg" Content="게임 아트" IsChecked="{Binding BgGameArt}"/>
+                                <RadioButton Style="{StaticResource ChipRadio}" GroupName="bg" Content="고정 이미지" IsChecked="{Binding BgImage}"/>
+                                <RadioButton Style="{StaticResource ChipRadio}" GroupName="bg" Content="단색" IsChecked="{Binding BgPlain}"/>
+                            </WrapPanel>
+                            <TextBlock Text="{Binding BackdropModeText}" Style="{StaticResource Caption}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource CardPanel}">
+                        <DockPanel>
+                            <!-- 고른 그림 미리보기 -->
+                            <Border DockPanel.Dock="Right" Width="200" Height="112" Margin="16,0,0,0" Background="{DynamicResource TileFill}" ClipToBounds="True">
+                                <Grid>
+                                    <TextBlock Text="고른 그림 없음" Style="{StaticResource Caption}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                               Visibility="{Binding HasBackdropPreview, Converter={StaticResource NotVis}}"/>
+                                    <Image Source="{Binding BackdropPreview}" Stretch="UniformToFill"
+                                           Visibility="{Binding HasBackdropPreview, Converter={StaticResource Vis}}"/>
+                                </Grid>
+                            </Border>
+                            <StackPanel>
+                                <TextBlock Text="고정 이미지" Margin="0,0,0,8"/>
+                                <Button Style="{StaticResource NavButton}" Command="{Binding PickBackdropFromGamesCommand}" Padding="14,10">
+                                    <StackPanel Orientation="Horizontal"><TextBlock Text="{StaticResource Icon.Image}" Style="{StaticResource Icon}" FontSize="16" Margin="0,0,12,0"/><TextBlock Text="게임 아트에서 고르기"/></StackPanel>
+                                </Button>
+                                <Button Style="{StaticResource NavButton}" Command="{Binding PickBackdropFileCommand}" Padding="14,10">
+                                    <StackPanel Orientation="Horizontal"><TextBlock Text="{StaticResource Icon.FileSearch}" Style="{StaticResource Icon}" FontSize="16" Margin="0,0,12,0"/><TextBlock Text="사진 파일에서 고르기"/></StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource CardPanel}">
+                        <StackPanel>
+                            <DockPanel><TextBlock DockPanel.Dock="Right" Text="{Binding BackdropBlur}" Style="{StaticResource Value}"/><TextBlock Text="흐림" Style="{StaticResource SliderTitle}"/></DockPanel>
+                            <Slider Minimum="0" Maximum="80" SmallChange="8" TickFrequency="8" Value="{Binding BackdropBlur}"/>
+                            <DockPanel Margin="0,8,0,0"><TextBlock DockPanel.Dock="Right" Text="{Binding BackdropDim, StringFormat={}{0}%}" Style="{StaticResource Value}"/><TextBlock Text="덮개 진하기 (높을수록 글자가 또렷)" Style="{StaticResource SliderTitle}"/></DockPanel>
+                            <Slider Minimum="20" Maximum="95" SmallChange="5" TickFrequency="5" Value="{Binding BackdropDim}"/>
+                        </StackPanel>
+                    </Border>
+                    <Button Style="{StaticResource NavButton}" Command="{Binding ResetBackdropCommand}">
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="{StaticResource Icon.RotateCcw}" Style="{StaticResource Icon}" Margin="0,0,14,0"/><TextBlock Text="배경 기본값으로"/></StackPanel>
+                    </Button>
+
+                    <TextBlock Text="타일" Style="{StaticResource Section}"/>
+                    <Border Style="{StaticResource CardPanel}">
+                        <StackPanel>
+                            <TextBlock Text="이어서 플레이 타일" Margin="0,0,0,10"/>
+                            <WrapPanel>
+                                <RadioButton Style="{StaticResource ChipRadio}" GroupName="hero" Content="크게" IsChecked="{Binding HeroLarge}"/>
+                                <RadioButton Style="{StaticResource ChipRadio}" GroupName="hero" Content="보통" IsChecked="{Binding HeroMedium}"/>
+                                <RadioButton Style="{StaticResource ChipRadio}" GroupName="hero" Content="숨기기" IsChecked="{Binding HeroHidden}"/>
+                            </WrapPanel>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource CardPanel}">
+                        <StackPanel>
+                            <TextBlock Text="최근 게임 타일 기본 크기" Margin="0,0,0,10"/>
+                            <WrapPanel>
+                                <RadioButton Style="{StaticResource ChipRadio}" GroupName="tile" Content="작게 (한 줄에 3개)" IsChecked="{Binding TileSmall}"/>
+                                <RadioButton Style="{StaticResource ChipRadio}" GroupName="tile" Content="보통 (2개)" IsChecked="{Binding TileMedium}"/>
+                                <RadioButton Style="{StaticResource ChipRadio}" GroupName="tile" Content="크게 (1개)" IsChecked="{Binding TileLarge}"/>
+                            </WrapPanel>
+                            <TextBlock Text="{Binding TileOverrideText}" Style="{StaticResource Caption}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource CardPanel}">
+                        <StackPanel>
+                            <TextBlock Text="최근 게임 타일 수" Margin="0,0,0,10"/>
+                            <WrapPanel>
+                                <RadioButton Style="{StaticResource ChipRadio}" GroupName="count" Content="6개" IsChecked="{Binding Count6}"/>
+                                <RadioButton Style="{StaticResource ChipRadio}" GroupName="count" Content="12개" IsChecked="{Binding Count12}"/>
+                                <RadioButton Style="{StaticResource ChipRadio}" GroupName="count" Content="18개" IsChecked="{Binding Count18}"/>
+                            </WrapPanel>
+                        </StackPanel>
+                    </Border>
+                    <Button Style="{StaticResource NavButton}" Command="{Binding ResetTileSizesCommand}">
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="{StaticResource Icon.RotateCcw}" Style="{StaticResource Icon}" Margin="0,0,14,0"/><TextBlock Text="타일마다 바꾼 크기 모두 기본으로"/></StackPanel>
+                    </Button>
+                </StackPanel>
+
                 <!-- ── 컨트롤러 ──────────────────────────── -->
                 <StackPanel Visibility="{Binding Selected.Key, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=controller}" m:Entrance.Stagger="Items"
                             IsEnabled="{Binding ControllerAvailable}">

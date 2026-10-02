@@ -8,6 +8,40 @@ public enum StartupMode { Auto, Shell, Companion }
 /// <summary>"데스크톱으로" 중 오른쪽 본체 버튼이 할 일.</summary>
 public enum DesktopRightButton { TouchKeyboard, GameBar }
 
+/// <summary>홈의 게임 타일 크기 (세로형 커버 2:3). 한 열에 작게 3개 · 보통 2개 · 크게 1개.</summary>
+public enum TileSize { Small, Medium, Large }
+
+/// <summary>"이어서 플레이" 큰 타일.</summary>
+public enum HeroTileSize { Large, Medium, Hidden }
+
+/// <summary>전체 화면 배경: 고른 게임의 아트(포커스를 따라 바뀜) · 고정 이미지 · 단색.</summary>
+public enum BackdropMode { GameArt, Image, Plain }
+
+public sealed class HomeSettings
+{
+    /// <summary>최근 게임 타일의 기본 크기.</summary>
+    public TileSize RecentTileSize { get; set; } = TileSize.Medium;
+
+    /// <summary>타일마다 따로 고른 크기 (게임 ID → 크기). 홈에서 X로 바꾼다.</summary>
+    public Dictionary<string, TileSize> TileSizes { get; set; } = [];
+
+    public HeroTileSize HeroSize { get; set; } = HeroTileSize.Large;
+
+    /// <summary>최근 게임 타일 수.</summary>
+    public int RecentCount { get; set; } = 12;
+
+    public BackdropMode BackdropMode { get; set; } = BackdropMode.GameArt;
+
+    /// <summary>고정 이미지 경로 (게임 아트 또는 사용자 데이터 폴더에 복사한 파일).</summary>
+    public string? BackdropImage { get; set; }
+
+    /// <summary>배경 흐림 (0 = 선명, 80 = 아주 흐림).</summary>
+    public int BackdropBlur { get; set; } = 56;
+
+    /// <summary>배경을 덮는 테마색 층의 진하기 % (높을수록 글자가 잘 보이고 그림은 흐려진다).</summary>
+    public int BackdropDim { get; set; } = 72;
+}
+
 public sealed class AppSettings
 {
     private static string FilePath => Path.Combine(JsonStore.UserDir, "settings.json");
@@ -39,6 +73,9 @@ public sealed class AppSettings
 
     /// <summary>SteamGridDB API 키 (아트 고르기에서 사용, 없으면 Steam 검색만).</summary>
     public string? SteamGridDbKey { get; set; }
+
+    /// <summary>홈 화면 꾸미기: 타일 크기·배경.</summary>
+    public HomeSettings Home { get; set; } = new();
 
     public const string XboxAppId =@"shell:AppsFolder\Microsoft.GamingApp_8wekyb3d8bbwe!Microsoft.Xbox.App";
 

@@ -53,7 +53,7 @@
         </DockPanel>
 
         <Grid>
-            <TextBlock Text="이 분류에는 게임이 없어요" Style="{StaticResource H2}" Foreground="{DynamicResource TextDim}"
+            <TextBlock Text="이 분류에는 아직 아무것도 없어요" Style="{StaticResource H2}" Foreground="{DynamicResource TextDim}"
                        HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,8,0,0"
                        Visibility="{Binding IsEmpty, Converter={StaticResource Vis}}"/>
             <!-- 포커스 테두리가 잘리지 않게 스크롤 영역을 바깥으로 6px 넓힌다 -->

@@ -28,6 +28,8 @@ public sealed class GameLibrary
         public string? PerformanceModeOnBattery { get; set; }
         /// <summary>배터리 전용. -1 = 따로 안 씀.</summary>
         public int? FpsLimitOnBattery { get; set; }
+        /// <summary>게임이 아닌 프로그램으로 분류.</summary>
+        public bool? IsApp { get; set; }
     }
 
     private static string FilePath => Path.Combine(JsonStore.UserDir, "library.json");
@@ -59,6 +61,7 @@ public sealed class GameLibrary
             g.MappingProfileId = o.MappingProfileId ?? g.MappingProfileId;
             g.PerformanceMode = Enum.TryParse<Ec.PerformanceMode>(o.PerformanceMode, out var pm) ? pm : null;
             g.Hidden = o.Hidden ?? g.Hidden;
+            g.IsApp = o.IsApp ?? g.IsApp;
             g.Title = o.Title ?? g.Title;
             g.FpsLimit = o.FpsLimit is >= 0 ? o.FpsLimit : null;
             g.LaunchTarget = o.LaunchTarget ?? g.LaunchTarget;
@@ -86,6 +89,9 @@ public sealed class GameLibrary
         Update(game, o => o.MappingProfileId = game.MappingProfileId = profileId);
 
     public void SetHidden(GameEntry game, bool hidden) => Update(game, o => o.Hidden = game.Hidden = hidden);
+
+    /// <summary>게임 / 앱(게임이 아닌 프로그램) 분류.</summary>
+    public void SetIsApp(GameEntry game, bool isApp) => Update(game, o => o.IsApp = game.IsApp = isApp);
 
     public void SetPerformance(GameEntry game, Ec.PerformanceMode? mode) =>
         Update(game, o => o.PerformanceMode = (game.PerformanceMode = mode)?.ToString() ?? "None");
@@ -170,7 +176,8 @@ public sealed class GameLibrary
     }
 
     /// <param name="targetExe">바로가기면 그 대상 실행 파일 — 설치 폴더(실행 감지)·아이콘에 쓴다. 없으면 launchTarget 기준.</param>
-    public GameEntry AddCustom(string title, string launchTarget, string? targetExe = null)
+    /// <param name="isApp">게임이 아닌 프로그램 (앱 분류).</param>
+    public GameEntry AddCustom(string title, string launchTarget, string? targetExe = null, bool isApp = false)
     {
         var exe = targetExe is not null && File.Exists(targetExe) ? targetExe : File.Exists(launchTarget) ? launchTarget : null;
         var game = new GameEntry
@@ -181,6 +188,7 @@ public sealed class GameLibrary
             LaunchTarget = launchTarget,
             InstallDir = exe is null ? null : Path.GetDirectoryName(exe),
             IconSource = exe,
+            IsApp = isApp,
         };
         _data.CustomGames.Add(game);
         JsonStore.Save(FilePath, _data);

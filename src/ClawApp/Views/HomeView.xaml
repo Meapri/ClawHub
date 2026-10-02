@@ -77,7 +77,9 @@
             <!-- ── 이어서 플레이 (히어로, 라이브 타일) ─────────── -->
             <StackPanel Margin="0,0,40,0" Visibility="{Binding IsEmpty, Converter={StaticResource NotVis}}">
                 <TextBlock Text="이어서 플레이" Style="{StaticResource GroupHeader}"/>
-                <Button Style="{StaticResource MetroTile}" Width="520" Height="344" Background="{DynamicResource TileFill}"
+                <!-- Tag=Hero: 이 타일에서 X → 크게(520)↔보통(344). 설정에서 숨길 수도 있다 -->
+                <Button Style="{StaticResource MetroTile}" Width="{Binding HeroWidth}" Height="344" Background="{DynamicResource TileFill}" Tag="Hero"
+                        HorizontalAlignment="Left" Visibility="{Binding HeroVisible, Converter={StaticResource Vis}}"
                         Command="{Binding Hero.PlayCommand}" local:Nav.InitialFocus="True" m:Backdrop.FocusSource="{Binding Hero.Hero}">
                     <Grid TextElement.Foreground="White">
                         <Grid ClipToBounds="True" m:LiveTile.IsLive="True">
@@ -136,6 +138,29 @@
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate><WrapPanel Orientation="Vertical" Height="528"/></ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
+                </ItemsControl>
+            </StackPanel>
+
+            <!-- ── 앱 (게임이 아닌 프로그램): 아이콘 타일, A = 바로 실행 ── -->
+            <StackPanel Margin="0,0,40,0" Visibility="{Binding HasApps, Converter={StaticResource Vis}}">
+                <TextBlock Text="앱" Style="{StaticResource GroupHeader}"/>
+                <ItemsControl ItemsSource="{Binding Apps}" Focusable="False">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate><WrapPanel Orientation="Vertical" Height="528"/></ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Style="{StaticResource MetroTile}" Width="168" Height="124" Background="{DynamicResource TileFill}" Foreground="{DynamicResource TileText}"
+                                    Command="{Binding PlayCommand}">
+                                <Grid Margin="14,12">
+                                    <Image Source="{Binding Icon}" Width="40" Height="40" HorizontalAlignment="Left" VerticalAlignment="Top"
+                                           RenderOptions.BitmapScalingMode="HighQuality"/>
+                                    <TextBlock Text="{Binding Title}" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Bottom"
+                                               TextTrimming="CharacterEllipsis" Foreground="{DynamicResource TileText}"/>
+                                </Grid>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
                 </ItemsControl>
             </StackPanel>
 

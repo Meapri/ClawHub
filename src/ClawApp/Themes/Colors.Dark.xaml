@@ -39,6 +39,8 @@
     <!-- ── 메트로 + 흐림 ───────────────────────────────────── -->
     <!-- 흐린 게임 아트 위에 까는 어둡게 하기 층 (아크릴 틴트) -->
     <SolidColorBrush x:Key="BackdropTint" Color="#B3101010"/>
+    <!-- 배경 덮개 (불투명도는 설정 → 홈 화면 → 어둡기/밝기로) -->
+    <SolidColorBrush x:Key="BackdropTintSolid" Color="#101010"/>
     <!-- 화면 위쪽(제목)·아래쪽(힌트)을 조금 더 어둡게: 글자 대비 확보 -->
     <LinearGradientBrush x:Key="BackdropShade" StartPoint="0,0" EndPoint="0,1">
         <GradientStop Color="#66000000" Offset="0"/>

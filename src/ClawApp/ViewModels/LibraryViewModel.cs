@@ -13,11 +13,13 @@ public sealed partial class LibraryViewModel : ObservableObject, INavPage
 
     public IReadOnlyList<Tab> Tabs { get; } =
     [
-        new("전체", _ => true),
-        new("최근", g => g.LastPlayed is not null),
-        new("Steam", g => g.Source == GameSource.Steam),
-        new("Epic", g => g.Source == GameSource.Epic),
-        new("기타", g => g.Source is GameSource.Installed or GameSource.Custom),
+        // 게임 탭들은 앱(게임이 아닌 프로그램)을 빼고, 앱은 마지막 탭에 따로
+        new("게임", g => !g.IsApp),
+        new("최근", g => !g.IsApp && g.LastPlayed is not null),
+        new("Steam", g => !g.IsApp && g.Source == GameSource.Steam),
+        new("Epic", g => !g.IsApp && g.Source == GameSource.Epic),
+        new("기타", g => !g.IsApp && g.Source is GameSource.Installed or GameSource.Custom),
+        new("앱", g => g.IsApp),
     ];
 
     [ObservableProperty] private int _tabIndex;

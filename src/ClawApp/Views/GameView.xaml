@@ -33,11 +33,20 @@
                         HorizontalContentAlignment="Left" local:Nav.InitialFocus="True" Margin="0,0,0,8">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="{StaticResource Icon.Play}" Style="{StaticResource Icon}" FontSize="20" Margin="0,0,14,0"/>
-                        <TextBlock Text="플레이" FontSize="19" Visibility="{Binding IsRunning, Converter={StaticResource NotVis}}"/>
+                        <TextBlock FontSize="19" Visibility="{Binding IsRunning, Converter={StaticResource NotVis}}">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Text" Value="플레이"/>
+                                    <Style.Triggers><DataTrigger Binding="{Binding IsApp}" Value="True"><Setter Property="Text" Value="실행"/></DataTrigger></Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
                         <TextBlock Text="게임으로 돌아가기" FontSize="19" Visibility="{Binding IsRunning, Converter={StaticResource Vis}}"/>
                     </StackPanel>
                 </Button>
 
+                <!-- 게임 전용 (앱이면 숨김): 매핑 · 성능 · 배터리 -->
+                <StackPanel Visibility="{Binding IsGame, Converter={StaticResource Vis}}">
                 <TextBlock Text="컨트롤러 매핑" Style="{StaticResource Section}"/>
                 <Button Style="{StaticResource NavButton}" Command="{Binding CycleProfileCommand}" HorizontalContentAlignment="Stretch">
                     <DockPanel>
@@ -77,10 +86,21 @@
                 </Button>
 
                 <s:GameBatterySection/>
+                </StackPanel>
 
                 <TextBlock Text="관리" Style="{StaticResource Section}"/>
                 <TextBlock Text="표시 이름" Style="{StaticResource Caption}" Margin="2,0,0,6"/>
                 <v:InlineEdit Text="{Binding GameTitle}" FontSize="16" Margin="0,0,0,4"/>
+                <Button Style="{StaticResource NavButton}" Command="{Binding ToggleKindCommand}" HorizontalContentAlignment="Stretch">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Right" Text="A로 변경" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                        <StackPanel>
+                            <TextBlock Text="분류" Style="{StaticResource Caption}"/>
+                            <TextBlock Text="{Binding KindText}" FontSize="19" FontWeight="SemiBold" Margin="0,2,0,0"/>
+                            <TextBlock Text="{Binding KindNote}" Style="{StaticResource Caption}" Margin="0,2,0,0"/>
+                        </StackPanel>
+                    </DockPanel>
+                </Button>
                 <s:GameArtSection/>
                 <Button Style="{StaticResource NavButton}" Command="{Binding HideCommand}" Foreground="{DynamicResource TextDim}">
                     <StackPanel Orientation="Horizontal"><TextBlock Text="{StaticResource Icon.EyeOff}" Style="{StaticResource Icon}" Margin="0,0,14,0"/><TextBlock Text="라이브러리에서 숨기기"/></StackPanel>

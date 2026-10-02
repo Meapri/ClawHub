@@ -25,6 +25,7 @@
             <DataTemplate DataType="{x:Type vm:ProfilesViewModel}"><v:ProfilesView/></DataTemplate>
             <DataTemplate DataType="{x:Type vm:SettingsViewModel}"><v:SettingsView/></DataTemplate>
             <DataTemplate DataType="{x:Type vm:AppPickerViewModel}"><v:AppPickerView/></DataTemplate>
+            <DataTemplate DataType="{x:Type vm:BackdropPickerViewModel}"><v:BackdropPickerView/></DataTemplate>
 
             <!-- 게임 커버 앞면: 커버 아트, 없으면 제목 색 그라데이션 + 아이콘 + 제목 -->
             <DataTemplate x:Key="CoverFace" DataType="{x:Type vm:GameTileViewModel}">
@@ -44,29 +45,40 @@
 
             <!-- 게임 커버 타일 (라이브러리). 포커스가 가면 배경이 그 게임 아트로 바뀐다 -->
             <DataTemplate x:Key="CoverTile" DataType="{x:Type vm:GameTileViewModel}">
-                <Button Style="{StaticResource TileButton}" Command="{Binding OpenCommand}" m:Backdrop.FocusSource="{Binding Hero}">
+                <Button Style="{StaticResource TileButton}" Command="{Binding OpenCommand}" m:Backdrop.FocusSource="{Binding Hero}" local:Nav.InitialFocus="True">
                     <ContentControl Content="{Binding}" ContentTemplate="{StaticResource CoverFace}" Focusable="False"/>
                 </Button>
             </DataTemplate>
 
             <!-- 라이브 커버 타일 (홈): 커버 ↔ 정보(제목·마지막 플레이)가 몇 초마다 위로 굴러 바뀐다 -->
             <DataTemplate x:Key="LiveCoverTile" DataType="{x:Type vm:GameTileViewModel}">
-                <Button Style="{StaticResource TileButton}" Command="{Binding OpenCommand}" m:Backdrop.FocusSource="{Binding Hero}">
+                <!-- 크기는 타일마다 (홈에서 X: 작게 112×168 · 보통 168×256 · 크게 344×520) -->
+                <Button Style="{StaticResource TileButton}" Command="{Binding OpenCommand}" m:Backdrop.FocusSource="{Binding Hero}"
+                        Width="{Binding TileWidth}" Height="{Binding TileHeight}" HorizontalAlignment="Left">
                     <Grid ClipToBounds="True" m:LiveTile.IsLive="True">
                         <ContentControl Content="{Binding}" ContentTemplate="{StaticResource CoverFace}" Focusable="False"/>
                         <Grid Background="{DynamicResource TileAccent}" Visibility="Hidden" TextElement.Foreground="{DynamicResource TileAccentText}">
-                            <StackPanel Margin="14,14,14,14">
-                                <Image Source="{Binding Icon}" Width="32" Height="32" HorizontalAlignment="Left" Margin="0,0,0,10"/>
-                                <TextBlock Text="{Binding Title}" FontSize="19" FontWeight="Bold" TextWrapping="Wrap" MaxHeight="128"
+                            <StackPanel x:Name="Info" Margin="14,14,14,14">
+                                <Image x:Name="InfoIcon" Source="{Binding Icon}" Width="32" Height="32" HorizontalAlignment="Left" Margin="0,0,0,10"/>
+                                <TextBlock x:Name="InfoTitle" Text="{Binding Title}" FontSize="19" FontWeight="Bold" TextWrapping="Wrap" MaxHeight="128"
                                            TextTrimming="CharacterEllipsis"/>
                             </StackPanel>
-                            <StackPanel VerticalAlignment="Bottom" Margin="14,0,14,14">
+                            <StackPanel x:Name="InfoBottom" VerticalAlignment="Bottom" Margin="14,0,14,14">
                                 <TextBlock Text="{Binding SourceLabel}" FontSize="12" Opacity="0.8"/>
                                 <TextBlock Text="{Binding LastPlayedLabel}" FontSize="13" FontWeight="SemiBold" Margin="0,2,0,0"/>
                             </StackPanel>
                         </Grid>
                     </Grid>
                 </Button>
+                <DataTemplate.Triggers>
+                    <!-- 작은 타일: 뒷면은 제목만 작게 -->
+                    <DataTrigger Binding="{Binding IsSmall}" Value="True">
+                        <Setter TargetName="InfoIcon" Property="Visibility" Value="Collapsed"/>
+                        <Setter TargetName="InfoTitle" Property="FontSize" Value="14"/>
+                        <Setter TargetName="Info" Property="Margin" Value="10"/>
+                        <Setter TargetName="InfoBottom" Property="Visibility" Value="Collapsed"/>
+                    </DataTrigger>
+                </DataTemplate.Triggers>
             </DataTemplate>
         </ResourceDictionary>
     </Application.Resources>

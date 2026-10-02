@@ -204,6 +204,8 @@ public partial class MainWindow : Window
             Key.PageDown => NavAction.TabNext,
             Key.F1 => NavAction.MainMenu,
             Key.F2 => NavAction.QuickAccess,
+            Key.F3 => NavAction.Secondary, // 패드 X
+            Key.F4 => NavAction.Options,   // 패드 Y
             _ => null,
         };
         if (a is null) return;

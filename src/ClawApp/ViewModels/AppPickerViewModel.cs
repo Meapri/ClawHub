@@ -32,6 +32,9 @@ public sealed partial class AppPickerViewModel : ObservableObject, INavPage
     [ObservableProperty] private ObservableCollection<AppItemViewModel> _items = [];
     [ObservableProperty] private bool _isLoading = true;
     [ObservableProperty] private string _query = "";
+    /// <summary>앱(게임이 아닌 프로그램)으로 넣을지. 시작 메뉴엔 게임 아닌 게 많아서 기본은 앱.</summary>
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(AddAsGame))] private bool _addAsApp = true;
+    public bool AddAsGame { get => !AddAsApp; set => AddAsApp = !value; }
 
     public AppPickerViewModel(ShellViewModel shell)
     {
@@ -83,10 +86,10 @@ public sealed partial class AppPickerViewModel : ObservableObject, INavPage
             _shell.ShowToast($"{item.Name}은(는) 이미 라이브러리에 있어요");
             return;
         }
-        _shell.Library.AddCustom(item.Name, item.App.LinkPath, item.App.TargetPath);
+        _shell.Library.AddCustom(item.Name, item.App.LinkPath, item.App.TargetPath, isApp: AddAsApp);
         item.IsAdded = true;
         _shell.Home.Reload();
-        _shell.ShowToast($"{item.Name}을(를) 라이브러리에 추가했어요");
+        _shell.ShowToast($"{item.Name}을(를) {(AddAsApp ? "앱" : "게임")}으로 추가했어요");
     }
 
     /// <summary>목록에 없는 프로그램: 파일 선택 창 (터치·마우스).</summary>

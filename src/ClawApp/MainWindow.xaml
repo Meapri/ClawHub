@@ -40,20 +40,20 @@
             <!-- 배경: 지금 고른 게임의 아트를 크게 흐리고 어둡게 (두 층을 교차 페이드).
                  흐림은 층마다 BitmapCache(반 해상도)에 한 번만 그려진다 — 글자가 없는 층이라 화질 손해 없음 -->
             <Grid Grid.RowSpan="3" Background="{DynamicResource BackdropFallback}" ClipToBounds="True" IsHitTestVisible="False"
-                  m:Backdrop.IsHost="True" m:Backdrop.Default="{Binding Home.Hero.Hero}">
+                  m:Backdrop.IsHost="True" m:Backdrop.Default="{Binding BackdropDefault}">
                 <Grid Margin="-120" Opacity="0">
                     <Grid.CacheMode><BitmapCache RenderAtScale="0.5"/></Grid.CacheMode>
                     <Image Stretch="UniformToFill" RenderOptions.BitmapScalingMode="LowQuality">
-                        <Image.Effect><BlurEffect Radius="56" KernelType="Gaussian" RenderingBias="Performance"/></Image.Effect>
+                        <Image.Effect><BlurEffect Radius="{Binding BackdropBlur}" KernelType="Gaussian" RenderingBias="Performance"/></Image.Effect>
                     </Image>
                 </Grid>
                 <Grid Margin="-120" Opacity="0">
                     <Grid.CacheMode><BitmapCache RenderAtScale="0.5"/></Grid.CacheMode>
                     <Image Stretch="UniformToFill" RenderOptions.BitmapScalingMode="LowQuality">
-                        <Image.Effect><BlurEffect Radius="56" KernelType="Gaussian" RenderingBias="Performance"/></Image.Effect>
+                        <Image.Effect><BlurEffect Radius="{Binding BackdropBlur}" KernelType="Gaussian" RenderingBias="Performance"/></Image.Effect>
                     </Image>
                 </Grid>
-                <Rectangle Fill="{DynamicResource BackdropTint}"/>
+                <Rectangle Fill="{DynamicResource BackdropTintSolid}" Opacity="{Binding BackdropDim}"/>
                 <Rectangle Fill="{DynamicResource BackdropShade}"/>
             </Grid>
 

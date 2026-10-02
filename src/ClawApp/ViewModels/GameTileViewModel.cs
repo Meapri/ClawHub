@@ -19,6 +19,16 @@ public sealed partial class GameTileViewModel(ShellViewModel shell, GameEntry ga
     public Brush Placeholder { get; } = ArtCache.PlaceholderBrush(game.Title);
     public bool HasCover => Cover is not null;
 
+    /// <summary>홈 "최근 게임"에서의 크기 (2:3 커버). 한 열(높이 528)에 작게 3 · 보통 2 · 크게 1개.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(TileWidth), nameof(TileHeight), nameof(IsSmall))]
+    private TileSize _size = TileSize.Medium;
+
+    public double TileWidth => Size switch { TileSize.Small => 112, TileSize.Large => 344, _ => 168 };
+    public double TileHeight => Size switch { TileSize.Small => 168, TileSize.Large => 520, _ => 256 };
+    /// <summary>작은 타일은 제목 글자를 줄인다.</summary>
+    public bool IsSmall => Size == TileSize.Small;
+
     /// <summary>아트를 바꾼 뒤(아트 고르기) 다시 읽는다.</summary>
     public void ReloadArt()
     {

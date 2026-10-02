@@ -1,0 +1,48 @@
+<UserControl x:Class="ClawApp.Views.BackdropPickerView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:ClawApp"
+             xmlns:m="clr-namespace:ClawApp.Motion"
+             KeyboardNavigation.DirectionalNavigation="Contained">
+    <!-- 배경 고르기: 라이브러리 게임의 아트를 넓은 타일로. 포커스하면 실제 배경에 미리 깔린다 -->
+    <DockPanel Margin="48,0,40,12">
+        <TextBlock DockPanel.Dock="Top" Style="{StaticResource Caption}" FontSize="13" Margin="2,0,0,12"
+                   Text="고르면 홈과 모든 화면의 배경으로 고정돼요. 사진 파일은 설정 → 홈 화면 → '사진 파일에서 고르기'로 넣을 수 있어요."/>
+        <Grid>
+            <TextBlock Text="아트가 있는 게임이 아직 없어요" Style="{StaticResource H2}" Foreground="{DynamicResource TextDim}" VerticalAlignment="Top"
+                       Visibility="{Binding IsEmpty, Converter={StaticResource Vis}}"/>
+            <ScrollViewer Margin="-6,-6,-6,0">
+                <ItemsControl ItemsSource="{Binding Choices}" Focusable="False" Margin="6" m:Entrance.Stagger="Tiles">
+                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Style="{StaticResource TileButton}" Width="344" Height="194" local:Nav.InitialFocus="True"
+                                    m:Backdrop.FocusSource="{Binding Image}"
+                                    Command="{Binding DataContext.ChooseCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    CommandParameter="{Binding}">
+                                <Grid>
+                                    <Border>
+                                        <Border.Background><ImageBrush ImageSource="{Binding Image}" Stretch="UniformToFill"/></Border.Background>
+                                    </Border>
+                                    <Border VerticalAlignment="Bottom" Padding="12,8">
+                                        <Border.Background>
+                                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                                <GradientStop Color="#00000000" Offset="0"/>
+                                                <GradientStop Color="#B0000000" Offset="1"/>
+                                            </LinearGradientBrush>
+                                        </Border.Background>
+                                        <DockPanel>
+                                            <TextBlock DockPanel.Dock="Right" Text="{StaticResource Icon.CircleCheck}" Style="{StaticResource Icon}"
+                                                       Visibility="{Binding IsCurrent, Converter={StaticResource Vis}}"/>
+                                            <TextBlock Text="{Binding Title}" FontSize="14" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                                        </DockPanel>
+                                    </Border>
+                                </Grid>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Grid>
+    </DockPanel>
+</UserControl>

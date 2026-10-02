@@ -97,7 +97,7 @@ public sealed class CategoryIconConverter : IValueConverter
 
     private static readonly Dictionary<string, string> Map = new(StringComparer.OrdinalIgnoreCase)
     {
-        ["general"] = "Settings", ["controller"] = "Gamepad2", ["light"] = "Lightbulb", ["performance"] = "Zap",
+        ["general"] = "Settings", ["home"] = "LayoutGrid", ["controller"] = "Gamepad2", ["light"] = "Lightbulb", ["performance"] = "Zap",
         ["display"] = "Monitor", ["battery"] = "Battery", ["windows"] = "AppWindow", ["library"] = "Library", ["about"] = "Info",
     };
 

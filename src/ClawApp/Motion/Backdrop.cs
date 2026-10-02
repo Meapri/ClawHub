@@ -59,17 +59,24 @@ public static class Backdrop
         if (_showingDefault || !_initialized) Show(null);
     }
 
+    /// <summary>
+    /// false면 포커스·페이지를 따라 바꾸지 않고 항상 기본 그림만 (설정 → 홈 화면 → 배경이 "고정 이미지"·"단색"일 때).
+    /// </summary>
+    public static bool FollowFocus { get; set; } = true;
+
+    private static void ShowFollowing(ImageSource? source) => Show(FollowFocus ? source : null);
+
     private static void OnFocusSourceChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         if (d is not UIElement el || e.OldValue is not null) return; // 처음 한 번만 연결
-        el.GotKeyboardFocus += (_, _) => Show(GetFocusSource(el));
+        el.GotKeyboardFocus += (_, _) => ShowFollowing(GetFocusSource(el));
     }
 
     private static void OnPageSourceChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         if (d is not FrameworkElement el) return;
-        if (e.OldValue is null) el.Loaded += (_, _) => Show(GetPageSource(el));
-        if (el.IsLoaded) Show(GetPageSource(el));
+        if (e.OldValue is null) el.Loaded += (_, _) => ShowFollowing(GetPageSource(el));
+        if (el.IsLoaded) ShowFollowing(GetPageSource(el));
     }
 
     /// <summary>기본 그림(홈 히어로)으로 돌아간다. 페이지가 바뀔 때마다 호출.</summary>

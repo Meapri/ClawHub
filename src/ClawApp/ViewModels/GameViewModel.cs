@@ -10,7 +10,9 @@ public sealed partial class GameViewModel(ShellViewModel shell, GameTileViewMode
     public GameTileViewModel Tile { get; } = tile;
 
     public string Title => Tile.Game.Title;
-    public IReadOnlyList<Hint> Hints => [new("A", "선택"), new("B", "뒤로"), new("Y", "매핑 편집")];
+    public IReadOnlyList<Hint> Hints => Tile.Game.IsApp
+        ? [new("A", "선택"), new("B", "뒤로")]
+        : [new("A", "선택"), new("B", "뒤로"), new("Y", "매핑 편집")];
 
     public MappingProfile? Profile => shell.Profiles.Find(Tile.Game.MappingProfileId);
     public string ProfileText => Profile?.Name ?? "사용 안 함 (게임패드 그대로)";
@@ -158,6 +160,24 @@ public sealed partial class GameViewModel(ShellViewModel shell, GameTileViewMode
     [RelayCommand]
     private void OpenArtPicker() => shell.Navigate(new ArtPickerViewModel(shell, Tile));
 
+    // ── 분류: 게임 / 앱 ─────────────────────────────────────
+    public bool IsApp => Tile.Game.IsApp;
+    public bool IsGame => !Tile.Game.IsApp;
+    public string KindText => IsApp ? "앱 (게임 아님)" : "게임";
+    public string KindNote => IsApp
+        ? "실행하면 런처가 숨고 스틱이 마우스가 돼요. 매핑·성능 모드는 쓰지 않아요."
+        : "실행하면 게임별 매핑·성능 모드가 적용되고, 끝나면 원래대로 돌아와요.";
+
+    [RelayCommand]
+    private void ToggleKind()
+    {
+        shell.Library.SetIsApp(Tile.Game, !Tile.Game.IsApp);
+        foreach (var p in new[] { nameof(IsApp), nameof(IsGame), nameof(KindText), nameof(KindNote) }) OnPropertyChanged(p);
+        shell.Home.Reload();
+        shell.UpdateHints(); // 앱이면 "매핑 편집" 힌트가 빠진다
+        shell.ShowToast($"{Tile.Title}: {(IsApp ? "앱" : "게임")}으로 바꿨어요");
+    }
+
     [RelayCommand]
     private void Hide()
     {
@@ -175,7 +195,7 @@ public sealed partial class GameViewModel(ShellViewModel shell, GameTileViewMode
 
     public bool Handle(NavAction action)
     {
-        if (action != NavAction.Options) return false;
+        if (action != NavAction.Options || IsApp) return false;
         EditMapping();
         return true;
     }
