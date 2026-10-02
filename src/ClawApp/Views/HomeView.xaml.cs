@@ -131,7 +131,21 @@ public partial class HomeView : UserControl
         d is Visual or System.Windows.Media.Media3D.Visual3D ? VisualTreeHelper.GetParent(d) : LogicalTreeHelper.GetParent(d);
 
     /// <summary>타일의 항목 컨테이너 (구역마다 ItemsControl이 따로라 시각 트리에서 찾는다).</summary>
-    private FrameworkElement? ContainerOf(StartTileViewModel tile) => FindContainer(Surface, tile);
+    private FrameworkElement? ContainerOf(StartTileViewModel tile)
+    {
+        // 끄는 동안 마우스가 움직일 때마다 타일마다 찾으므로 기억해 두고, 아직 그 판에 붙어 있을 때만 다시 쓴다
+        // (다른 구역으로 옮겨지면 컨테이너가 새로 생긴다)
+        var surface = Surface;
+        if (_containers.TryGetValue(tile, out var c) && c is ContentPresenter { Content: var content, IsLoaded: true }
+            && ReferenceEquals(content, tile) && surface.IsAncestorOf(c))
+            return c;
+        c = FindContainer(surface, tile);
+        if (c is null) _containers.Remove(tile);
+        else _containers[tile] = c;
+        return c;
+    }
+
+    private readonly Dictionary<StartTileViewModel, FrameworkElement> _containers = [];
 
     private static FrameworkElement? FindContainer(DependencyObject root, StartTileViewModel tile)
     {
@@ -296,6 +310,7 @@ public partial class HomeView : UserControl
     private void EndDragging()
     {
         _dragging = false;
+        _containers.Clear(); // 끌기가 끝나면 기억한 컨테이너는 버린다 (지운 타일이 남지 않게)
         _autoScroll.Stop();
         _hover.Stop();
         var outside = _hoverTarget == OutsideFolderTarget;

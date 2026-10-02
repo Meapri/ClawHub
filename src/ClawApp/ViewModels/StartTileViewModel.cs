@@ -108,10 +108,15 @@ public sealed partial class StartTileViewModel : ObservableObject, IStartCell
     /// <summary>정의(크기·이름·안의 타일)나 라이브러리가 바뀌었을 때. continueGame = 이어서 플레이에 보일 게임.</summary>
     public void Refresh(GameTileViewModel? continueGame)
     {
+        // 바뀐 게 없으면 아무것도 하지 않는다 — 홈으로 돌아올 때마다 모든 타일의 바인딩을 다시 계산하지 않게
+        var key = Signature(continueGame);
+        if (key == _signature) return;
+        _signature = key;
+
         Game = Kind switch
         {
             StartTileKind.Game => _shell.Library.Games.FirstOrDefault(g => g.Id == Def.Ref) is { Hidden: false } e
-                ? (Game?.Game == e ? Game : new GameTileViewModel(_shell, e)) : null,
+                ? (Game?.Game.Id == e.Id && SameArt(Game.Game, e) ? Game : new GameTileViewModel(_shell, e)) : null,
             StartTileKind.Continue => continueGame,
             _ => null,
         };
@@ -130,6 +135,26 @@ public sealed partial class StartTileViewModel : ObservableObject, IStartCell
         }
         OnPropertyChanged(string.Empty);
     }
+
+    private string? _signature;
+
+    /// <summary>이 타일 모습을 정하는 값들 (크기·이름·게임과 그 아트·폴더 안 구성).</summary>
+    private string Signature(GameTileViewModel? continueGame)
+    {
+        static string G(ClawCore.Games.GameEntry? g) => g is null ? "-" : $"{g.Id}|{g.Title}|{g.IsApp}|{g.Hidden}|{g.HeroImage}|{g.CoverImage}|{g.LogoImage}|{g.LastPlayed?.Ticks}";
+        var lib = _shell.Library.Games;
+        var main = Kind switch
+        {
+            StartTileKind.Game => G(lib.FirstOrDefault(g => g.Id == Def.Ref)),
+            StartTileKind.Continue => G(continueGame?.Game) + (continueGame?.GetHashCode() ?? 0),
+            _ => "",
+        };
+        var children = IsFolder ? string.Join(";", Def.Children.Select(c => c.Id + c.Size + G(lib.FirstOrDefault(g => g.Id == c.Ref)))) : "";
+        return $"{Def.Size}|{Def.Title}|{main}|{children}";
+    }
+
+    private static bool SameArt(ClawCore.Games.GameEntry a, ClawCore.Games.GameEntry b) =>
+        a.HeroImage == b.HeroImage && a.CoverImage == b.CoverImage && a.LogoImage == b.LogoImage && a.Title == b.Title && a.LastPlayed == b.LastPlayed;
 
     /// <summary>표시할 수 있는지 (라이브러리에서 지웠거나 숨긴 게임은 타일이 남아도 보이지 않음).</summary>
     public bool IsVisible => Kind != StartTileKind.Game || Game is not null;
