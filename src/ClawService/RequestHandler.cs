@@ -16,6 +16,11 @@ public sealed class RequestHandler(ILogger<RequestHandler> log, ControllerManage
          AppCommands.Screenshot, AppCommands.ToggleRecording, AppCommands.SaveClip,
          AppCommands.WidgetShown, AppCommands.WidgetHidden];
 
+    /// <summary>"SetVolume:0"–"SetVolume:100"만 통과시킨다.</summary>
+    private static bool IsVolumeCommand(string cmd) =>
+        cmd.StartsWith(AppCommands.SetVolumePrefix, StringComparison.Ordinal) &&
+        int.TryParse(cmd.AsSpan(AppCommands.SetVolumePrefix.Length), System.Globalization.NumberStyles.None, null, out var v) && v is >= 0 and <= 100;
+
     private static readonly string? Bios =
         Registry.GetValue(@"HKEY_LOCAL_MACHINE\HARDWARE\DESCRIPTION\System\BIOS", "BIOSVersion", null) as string;
 
@@ -97,7 +102,7 @@ public sealed class RequestHandler(ILogger<RequestHandler> log, ControllerManage
                     break;
                 case Ops.AppCommand:
                     var cmd = req.Command ?? throw new ArgumentException("Command 누락");
-                    if (!KnownCommands.Contains(cmd) && !cmd.StartsWith(AppCommands.SetProfilePrefix, StringComparison.Ordinal))
+                    if (!KnownCommands.Contains(cmd) && !cmd.StartsWith(AppCommands.SetProfilePrefix, StringComparison.Ordinal) && !IsVolumeCommand(cmd))
                         throw new ArgumentException($"알 수 없는 명령 {cmd}");
                     if (RelayAppCommand is null || system.AppState is null) throw new InvalidOperationException("ClawHub 앱이 실행 중이 아니에요");
                     RelayAppCommand(cmd);

@@ -64,6 +64,8 @@ public static class AppCommands
     /// <summary>Game Bar "방금 일어난 일 기록" — 최근 30초 저장 (Win+Alt+G, 백그라운드 녹화가 켜져 있어야 함).</summary>
     public const string SaveClip = "SaveClip";
     /// <summary>Game Bar가 열려 위젯이 보인다 / 닫혔다. Game Bar는 앞 창으로 잡히지 않을 때가 많아서 런처는 이것으로 "넘겨준 동안"을 판단한다.</summary>
+    /// <summary>"SetVolume:&lt;0–100&gt;" — 시스템 볼륨. 위젯은 샌드박스라 직접 못 바꿔서 앱이 대신 바꾼다.</summary>
+    public const string SetVolumePrefix = "SetVolume:";
     public const string WidgetShown = "WidgetShown";
     public const string WidgetHidden = "WidgetHidden";
 }
@@ -87,6 +89,8 @@ public sealed class AppState
     public bool OnBattery { get; set; }
     /// <summary>실행 중 게임의 렌더링 프로세스 ID (FPS 측정 대상). null = 모름/게임 없음.</summary>
     public int? RunningGamePid { get; set; }
+    /// <summary>시스템 볼륨 0–100 (null = 모름). 위젯(AppContainer)은 직접 못 읽어서 앱이 알려 준다.</summary>
+    public int? Volume { get; set; }
 }
 
 public sealed class ProfileItem

@@ -151,6 +151,7 @@ public sealed partial class ShellViewModel : ObservableObject
             GameFpsLimitOnBattery = game?.FpsLimitOnBattery,
             OnBattery = OnBattery,
             RunningGamePid = game is null ? null : await Task.Run(() => GameProcessPicker.Pick(Session)), // FPS 측정 대상
+            Volume = await Task.Run(SystemControls.GetVolume), // 위젯 볼륨 슬라이더용 (위젯은 직접 못 읽는다)
         };
         var json = System.Text.Json.JsonSerializer.Serialize(state, ClawCore.JsonStore.Options);
         if (json == _sentAppState) return; // 바뀐 것 없음
@@ -180,6 +181,13 @@ public sealed partial class ShellViewModel : ObservableObject
                 return;
             case AppCommands.WidgetHidden:
                 OnWidgetShown(false);
+                return;
+            case var v when v.StartsWith(AppCommands.SetVolumePrefix, StringComparison.Ordinal):
+                if (int.TryParse(v.AsSpan(AppCommands.SetVolumePrefix.Length), out var percent))
+                {
+                    SystemControls.SetVolume(Math.Clamp(percent, 0, 100));
+                    _ = PushAppStateAsync(); // 위젯이 다음 상태 조회에서 새 값을 본다
+                }
                 return;
             case AppCommands.CycleProfile:
                 CycleTargetProfile();
@@ -665,6 +673,7 @@ public sealed partial class ShellViewModel : ObservableObject
         _widgetShown = shown;
         if (shown)
         {
+            _ = PushAppStateAsync(); // 볼륨 등 최신 값으로 (평소엔 10초마다)
             if (_handoff != Handoff.GameBar) BeginHandoff(Handoff.GameBar);
             _handoffSeen = true;
             _handoffRetry = false;

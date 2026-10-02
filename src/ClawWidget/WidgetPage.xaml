@@ -19,7 +19,7 @@
             <StackPanel x:Name="MainStack" Padding="12,10,12,12">
 
                 <!-- 서비스 연결 안 됨 -->
-                <Border x:Name="OfflineCard" Visibility="Collapsed" CornerRadius="8" Padding="12" Margin="0,0,0,8"
+                <Border x:Name="OfflineCard" Visibility="Collapsed" Padding="12" Margin="0,0,0,6"
                         Background="{ThemeResource WidgetErrorBackgroundBrush}">
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -32,7 +32,7 @@
                             <TextBlock Text="서비스 연결 안 됨" FontWeight="SemiBold" />
                             <TextBlock x:Name="OfflineDetail" Style="{StaticResource CaptionStyle}" Text="ClawHub 서비스에 연결할 수 없어요" />
                             <TextBlock Style="{StaticResource CaptionStyle}" Text="자동으로 계속 다시 연결해요." />
-                            <Button x:Name="RetryButton" Margin="0,4,0,0" Click="RetryButton_Click">
+                            <Button x:Name="RetryButton" Style="{StaticResource ActionButtonStyle}" HorizontalAlignment="Left" Margin="0,4,0,0" Click="RetryButton_Click">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                     <FontIcon FontFamily="{StaticResource WidgetIconFont}" Glyph="&#xE145;" FontSize="14" />
                                     <TextBlock Text="지금 다시 연결" />
@@ -57,7 +57,7 @@
 
         <!-- ═════════════ 고정(핀) 미니 HUD — Game Bar가 닫혀 있고 위젯만 게임 위에 떠 있을 때 ═════════════ -->
         <Border x:Name="PinnedView" Visibility="Collapsed" HorizontalAlignment="Left" VerticalAlignment="Top"
-                CornerRadius="8" Padding="10,6" Background="{ThemeResource WidgetHudPillBrush}">
+                Padding="10,6" Background="{ThemeResource WidgetHudPillBrush}">
             <StackPanel Orientation="Horizontal" Spacing="6">
                 <FontIcon FontFamily="{StaticResource WidgetIconFont}" Glyph="&#xE0A9;" FontSize="14" VerticalAlignment="Center"
                           Foreground="{ThemeResource WidgetCpuLineBrush}" />
@@ -74,7 +74,7 @@
 
         <!-- ═════════════ 알림 (명령 실패 등, 잠깐 표시) ═════════════ -->
         <Border x:Name="Toast" Visibility="Collapsed" VerticalAlignment="Bottom" HorizontalAlignment="Stretch"
-                Margin="12" Padding="12,10" CornerRadius="8" IsHitTestVisible="False"
+                Margin="12" Padding="12,10" IsHitTestVisible="False"
                 Background="{ThemeResource WidgetToastBrush}" BorderThickness="1" BorderBrush="{ThemeResource WidgetCardStrokeBrush}">
             <Grid>
                 <Grid.ColumnDefinitions>

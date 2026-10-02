@@ -44,6 +44,8 @@ namespace ClawWidget.UI
         public const string Video = "";
         public const string Film = "";
         public const string Sparkles = "";
+        public const string Volume2 = "";
+        public const string VolumeX = "";
         public const string HeartPulse = "";
 
         public static FontFamily Font => (FontFamily)Application.Current.Resources["WidgetIconFont"];

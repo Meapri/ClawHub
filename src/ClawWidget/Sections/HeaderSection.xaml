@@ -70,9 +70,9 @@
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
-                                    <Button Style="{StaticResource AccentButtonStyle}" HorizontalAlignment="Stretch"
+                                    <Button Style="{StaticResource MetroAccentButtonStyle}" HorizontalAlignment="Stretch"
                                             Content="종료" Click="QuitConfirmButton_Click" />
-                                    <Button Grid.Column="1" HorizontalAlignment="Stretch" Content="취소" Click="QuitCancelButton_Click" />
+                                    <Button Grid.Column="1" Style="{StaticResource ActionButtonStyle}" Content="취소" Click="QuitCancelButton_Click" />
                                 </Grid>
                             </StackPanel>
                         </Flyout>

@@ -54,6 +54,8 @@ namespace ClawWidget.Ipc
         /// <summary>최근 30초 저장 (Win+Alt+G, 백그라운드 녹화가 켜져 있어야 함).</summary>
         public const string SaveClip = "SaveClip";
         /// <summary>Game Bar가 열려 이 위젯이 보인다 / 닫혀 안 보인다 (고정 HUD만 남은 것은 닫힘). 런처가 매핑을 풀고 되돌리는 기준.</summary>
+        /// <summary>"SetVolume:&lt;0–100&gt;" — 앱이 대신 시스템 볼륨을 바꾼다.</summary>
+        public const string SetVolumePrefix = "SetVolume:";
         public const string WidgetShown = "WidgetShown";
         public const string WidgetHidden = "WidgetHidden";
     }
@@ -164,6 +166,8 @@ namespace ClawWidget.Ipc
         public int? GameFpsLimitOnBattery;
         /// <summary>앱이 본 전원 상태 (true = 배터리).</summary>
         public bool OnBattery;
+        /// <summary>시스템 볼륨 0–100 (앱이 알려 준 값, null = 모름).</summary>
+        public int? Volume;
 
         /// <summary>지금 전원 상태에서 이 게임에 적용되는 전용 성능 모드 이름 (없으면 null).</summary>
         public string CurrentGamePerformanceMode =>
@@ -187,6 +191,7 @@ namespace ClawWidget.Ipc
                 GamePerformanceModeOnBattery = Json.Str(o, "GamePerformanceModeOnBattery"),
                 GameFpsLimitOnBattery = Json.Int(o, "GameFpsLimitOnBattery"),
                 OnBattery = Json.Bool(o, "OnBattery") ?? false,
+                Volume = Json.Int(o, "Volume"),
             };
             var arr = Json.Get(o, "Profiles");
             if (arr != null && arr.ValueType == JsonValueType.Array)
@@ -418,6 +423,8 @@ namespace ClawWidget.Ipc
         public string Error;
         public string Event;
         public ServiceStatus Status;
+        /// <summary>Status 원본 JSON (위젯이 다음에 열릴 때 바로 보여 주려고 저장해 둔다).</summary>
+        public string StatusJson;
         public Telemetry Telemetry;
 
         public static Response Parse(string line)
@@ -431,6 +438,7 @@ namespace ClawWidget.Ipc
                 Error = Json.Str(o, "Error"),
                 Event = Json.Str(o, "Event"),
                 Status = ServiceStatus.FromJson(Json.Get(o, "Status")),
+                StatusJson = Json.AsObject(Json.Get(o, "Status"))?.Stringify(),
                 Telemetry = Telemetry.FromJson(Json.Get(o, "Telemetry")),
             };
         }

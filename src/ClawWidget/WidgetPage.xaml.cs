@@ -75,9 +75,10 @@ namespace ClawWidget
             Add(new CaptureSection());
             Add(new TelemetrySection());
             Add(new PerformanceSection());
-            Add(new EnduranceSection());
+            // 자주 만지는 것 먼저 (허브 빠른 설정과 같은 순서): FPS → 밝기·소리 → 자동 TDP → 조명
             Add(new GraphicsSection());
             Add(new DisplaySection());
+            Add(new EnduranceSection());
             Add(new LightingSection());
         }
 
@@ -101,12 +102,16 @@ namespace ClawWidget
             if (resp == null)
             {
                 _attempted = true;
+                PendingChoices.Clear();
                 ShowToast("서비스 연결 안 됨 · " + (_client.LastError ?? "ClawHub 서비스에 연결할 수 없어요"), true);
                 ApplyStatus(null);
                 return false;
             }
             if (!resp.Ok)
+            {
+                PendingChoices.Clear(); // 먼저 표시해 둔 선택을 실제 값으로 되돌린다
                 ShowToast((failMessage ?? "적용하지 못했어요") + " · " + (string.IsNullOrEmpty(resp.Error) ? "알 수 없는 오류" : resp.Error), true);
+            }
             // 실패해도 서비스가 현재 상태를 함께 보낸다 → 토글처럼 미리 움직인 컨트롤을 실제 값으로 되돌림
             ApplyStatus(resp.Status ?? _status);
             return resp.Ok;
@@ -168,8 +173,43 @@ namespace ClawWidget
             ApplyBackground();
         }
 
+        // ══════════════ 마지막 상태 캐시 ══════════════
+        // 위젯 프로세스가 새로 뜰 때(처음 열기·재부팅 뒤) 서비스 응답을 기다리는 동안 카드가 비어 있지 않게,
+        // 마지막으로 받은 상태를 파일에 두었다가 바로 그린다. 첫 응답이 오면 곧바로 실제 값으로 바뀐다.
+
+        private const string CacheFile = "last-status.json";
+        private string _cachedJson;
+
+        private async Task LoadCachedStatusAsync()
+        {
+            try
+            {
+                var item = await Windows.Storage.ApplicationData.Current.LocalFolder.TryGetItemAsync(CacheFile) as Windows.Storage.StorageFile;
+                if (item == null) return;
+                var json = await Windows.Storage.FileIO.ReadTextAsync(item);
+                JsonObject o;
+                if (_status != null || _disposed || !JsonObject.TryParse(json, out o)) return; // 이미 실제 응답이 왔으면 그대로
+                _cachedJson = json;
+                ApplyStatus(ServiceStatus.FromJson(o));
+            }
+            catch (Exception) { /* 캐시가 없거나 깨짐 — 응답을 기다린다 */ }
+        }
+
+        private async void SaveStatus(string json)
+        {
+            if (string.IsNullOrEmpty(json) || json == _cachedJson) return;
+            _cachedJson = json;
+            try
+            {
+                var file = await Windows.Storage.ApplicationData.Current.LocalFolder.CreateFileAsync(CacheFile, Windows.Storage.CreationCollisionOption.ReplaceExisting);
+                await Windows.Storage.FileIO.WriteTextAsync(file, json);
+            }
+            catch (Exception) { /* 다음에 다시 */ }
+        }
+
         private async void OnLoaded(object sender, RoutedEventArgs e)
         {
+            await LoadCachedStatusAsync();
             await UpdateViewModeAsync();
             UpdatePolling();
             await ReportShownAsync();
@@ -350,7 +390,7 @@ namespace ClawWidget
             var compact = _widget != null && _widget.CompactModeEnabled;
             MainStack.Padding = compact ? new Thickness(8, 6, 8, 8) : new Thickness(12, 10, 12, 12);
             OfflineCard.Margin = new Thickness(0, 0, 0, compact ? 6 : 8);
-            RetryButton.MinHeight = compact ? 44 : 32;
+            RetryButton.MinHeight = compact ? 52 : 44;
             foreach (var s in _sections) s.OnDensity(compact);
         }
 
@@ -377,6 +417,7 @@ namespace ClawWidget
                         return;
                     }
                     ApplyStatus(resp.Status);
+                    SaveStatus(resp.StatusJson);
                 }
 
                 var tel = await _client.SendAsync(Requests.Create(Ops.GetTelemetry), 3000);

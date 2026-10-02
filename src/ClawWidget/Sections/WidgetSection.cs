@@ -75,7 +75,7 @@ namespace ClawWidget.Sections
             var card = Content as Border;
             if (card == null) return;
             card.Padding = new Thickness(compact ? 10 : 12);
-            card.Margin = new Thickness(0, 0, 0, compact ? 6 : 8);
+            card.Margin = new Thickness(0, 0, 0, 6);
         }
 
         /// <summary>위젯이 처음 열릴 때 포커스를 줄 컨트롤 (없으면 null).</summary>
@@ -89,6 +89,7 @@ namespace ClawWidget.Sections
 
         protected Brush ThemeBrush(string key) => Host != null ? Host.ThemeBrush(key) : null;
 
-        protected static double ItemHeight(bool compact) => compact ? 44 : 36;
+        /// <summary>누르는 대상 높이. 손가락 크기 이상 (허브와 같이 44 이상), 핸드헬드(컴팩트)에서는 더 크게.</summary>
+        protected static double ItemHeight(bool compact) => compact ? 52 : 44;
     }
 }

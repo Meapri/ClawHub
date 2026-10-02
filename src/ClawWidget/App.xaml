@@ -6,16 +6,21 @@
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <!-- WinUI 2 = Windows 11 컨트롤 스타일 (둥근 모서리, Fluent 색) -->
+                <!-- WinUI 2 컨트롤 (슬라이더·스위치·플라이아웃). 모양은 아래 키로 허브(메트로)에 맞춘다 -->
                 <muxc:XamlControlsResources ControlsResourcesVersion="Version2" />
             </ResourceDictionary.MergedDictionaries>
 
-            <!-- 위젯 전용 색. WinUI 리소스 키에 의존하지 않도록 직접 정의 (Windows 11 팔레트 근사값). -->
+            <!-- 위젯 전용 색. 허브(ClawApp Themes/Colors.*.xaml)와 같은 값. 강조색은 Windows 강조색. -->
             <ResourceDictionary.ThemeDictionaries>
                 <ResourceDictionary x:Key="Dark">
                     <SolidColorBrush x:Key="WidgetBackgroundBrush" Color="#202020" />
-                    <SolidColorBrush x:Key="WidgetCardBrush" Color="#0DFFFFFF" />
+                    <SolidColorBrush x:Key="WidgetCardBrush" Color="#0FFFFFFF" />
                     <SolidColorBrush x:Key="WidgetCardStrokeBrush" Color="#19FFFFFF" />
+                    <SolidColorBrush x:Key="WidgetTileBrush" Color="#1AFFFFFF" />
+                    <SolidColorBrush x:Key="WidgetTileHoverBrush" Color="#14FFFFFF" />
+                    <SolidColorBrush x:Key="WidgetTextBrush" Color="#FFFFFF" />
+                    <SolidColorBrush x:Key="WidgetAccentBrush" Color="{ThemeResource SystemAccentColorLight2}" />
+                    <SolidColorBrush x:Key="WidgetAccentTextBrush" Color="#000000" />
                     <SolidColorBrush x:Key="WidgetSecondaryTextBrush" Color="#C5FFFFFF" />
                     <SolidColorBrush x:Key="WidgetTertiaryTextBrush" Color="#87FFFFFF" />
                     <SolidColorBrush x:Key="WidgetOkBrush" Color="#6CCB5F" />
@@ -32,6 +37,11 @@
                     <SolidColorBrush x:Key="WidgetBackgroundBrush" Color="#F3F3F3" />
                     <SolidColorBrush x:Key="WidgetCardBrush" Color="#B3FFFFFF" />
                     <SolidColorBrush x:Key="WidgetCardStrokeBrush" Color="#0F000000" />
+                    <SolidColorBrush x:Key="WidgetTileBrush" Color="#0D000000" />
+                    <SolidColorBrush x:Key="WidgetTileHoverBrush" Color="#0A000000" />
+                    <SolidColorBrush x:Key="WidgetTextBrush" Color="#E4000000" />
+                    <SolidColorBrush x:Key="WidgetAccentBrush" Color="{ThemeResource SystemAccentColorDark1}" />
+                    <SolidColorBrush x:Key="WidgetAccentTextBrush" Color="#FFFFFF" />
                     <SolidColorBrush x:Key="WidgetSecondaryTextBrush" Color="#9E000000" />
                     <SolidColorBrush x:Key="WidgetTertiaryTextBrush" Color="#72000000" />
                     <SolidColorBrush x:Key="WidgetOkBrush" Color="#0F7B0F" />
@@ -46,11 +56,25 @@
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
 
+            <!-- ── 메트로: ClawHub 앱과 같은 디자인 언어 ──────────────────
+                 직각(둥근 모서리 없음) · 평평한 반투명 면 · 고른 것은 강조색 단색 타일 · 누르면 살짝 눌림(틸트).
+                 WinUI 템플릿이 쓰는 키를 덮어써서 슬라이더·스위치·메뉴·플라이아웃도 같이 직각이 된다. -->
+            <CornerRadius x:Key="ControlCornerRadius">0</CornerRadius>
+            <CornerRadius x:Key="OverlayCornerRadius">0</CornerRadius>
+            <CornerRadius x:Key="SliderThumbCornerRadius">0</CornerRadius>
+            <!-- 슬라이더 손잡이 = 허브와 같은 세로 막대 (손가락으로 잡기 쉽게 높게) -->
+            <x:Double x:Key="SliderHorizontalThumbWidth">12</x:Double>
+            <x:Double x:Key="SliderHorizontalThumbHeight">26</x:Double>
+            <x:Double x:Key="SliderInnerThumbWidth">12</x:Double>
+            <x:Double x:Key="SliderInnerThumbHeight">26</x:Double>
+            <x:Double x:Key="SliderTrackThemeHeight">6</x:Double>
+
             <!-- Lucide 아이콘 글꼴 (ISC). 코드포인트는 UI/Icons.cs 참고. -->
             <FontFamily x:Key="WidgetIconFont">ms-appx:///Assets/Fonts/lucide.ttf#lucide</FontFamily>
 
+            <!-- 카드(섹션) 제목: 허브의 구역 제목처럼 조금 크고 굵게 -->
             <Style x:Key="SectionHeaderStyle" TargetType="TextBlock">
-                <Setter Property="FontSize" Value="14" />
+                <Setter Property="FontSize" Value="15" />
                 <Setter Property="FontWeight" Value="SemiBold" />
             </Style>
             <Style x:Key="CaptionStyle" TargetType="TextBlock">
@@ -68,41 +92,190 @@
                 <Setter Property="FontWeight" Value="SemiBold" />
                 <Setter Property="TextTrimming" Value="CharacterEllipsis" />
             </Style>
+            <!-- 카드: 테두리 없는 평평한 반투명 면, 직각 -->
             <Style x:Key="CardStyle" TargetType="Border">
                 <Setter Property="Background" Value="{ThemeResource WidgetCardBrush}" />
-                <Setter Property="BorderBrush" Value="{ThemeResource WidgetCardStrokeBrush}" />
-                <Setter Property="BorderThickness" Value="1" />
-                <Setter Property="CornerRadius" Value="8" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="CornerRadius" Value="0" />
                 <Setter Property="Padding" Value="12" />
-                <Setter Property="Margin" Value="0,0,0,8" />
+                <Setter Property="Margin" Value="0,0,0,6" />
             </Style>
-            <Style x:Key="ChoiceButtonStyle" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
+
+            <!-- ── 메트로 타일 버튼 ──────────────────────────────────
+                 선택지(ChoiceGroup)는 ToggleButton: 고르면 강조색 층이 짧게 페이드 인 (허브의 칩·빠른 설정 타일과 같은 동작).
+                 누르면 0.96으로 살짝 눌렸다 돌아온다. 패드 포커스는 시스템 포커스 테두리를 두껍게 (3 + 1). -->
+            <Style x:Key="MetroChoiceStyle" TargetType="ToggleButton">
+                <Setter Property="Background" Value="{ThemeResource WidgetTileBrush}" />
+                <Setter Property="Foreground" Value="{ThemeResource WidgetTextBrush}" />
                 <Setter Property="HorizontalAlignment" Value="Stretch" />
                 <Setter Property="VerticalAlignment" Value="Stretch" />
-                <Setter Property="MinHeight" Value="36" />
+                <Setter Property="HorizontalContentAlignment" Value="Center" />
+                <Setter Property="VerticalContentAlignment" Value="Center" />
+                <Setter Property="MinHeight" Value="44" />
                 <Setter Property="MinWidth" Value="0" />
-                <Setter Property="Padding" Value="4,4" />
+                <Setter Property="Padding" Value="6,4" />
                 <Setter Property="Margin" Value="2" />
+                <Setter Property="FontSize" Value="14" />
+                <Setter Property="UseSystemFocusVisuals" Value="True" />
+                <Setter Property="FocusVisualPrimaryThickness" Value="3" />
+                <Setter Property="FocusVisualSecondaryThickness" Value="1" />
+                <Setter Property="FocusVisualMargin" Value="-3" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ToggleButton">
+                            <Grid x:Name="Root" RenderTransformOrigin="0.5,0.5">
+                                <Grid.RenderTransform>
+                                    <ScaleTransform x:Name="Tilt" />
+                                </Grid.RenderTransform>
+                                <Border Background="{TemplateBinding Background}" />
+                                <Border x:Name="Hover" Background="{ThemeResource WidgetTileHoverBrush}" Opacity="0" />
+                                <Border x:Name="Selected" Background="{ThemeResource WidgetAccentBrush}" Opacity="0" />
+                                <ContentPresenter x:Name="Presenter" Padding="{TemplateBinding Padding}"
+                                                  Foreground="{TemplateBinding Foreground}"
+                                                  HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                  VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                  Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" />
+                                <VisualStateManager.VisualStateGroups>
+                                    <VisualStateGroup x:Name="CommonStates">
+                                        <VisualStateGroup.Transitions>
+                                            <VisualTransition GeneratedDuration="0:0:0.14" />
+                                            <!-- 눌림은 빠르게, 떼면 천천히 돌아온다 -->
+                                            <VisualTransition To="Pressed" GeneratedDuration="0:0:0.06" />
+                                            <VisualTransition To="CheckedPressed" GeneratedDuration="0:0:0.06" />
+                                        </VisualStateGroup.Transitions>
+                                        <VisualState x:Name="Normal" />
+                                        <VisualState x:Name="PointerOver">
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="Hover" Storyboard.TargetProperty="Opacity" To="1" Duration="0" />
+                                            </Storyboard>
+                                        </VisualState>
+                                        <VisualState x:Name="Pressed">
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="Hover" Storyboard.TargetProperty="Opacity" To="1" Duration="0" />
+                                                <DoubleAnimation Storyboard.TargetName="Tilt" Storyboard.TargetProperty="ScaleX" To="0.96" Duration="0" />
+                                                <DoubleAnimation Storyboard.TargetName="Tilt" Storyboard.TargetProperty="ScaleY" To="0.96" Duration="0" />
+                                            </Storyboard>
+                                        </VisualState>
+                                        <VisualState x:Name="Disabled">
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="Root" Storyboard.TargetProperty="Opacity" To="0.4" Duration="0" />
+                                            </Storyboard>
+                                        </VisualState>
+                                        <VisualState x:Name="Checked">
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="Selected" Storyboard.TargetProperty="Opacity" To="1" Duration="0" />
+                                                <ObjectAnimationUsingKeyFrames Storyboard.TargetName="Presenter" Storyboard.TargetProperty="Foreground">
+                                                    <DiscreteObjectKeyFrame KeyTime="0" Value="{ThemeResource WidgetAccentTextBrush}" />
+                                                </ObjectAnimationUsingKeyFrames>
+                                            </Storyboard>
+                                        </VisualState>
+                                        <VisualState x:Name="CheckedPointerOver">
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="Selected" Storyboard.TargetProperty="Opacity" To="0.9" Duration="0" />
+                                                <ObjectAnimationUsingKeyFrames Storyboard.TargetName="Presenter" Storyboard.TargetProperty="Foreground">
+                                                    <DiscreteObjectKeyFrame KeyTime="0" Value="{ThemeResource WidgetAccentTextBrush}" />
+                                                </ObjectAnimationUsingKeyFrames>
+                                            </Storyboard>
+                                        </VisualState>
+                                        <VisualState x:Name="CheckedPressed">
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="Selected" Storyboard.TargetProperty="Opacity" To="0.85" Duration="0" />
+                                                <DoubleAnimation Storyboard.TargetName="Tilt" Storyboard.TargetProperty="ScaleX" To="0.96" Duration="0" />
+                                                <DoubleAnimation Storyboard.TargetName="Tilt" Storyboard.TargetProperty="ScaleY" To="0.96" Duration="0" />
+                                                <ObjectAnimationUsingKeyFrames Storyboard.TargetName="Presenter" Storyboard.TargetProperty="Foreground">
+                                                    <DiscreteObjectKeyFrame KeyTime="0" Value="{ThemeResource WidgetAccentTextBrush}" />
+                                                </ObjectAnimationUsingKeyFrames>
+                                            </Storyboard>
+                                        </VisualState>
+                                        <VisualState x:Name="CheckedDisabled">
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="Selected" Storyboard.TargetProperty="Opacity" To="1" Duration="0" />
+                                                <DoubleAnimation Storyboard.TargetName="Root" Storyboard.TargetProperty="Opacity" To="0.4" Duration="0" />
+                                                <ObjectAnimationUsingKeyFrames Storyboard.TargetName="Presenter" Storyboard.TargetProperty="Foreground">
+                                                    <DiscreteObjectKeyFrame KeyTime="0" Value="{ThemeResource WidgetAccentTextBrush}" />
+                                                </ObjectAnimationUsingKeyFrames>
+                                            </Storyboard>
+                                        </VisualState>
+                                        <VisualState x:Name="Indeterminate" />
+                                        <VisualState x:Name="IndeterminatePointerOver" />
+                                        <VisualState x:Name="IndeterminatePressed" />
+                                        <VisualState x:Name="IndeterminateDisabled" />
+                                    </VisualStateGroup>
+                                </VisualStateManager.VisualStateGroups>
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
             </Style>
-            <Style x:Key="ChoiceButtonSelectedStyle" TargetType="Button" BasedOn="{StaticResource AccentButtonStyle}">
+
+            <!-- 동작 버튼 (ClawHub 열기 · 캡처 등): 같은 타일 모양, 선택 상태 없음 -->
+            <Style x:Key="ActionButtonStyle" TargetType="Button">
+                <Setter Property="Background" Value="{ThemeResource WidgetTileBrush}" />
+                <Setter Property="Foreground" Value="{ThemeResource WidgetTextBrush}" />
                 <Setter Property="HorizontalAlignment" Value="Stretch" />
-                <Setter Property="VerticalAlignment" Value="Stretch" />
-                <Setter Property="MinHeight" Value="36" />
-                <Setter Property="MinWidth" Value="0" />
-                <Setter Property="Padding" Value="4,4" />
-                <Setter Property="Margin" Value="2" />
+                <Setter Property="HorizontalContentAlignment" Value="Center" />
+                <Setter Property="VerticalContentAlignment" Value="Center" />
+                <Setter Property="MinHeight" Value="44" />
+                <Setter Property="Padding" Value="8,4" />
+                <Setter Property="FontSize" Value="14" />
+                <Setter Property="UseSystemFocusVisuals" Value="True" />
+                <Setter Property="FocusVisualPrimaryThickness" Value="3" />
+                <Setter Property="FocusVisualSecondaryThickness" Value="1" />
+                <Setter Property="FocusVisualMargin" Value="-3" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Grid x:Name="Root" RenderTransformOrigin="0.5,0.5">
+                                <Grid.RenderTransform>
+                                    <ScaleTransform x:Name="Tilt" />
+                                </Grid.RenderTransform>
+                                <Border Background="{TemplateBinding Background}" />
+                                <Border x:Name="Hover" Background="{ThemeResource WidgetTileHoverBrush}" Opacity="0" />
+                                <ContentPresenter Padding="{TemplateBinding Padding}" Foreground="{TemplateBinding Foreground}"
+                                                  HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                  VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                  Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" />
+                                <VisualStateManager.VisualStateGroups>
+                                    <VisualStateGroup x:Name="CommonStates">
+                                        <VisualStateGroup.Transitions>
+                                            <VisualTransition GeneratedDuration="0:0:0.14" />
+                                            <VisualTransition To="Pressed" GeneratedDuration="0:0:0.06" />
+                                        </VisualStateGroup.Transitions>
+                                        <VisualState x:Name="Normal" />
+                                        <VisualState x:Name="PointerOver">
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="Hover" Storyboard.TargetProperty="Opacity" To="1" Duration="0" />
+                                            </Storyboard>
+                                        </VisualState>
+                                        <VisualState x:Name="Pressed">
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="Hover" Storyboard.TargetProperty="Opacity" To="1" Duration="0" />
+                                                <DoubleAnimation Storyboard.TargetName="Tilt" Storyboard.TargetProperty="ScaleX" To="0.96" Duration="0" />
+                                                <DoubleAnimation Storyboard.TargetName="Tilt" Storyboard.TargetProperty="ScaleY" To="0.96" Duration="0" />
+                                            </Storyboard>
+                                        </VisualState>
+                                        <VisualState x:Name="Disabled">
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="Root" Storyboard.TargetProperty="Opacity" To="0.4" Duration="0" />
+                                            </Storyboard>
+                                        </VisualState>
+                                    </VisualStateGroup>
+                                </VisualStateManager.VisualStateGroups>
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
             </Style>
-            <Style x:Key="ChipButtonStyle" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
-                <Setter Property="HorizontalAlignment" Value="Stretch" />
-                <Setter Property="HorizontalContentAlignment" Value="Left" />
-                <Setter Property="CornerRadius" Value="16" />
-                <Setter Property="MinHeight" Value="36" />
+            <!-- 매핑 프로필 줄: 동작 버튼과 같은 모양, 글자는 왼쪽 -->
+            <Style x:Key="ChipButtonStyle" TargetType="Button" BasedOn="{StaticResource ActionButtonStyle}">
+                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                 <Setter Property="Padding" Value="12,4" />
             </Style>
-            <Style x:Key="ActionButtonStyle" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
-                <Setter Property="HorizontalAlignment" Value="Stretch" />
-                <Setter Property="MinHeight" Value="36" />
-                <Setter Property="Padding" Value="8,4" />
+            <!-- 확인 버튼 (게임 종료 등): 강조색 단색 타일 -->
+            <Style x:Key="MetroAccentButtonStyle" TargetType="Button" BasedOn="{StaticResource ActionButtonStyle}">
+                <Setter Property="Background" Value="{ThemeResource WidgetAccentBrush}" />
+                <Setter Property="Foreground" Value="{ThemeResource WidgetAccentTextBrush}" />
+                <Setter Property="FontWeight" Value="SemiBold" />
             </Style>
         </ResourceDictionary>
     </Application.Resources>

@@ -77,7 +77,7 @@ namespace ClawWidget.Sections
         public override void OnDensity(bool compact)
         {
             base.OnDensity(compact);
-            _modes.ItemMinHeight = compact ? 64 : 56;
+            _modes.ItemMinHeight = compact ? 72 : 64;
             _target.ItemMinHeight = ItemHeight(compact);
         }
 

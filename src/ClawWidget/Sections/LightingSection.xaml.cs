@@ -67,10 +67,10 @@ namespace ClawWidget.Sections
         {
             var b = new Button
             {
-                Width = 34, Height = 34, MinWidth = 0, MinHeight = 0, Padding = new Thickness(0),
-                CornerRadius = new CornerRadius(17), BorderThickness = new Thickness(2),
+                Width = 44, Height = 44, MinWidth = 0, MinHeight = 0, Padding = new Thickness(0),
+                CornerRadius = new CornerRadius(0), BorderThickness = new Thickness(3),
                 Background = new SolidColorBrush(Colors.Transparent),
-                Content = new Ellipse { Width = 22, Height = 22, Fill = new SolidColorBrush(Color.FromArgb(0xFF, rgb[0], rgb[1], rgb[2])) },
+                Content = new Rectangle { Width = 30, Height = 30, Fill = new SolidColorBrush(Color.FromArgb(0xFF, rgb[0], rgb[1], rgb[2])) },
             };
             AutomationProperties.SetName(b, name);
             ToolTipService.SetToolTip(b, name);
@@ -85,11 +85,11 @@ namespace ClawWidget.Sections
         {
             base.OnDensity(compact);
             _mode.ItemMinHeight = _speed.ItemMinHeight = ItemHeight(compact);
-            var size = compact ? 40 : 34;
+            var size = compact ? 52 : 44; // 손가락 크기 (메트로: 정사각 색 칸, 고른 색은 강조색 테두리)
             foreach (var kv in _swatches)
             {
                 kv.Value.Width = kv.Value.Height = size;
-                kv.Value.CornerRadius = new CornerRadius(size / 2.0);
+                ((FrameworkElement)kv.Value.Content).Width = ((FrameworkElement)kv.Value.Content).Height = size - 14;
             }
         }
 
@@ -112,7 +112,7 @@ namespace ClawWidget.Sections
             LightSpeedGrid.Visibility = cs != null && usesSpeed ? Visibility.Visible : Visibility.Collapsed;
             LightBrightnessRow.Visibility = cs != null && mode != LightMode.Off ? Visibility.Visible : Visibility.Collapsed;
 
-            var accent = Application.Current.Resources["SystemControlHighlightAccentBrush"] as Brush;
+            var accent = ThemeBrush("WidgetAccentBrush");
             var stroke = ThemeBrush("WidgetCardStrokeBrush");
             foreach (var kv in _swatches)
             {

@@ -6,11 +6,15 @@ using Windows.UI.Xaml.Controls.Primitives;
 
 namespace ClawWidget.Sections
 {
-    /// <summary>밝기(SetBrightness, 400 ms 디바운스)와 충전 한도(SetChargeLimit 100/80/60 %).</summary>
+    /// <summary>
+    /// 밝기(SetBrightness, 400 ms 디바운스), 볼륨(앱에 SetVolume 명령 — 위젯은 샌드박스라 직접 못 바꾼다, 앱이 꺼져 있으면 비활성),
+    /// 충전 한도(SetChargeLimit 100/80/60 %).
+    /// </summary>
     public sealed partial class DisplaySection : WidgetSection
     {
         private readonly ChoiceGroup<ChargeLimit> _charge;
         private readonly Debouncer _brightness;
+        private readonly Debouncer _volume;
 
         public DisplaySection()
         {
@@ -23,9 +27,14 @@ namespace ClawWidget.Sections
             });
             _charge.Chosen += v => _ = Run(Requests.SetChargeLimit(v), "충전 한도를 바꾸지 못했어요");
             _brightness = new Debouncer(() => _ = Run(Requests.SetBrightness((int)BrightnessSlider.Value), "밝기를 바꾸지 못했어요"));
+            _volume = new Debouncer(() => _ = Run(Requests.AppCommand(AppCommands.SetVolumePrefix + (int)VolumeSlider.Value), "볼륨을 바꾸지 못했어요"));
         }
 
-        public override void Stop() => _brightness.Stop();
+        public override void Stop()
+        {
+            _brightness.Stop();
+            _volume.Stop();
+        }
 
         public override void OnDensity(bool compact)
         {
@@ -40,6 +49,13 @@ namespace ClawWidget.Sections
             if (brightness.HasValue && !_brightness.IsHolding)
                 BrightnessSlider.Value = PerformanceState.Clamp(brightness.Value, 0, 100);
             BrightnessText.Text = brightness.HasValue ? (int)BrightnessSlider.Value + "%" : "–";
+
+            var volume = s != null && s.AppState != null ? s.AppState.Volume : null;
+            VolumeSlider.IsEnabled = volume.HasValue;
+            if (volume.HasValue && !_volume.IsHolding)
+                VolumeSlider.Value = PerformanceState.Clamp(volume.Value, 0, 100);
+            VolumeText.Text = volume.HasValue ? ((int)VolumeSlider.Value).ToString() : "–";
+            VolumeIcon.Glyph = !volume.HasValue || VolumeSlider.Value > 0 ? Icons.Volume2 : Icons.VolumeX;
 
             var limit = s != null ? s.ChargeLimit : null;
             _charge.Select(limit.HasValue, limit ?? ChargeLimit.Full);
@@ -68,6 +84,14 @@ namespace ClawWidget.Sections
         }
 
         private static string Wh(int mWh) => (mWh / 1000.0).ToString("0.0");
+
+        private void VolumeSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
+        {
+            if (VolumeText != null) VolumeText.Text = ((int)e.NewValue).ToString();
+            if (VolumeIcon != null) VolumeIcon.Glyph = e.NewValue > 0 ? Icons.Volume2 : Icons.VolumeX;
+            if (IgnoreInput) return;
+            _volume.Trigger();
+        }
 
         private void BrightnessSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
         {

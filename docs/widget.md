@@ -1,7 +1,7 @@
 # Xbox Game Bar 위젯 (ClawWidget)
 
 게임 중 `Win+G`(또는 Claw 오른쪽 하드웨어 버튼 → `ms-gamebar:activate/…ClawHubQuick`)로 여는 Game Bar 안의 ClawHub 퀵 설정.
-ClawApp 자체 퀵 설정 오버레이를 대체한다. `src/ClawWidget` — 클래식 UWP(C#, .NET Native) + `Microsoft.Gaming.XboxGameBar` 7.3 + WinUI 2.8.
+ClawApp 자체 퀵 설정 오버레이를 대체한다. `src/ClawWidget` — 클래식 UWP(C#, .NET Native) + `Microsoft.Gaming.XboxGameBar` 7.3 + WinUI 2.8. 디자인은 ClawHub 앱과 같은 메트로: 직각(WinUI `ControlCornerRadius`·`OverlayCornerRadius` = 0), 평평한 반투명 카드, 선택지 = 강조색 단색 타일(`MetroChoiceStyle`, 고르면 강조색이 짧게 페이드 인, 누르면 0.96 틸트), 누르는 대상 44 이상(컴팩트 52), 패드 포커스 테두리 3 + 1.
 
 | 구역 | 내용 | 서비스 요청 |
 |---|---|---|
@@ -11,7 +11,7 @@ ClawApp 자체 퀵 설정 오버레이를 대체한다. `src/ClawWidget` — 클
 | 성능 | 절전/균형/성능/수동 타일, 수동이면 PL1/PL2 슬라이더(400 ms 디바운스, PL1 ≤ PL2 자동 유지), 쿨러 부스트. 머리에 지금 전원(플러그/배터리 아이콘)과 실제 적용 PL. "배터리용 따로 설정" 스위치(끄면 배터리 칸 삭제), 켜면 "충전 중 / 배터리" 선택(기본 = 지금 전원)으로 타일이 바꿀 칸을 고름. 게임 전용 설정·게임별 임시 성능 안내 | `SetPerformance` (+ `PowerSource` `Ac`/`Battery`, 배터리 칸 삭제는 `Performance:null`) |
 | 자동 TDP | Intel Endurance Gaming 끔/켬/자동(배터리일 때만) + 강도(성능 우선/균형/배터리 최대). `Graphics.Endurance.Available=false`면 숨김 | `SetEnduranceGaming` |
 | 그래픽 | FPS 제한 끔/30/40/45/60/90/120, 프레임 생성 끔/2배/3배/4배. `Graphics.Available=false`면 숨김 | `SetGraphics` |
-| 화면 · 배터리 | 밝기 슬라이더(디바운스), 충전 한도 100/80/60 %, 배터리 상태 줄("배터리 상태 102% · 79.1/77.8 Wh · 사이클 N", `BatteryHealth`가 null이면 숨김) | `SetBrightness`, `SetChargeLimit` |
+| 화면 · 소리 · 배터리 | 밝기 슬라이더(디바운스), 볼륨 슬라이더(위젯은 AppContainer라 직접 못 바꿔서 앱에 `AppCommand SetVolume:<0–100>`, 현재 값은 앱이 `AppState.Volume`으로 알려 줌 — 앱이 꺼져 있으면 비활성), 충전 한도 100/80/60 %, 배터리 상태 줄("배터리 상태 102% · 79.1/77.8 Wh · 사이클 N", `BatteryHealth`가 null이면 숨김) | `SetBrightness`, `AppCommand SetVolume:N`, `SetChargeLimit` |
 | 조명 | 기본/단색/숨쉬기/무지개/웨이브/끄기, 색 7개(단색·숨쉬기), 속도(숨쉬기·무지개·웨이브), 밝기 | `SetControllerSettings` (받은 객체 전체를 복사해 Light·LightBrightness·LightColor·LightSpeed만 바꿔 보냄) |
 
 패드: Game Bar가 위젯에 포커스를 주면 D-pad/스틱으로 XY 포커스 이동, A로 누르기, B로 플라이아웃 닫기.
@@ -39,7 +39,8 @@ ClawApp 자체 퀵 설정 오버레이를 대체한다. `src/ClawWidget` — 클
 - **폴링만, 구독 안 함**: 2초마다 `GetTelemetry`, 전체 화면에선 4초마다 `GetStatus`. 연결이 없으면 매 주기 재접속.
   `Subscribe`는 쓰지 않는다 — 서비스는 마지막 구독자가 끊길 때 게임 매핑·게임별 성능을 복원하는데,
   위젯이 구독자로 남아 있으면 ClawApp이 꺼져도 복원이 안 된다.
-- 명령 응답의 `Status`로 바로 화면을 갱신한다. 선택 표시는 응답이 와야 바뀐다(누르는 순간 바꾸지 않음).
+- 명령 응답의 `Status`로 바로 화면을 갱신한다. 선택지는 누르는 순간 강조색으로 표시하고(응답을 기다리면 굼떠 보였다), 2.5초 동안은 폴링의 이전 값으로 되돌리지 않는다. 명령이 실패하면 `PendingChoices.Clear()`로 실제 값으로 돌아간다.
+- **처음 열 때**: 마지막으로 받은 상태를 `LocalFolder\last-status.json`에 두었다가 위젯 프로세스가 새로 뜨면 바로 그린다(첫 응답 전에 카드가 비지 않게).
   사용자가 움직인 슬라이더는 2.5초 동안 폴링 값으로 덮어쓰지 않는다.
 - **오류 표시**: 서비스 연결 안 됨 → 머리 아래 빨간 카드("서비스 연결 안 됨" + 원인 + "지금 다시 연결"), 조작 카드는 숨김.
   `Ok=false` → 아래쪽에 3.5초 알림("성능 모드를 바꾸지 못했어요 · <서비스 Error>"), 응답의 Status로 컨트롤을 실제 값으로 되돌림.
