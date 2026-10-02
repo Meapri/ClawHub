@@ -252,7 +252,9 @@
                             PreviewGotKeyboardFocus="PageHost_GotKeyboardFocus"/>
 
             <!-- 하단 버튼 힌트: 누르면 그 패드 버튼과 같은 동작 (항목 안쪽 여백 12 → 오른쪽 여백 28 + 12 = 40) -->
-            <ItemsControl Grid.Row="2" ItemsSource="{Binding Hints}" HorizontalAlignment="Right" Margin="0,0,28,0" Focusable="False" Uid="CaptureBypass">
+            <!-- 힌트가 바뀌면(페이지·패널) 짧게 차례로 들어온다. 같은 힌트면 목록을 바꾸지 않으므로 다시 움직이지 않는다 -->
+            <ItemsControl Grid.Row="2" ItemsSource="{Binding Hints}" HorizontalAlignment="Right" Margin="0,0,28,0" Focusable="False" Uid="CaptureBypass"
+                          m:Entrance.Stagger="Items" m:Entrance.Offset="16">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate><StackPanel Orientation="Horizontal" VerticalAlignment="Center"/></ItemsPanelTemplate>
                 </ItemsControl.ItemsPanel>
@@ -272,37 +274,41 @@
         </Grid>
         </Grid>
 
+        <!-- 아래 층들은 Visibility 대신 m:Reveal.IsShown으로 켜고 끈다: 닫힐 때 짧게 사라진 뒤 접힌다 (Motion/Reveal.cs).
+             닫히는 동안 글자가 비지 않게 내용은 …Shown(마지막 내용)을 본다 (ShellViewModel.Shown.cs) -->
+
         <!-- ── 패널 뒤 어둡게 ─────────────────────────────── -->
-        <Border Background="{DynamicResource Scrim}" Visibility="{Binding IsAnyPanelOpen, Converter={StaticResource Vis}}"
-                MouseDown="Scrim_MouseDown"/>
+        <Border Background="{DynamicResource Scrim}" m:Reveal.IsShown="{Binding IsAnyPanelOpen}" MouseDown="Scrim_MouseDown"/>
 
-        <!-- ── 상태 표시줄 항목 패널 (표시줄 바로 아래 오른쪽) ── -->
+        <!-- ── 상태 표시줄 항목 패널 (표시줄 바로 아래 오른쪽). 다른 항목으로 바로 바꾸면 내용이 다시 미끄러져 들어온다 ── -->
         <v:StatusFlyout x:Name="StatusFlyout" Width="400" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,68,40,0"
-                        m:Entrance.Stagger="Self" m:Entrance.Offset="24"
-                        Visibility="{Binding StatusPanel, Converter={StaticResource NullVis}}"/>
+                        m:Entrance.Stagger="Self" m:Entrance.Offset="24" m:Entrance.Key="{Binding StatusPanel}"
+                        m:Reveal.IsShown="{Binding StatusPanel, Converter={x:Static local:HasValue.Instance}}" m:Reveal.ExitY="-12"/>
 
-        <!-- ── 빠른 설정 (오른쪽 가장자리에서 미끄러져 나오는 참 바) ── -->
+        <!-- ── 빠른 설정 (오른쪽 가장자리에서 미끄러져 나오는 참 바, 닫히면 그쪽으로 되돌아간다) ── -->
         <v:QuickAccessPanel x:Name="QuickPanel" Width="420" HorizontalAlignment="Right"
                             DataContext="{Binding QuickAccess}" m:Entrance.Stagger="Self" m:Entrance.Offset="80"
-                            Visibility="{Binding DataContext.IsQuickAccessOpen, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Vis}}"/>
+                            m:Reveal.IsShown="{Binding DataContext.IsQuickAccessOpen, RelativeSource={RelativeSource AncestorType=Window}}"
+                            m:Reveal.ExitX="64"/>
 
         <!-- ── 실행 중: 흐르는 점 + 큰 글씨 ─────────────────── -->
-        <Grid Background="{DynamicResource BackdropTint}" Visibility="{Binding BusyText, Converter={StaticResource NullVis}}">
+        <Grid Background="{DynamicResource BackdropTint}" m:Reveal.IsShown="{Binding BusyText, Converter={x:Static local:HasValue.Instance}}"
+              m:Reveal.ExitMs="220">
             <StackPanel VerticalAlignment="Center">
                 <m:MetroDots HorizontalAlignment="Stretch" Margin="0,0,0,28"/>
                 <!-- 긴 게임 이름도 잘리지 않게 두 줄까지 -->
-                <TextBlock Text="{Binding BusyText}" Style="{StaticResource H1}" Margin="48,0" m:Entrance.Stagger="Self"
+                <TextBlock Text="{Binding BusyShown}" Style="{StaticResource H1}" Margin="48,0" m:Entrance.Stagger="Self"
                            TextWrapping="Wrap" MaxHeight="88" LineHeight="42" LineStackingStrategy="BlockLineHeight"/>
             </StackPanel>
         </Grid>
 
         <!-- ── 확인 대화 상자 (메트로 메시지 대화: 화면을 가로지르는 띠) ──────────
              열려 있는 동안 패드·키 입력은 여기로만 (MainWindow.Route). 바깥(어둡게 한 곳)을 누르면 취소 -->
-        <Grid x:Name="ConfirmLayer" Visibility="{Binding IsConfirmOpen, Converter={StaticResource Vis}}"
+        <Grid x:Name="ConfirmLayer" m:Reveal.IsShown="{Binding IsConfirmOpen}" m:Reveal.ExitMs="150"
               KeyboardNavigation.DirectionalNavigation="Contained" KeyboardNavigation.TabNavigation="Cycle">
             <Border Background="{DynamicResource Scrim}" MouseDown="ConfirmScrim_MouseDown"/>
             <Border VerticalAlignment="Center" Background="{DynamicResource Bg1}" BorderBrush="{DynamicResource StrokeStrong}" BorderThickness="0,1"
-                    DataContext="{Binding Confirm}">
+                    DataContext="{Binding ConfirmShown}">
                 <Grid MaxWidth="760" Margin="48,32,48,32" m:Entrance.Stagger="Self" m:Entrance.Offset="40">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
@@ -343,7 +349,8 @@
         <!-- ── 알림 (메트로 토스트: 아래 가운데, 힌트 바 바로 위. 강조색 막대 + 카드, 두 줄까지) ──── -->
         <Border x:Name="ToastCard" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="40,0,40,64" MaxWidth="640" MinWidth="280"
                 Background="{DynamicResource Bg1}" BorderBrush="{DynamicResource Stroke}" BorderThickness="0,1,1,1"
-                Visibility="{Binding Toast, Converter={StaticResource NullVis}}" IsHitTestVisible="False">
+                m:Reveal.IsShown="{Binding Toast, Converter={x:Static local:HasValue.Instance}}" m:Reveal.EnterY="20" m:Reveal.ExitY="12"
+                IsHitTestVisible="False">
             <DockPanel>
                 <Border DockPanel.Dock="Left" Width="4" Background="{DynamicResource Accent}"/>
                 <Grid Margin="16,13,22,13">
@@ -353,7 +360,7 @@
                     </Grid.ColumnDefinitions>
                     <TextBlock Text="{StaticResource Icon.Info}" Style="{StaticResource Icon}" Foreground="{DynamicResource Accent}"
                                VerticalAlignment="Top" Margin="0,2,12,0"/>
-                    <TextBlock Grid.Column="1" Text="{Binding Toast}" FontWeight="Medium" VerticalAlignment="Center"
+                    <TextBlock Grid.Column="1" Text="{Binding ToastShown}" FontWeight="Medium" VerticalAlignment="Center"
                                TextWrapping="Wrap" TextTrimming="CharacterEllipsis" LineHeight="22" LineStackingStrategy="BlockLineHeight" MaxHeight="44"/>
                 </Grid>
             </DockPanel>

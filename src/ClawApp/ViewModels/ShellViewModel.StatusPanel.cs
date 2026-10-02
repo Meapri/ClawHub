@@ -15,6 +15,7 @@ public sealed partial class ShellViewModel
 
     partial void OnStatusPanelChanged(string? value)
     {
+        if (value is not null) StatusPanelShown = value; // 닫히는 동안에도 그 칸을 보여 준다 (ShellViewModel.Shown.cs)
         OnPropertyChanged(nameof(IsAnyPanelOpen));
         // 날짜·시간 패널이 열려 있는 동안만 초 단위로 갱신 (평소 시계는 10초 주기)
         if (value == "clock")

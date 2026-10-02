@@ -19,6 +19,8 @@ internal static class MotionCore
     public static readonly IEasingFunction Decelerate = Frozen(new ExponentialEase { EasingMode = EasingMode.EaseOut, Exponent = 6 });
     public static readonly IEasingFunction Out = Frozen(new CubicEase { EasingMode = EasingMode.EaseOut });
     public static readonly IEasingFunction InOut = Frozen(new QuinticEase { EasingMode = EasingMode.EaseInOut });
+    /// <summary>퇴장 곡선: 천천히 출발해 빨라지며 사라진다 (메트로 퇴장은 짧고 가속).</summary>
+    public static readonly IEasingFunction Accelerate = Frozen(new CubicEase { EasingMode = EasingMode.EaseIn });
 
     private static IEasingFunction Frozen(EasingFunctionBase e)
     {
@@ -81,6 +83,44 @@ internal static class MotionCore
         }
         // 완료 시점 감지용 (값은 쓰지 않음)
         token.BeginAnimation(ProgressProperty, move);
+    }
+
+    /// <summary>
+    /// (dx, dy) 쪽으로 미끄러지며 사라진다. 끝나면 변환·애니메이션을 걷고 <paramref name="done"/>을 부른다
+    /// (그 사이 다른 모션이 시작되면 부르지 않는다 — 다시 열린 경우).
+    /// </summary>
+    public static void SlideOut(UIElement el, double dx, double dy, TimeSpan duration, Action done)
+    {
+        var token = new TranslateTransform();
+        var ownTransform = CanOwnTransform(el);
+        el.SetValue(TokenProperty, token);
+        if (ownTransform) el.RenderTransform = token;
+
+        var from = el.Opacity; // 등장 중이었다면 지금 보이는 만큼에서
+        var move = Hold(0, 1, TimeSpan.Zero, duration, Accelerate);
+        move.Completed += (_, _) =>
+        {
+            if (!ReferenceEquals(el.GetValue(TokenProperty), token)) return;
+            done();
+            Cancel(el);
+        };
+
+        el.BeginAnimation(UIElement.OpacityProperty, Hold(from, 0, TimeSpan.Zero, duration, Accelerate));
+        if (ownTransform)
+        {
+            if (dx != 0) token.BeginAnimation(TranslateTransform.XProperty, Hold(0, dx, TimeSpan.Zero, duration, Accelerate));
+            if (dy != 0) token.BeginAnimation(TranslateTransform.YProperty, Hold(0, dy, TimeSpan.Zero, duration, Accelerate));
+        }
+        token.BeginAnimation(ProgressProperty, move);
+    }
+
+    /// <summary>진행 중인 모션을 멈추고 정지 상태(변환 없음·원래 불투명도)로 되돌린다.</summary>
+    public static void Cancel(UIElement el)
+    {
+        if (el.GetValue(TokenProperty) is { } token && ReferenceEquals(el.ReadLocalValue(UIElement.RenderTransformProperty), token))
+            el.ClearValue(UIElement.RenderTransformProperty);
+        el.ClearValue(TokenProperty);
+        el.BeginAnimation(UIElement.OpacityProperty, null);
     }
 
     /// <summary>완료 이벤트만 받기 위한 더미 속성 (TranslateTransform에 붙여서 돌린다).</summary>

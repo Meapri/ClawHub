@@ -5,7 +5,7 @@
              KeyboardNavigation.DirectionalNavigation="Contained">
     <!--
         상단 상태 표시줄 항목을 누르면 열리는 패널. DataContext = ShellViewModel, 값·동작은 빠른 설정(QuickAccess)과 같다.
-        StatusPanel 키마다 한 칸만 보인다.
+        StatusPanel 키마다 한 칸만 보인다 (닫히는 동안에도 그 칸이 남도록 StatusPanelShown을 본다).
     -->
     <UserControl.Resources>
         <Style x:Key="Head" TargetType="TextBlock" BasedOn="{StaticResource H2}">
@@ -32,7 +32,7 @@
     <Border Background="{DynamicResource Bg1}" BorderBrush="{DynamicResource Stroke}" BorderThickness="1" Padding="20">
         <Grid>
             <!-- 서비스 -->
-            <StackPanel Visibility="{Binding StatusPanel, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=service}">
+            <StackPanel Visibility="{Binding StatusPanelShown, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=service}">
                 <TextBlock Text="ClawHub 서비스" Style="{StaticResource Head}"/>
                 <TextBlock Style="{StaticResource Caption}" Margin="0,0,0,4"
                            Text="서비스가 꺼져 있어 성능·충전 한도·컨트롤러 설정·매핑을 바꿀 수 없어요. 설치 프로그램으로 다시 설치하거나 PC를 다시 시작해 보세요."/>
@@ -43,7 +43,7 @@
 
             <!-- 성능 -->
             <StackPanel DataContext="{Binding QuickAccess}"
-                        Visibility="{Binding DataContext.StatusPanel, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=perf}">
+                        Visibility="{Binding DataContext.StatusPanelShown, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=perf}">
                 <TextBlock Text="성능" Style="{StaticResource Head}"/>
                 <WrapPanel IsEnabled="{Binding PerfAvailable}">
                     <RadioButton Style="{StaticResource ChipRadio}" GroupName="fperf" Content="절전" IsChecked="{Binding IsBattery}" local:Nav.InitialFocus="True"/>
@@ -64,7 +64,7 @@
 
             <!-- 시스템 상태 -->
             <StackPanel DataContext="{Binding QuickAccess}"
-                        Visibility="{Binding DataContext.StatusPanel, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=system}">
+                        Visibility="{Binding DataContext.StatusPanelShown, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=system}">
                 <TextBlock Text="시스템 상태" Style="{StaticResource Head}"/>
                 <DockPanel Style="{StaticResource Row}"><TextBlock Text="{Binding CpuTempText}" Style="{StaticResource RowValue}"/><TextBlock Text="CPU 온도" Style="{StaticResource RowLabel}"/></DockPanel>
                 <DockPanel Style="{StaticResource Row}"><TextBlock Text="{Binding GpuTempText}" Style="{StaticResource RowValue}"/><TextBlock Text="CPU 전력" Style="{StaticResource RowLabel}"/></DockPanel>
@@ -78,7 +78,7 @@
             </StackPanel>
 
             <!-- 컨트롤러 -->
-            <StackPanel Visibility="{Binding StatusPanel, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=controller}">
+            <StackPanel Visibility="{Binding StatusPanelShown, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=controller}">
                 <TextBlock Text="컨트롤러" Style="{StaticResource Head}"/>
                 <DockPanel Style="{StaticResource Row}"><TextBlock Text="{Binding ControllerStatusText}" Style="{StaticResource RowValue}"/><TextBlock Text="상태" Style="{StaticResource RowLabel}"/></DockPanel>
                 <DockPanel Style="{StaticResource Row}" DataContext="{Binding QuickAccess}">
@@ -100,7 +100,7 @@
             </StackPanel>
 
             <!-- 네트워크 -->
-            <StackPanel Visibility="{Binding StatusPanel, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=network}">
+            <StackPanel Visibility="{Binding StatusPanelShown, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=network}">
                 <TextBlock Text="네트워크" Style="{StaticResource Head}"/>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                     <TextBlock Text="{Binding NetworkIcon}" Style="{StaticResource Icon}" FontSize="22" Margin="0,0,12,0"/>
@@ -119,7 +119,7 @@
 
             <!-- 밝기·소리 -->
             <StackPanel DataContext="{Binding QuickAccess}"
-                        Visibility="{Binding DataContext.StatusPanel, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=sound}">
+                        Visibility="{Binding DataContext.StatusPanelShown, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=sound}">
                 <TextBlock Text="밝기·소리" Style="{StaticResource Head}"/>
                 <DockPanel>
                     <TextBlock Text="{StaticResource Icon.Volume2}" Style="{StaticResource Icon}" Width="30"/>
@@ -138,7 +138,7 @@
 
             <!-- 배터리 -->
             <StackPanel DataContext="{Binding QuickAccess}"
-                        Visibility="{Binding DataContext.StatusPanel, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=battery}">
+                        Visibility="{Binding DataContext.StatusPanelShown, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=battery}">
                 <TextBlock Text="{Binding BatteryText}" Style="{StaticResource Head}"/>
                 <DockPanel Style="{StaticResource Row}"><TextBlock Text="{Binding RemainingText}" Style="{StaticResource RowValue}"/><TextBlock Text="남은 시간" Style="{StaticResource RowLabel}"/></DockPanel>
                 <DockPanel Style="{StaticResource Row}"><TextBlock Text="{Binding PowerText}" Style="{StaticResource RowValue}"/><TextBlock Text="지금 소모" Style="{StaticResource RowLabel}"/></DockPanel>
@@ -157,7 +157,7 @@
             </StackPanel>
 
             <!-- 날짜·시간 -->
-            <StackPanel Visibility="{Binding StatusPanel, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=clock}">
+            <StackPanel Visibility="{Binding StatusPanelShown, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=clock}">
                 <TextBlock FontSize="40" FontWeight="Bold">
                     <Run Text="{Binding PanelClock, Mode=OneWay}"/><Run Text="{Binding PanelSeconds, Mode=OneWay}" FontSize="28" FontWeight="SemiBold" Foreground="{DynamicResource TextDim}"/>
                 </TextBlock>

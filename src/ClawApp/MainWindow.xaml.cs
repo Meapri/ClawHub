@@ -50,8 +50,6 @@ public partial class MainWindow : Window
         AddHandler(Keyboard.GotKeyboardFocusEvent, new KeyboardFocusChangedEventHandler((_, _) => RevealFocused()), true);
         AddHandler(PreviewMouseDownEvent, new MouseButtonEventHandler((_, _) => _pointerAt = Environment.TickCount64), true);
         AddHandler(PreviewTouchDownEvent, new EventHandler<TouchEventArgs>((_, _) => _pointerAt = Environment.TickCount64), true);
-        // 터치로 끝까지 넘겼을 때 창 전체가 튕기는 WPF 기본 동작 끄기
-        ManipulationBoundaryFeedback += (_, e) => e.Handled = true;
         PreviewMouseDown += OnMouseButton;
         PreviewMouseUp += OnMouseButton;
         PreviewMouseWheel += OnMouseWheelCapture;
@@ -69,8 +67,19 @@ public partial class MainWindow : Window
         else if (e.PropertyName == nameof(ShellViewModel.IsShellVisible)) ApplyBackdrop();
         else if (e.PropertyName == nameof(ShellViewModel.CurrentPage)) PlayPageEntrance();
         else if (e.PropertyName == nameof(ShellViewModel.IsConfirmOpen)) OnConfirmChanged();
-        else if (e.PropertyName == nameof(ShellViewModel.Toast) && _vm.Toast is not null && Motion.MotionCore.Enabled)
-            Motion.MotionCore.SlideIn(ToastCard, 0, 20, TimeSpan.Zero, Motion.MotionCore.Ms(360), fadeRatio: 0.5); // 아래에서 살짝 떠오른다
+        else if (e.PropertyName == nameof(ShellViewModel.Toast)) OnToastChanged();
+    }
+
+    /// <summary>알림이 보이는 중인지 (처음 뜰 때·사라질 때의 모션은 Reveal이 맡는다).</summary>
+    private bool _toastShowing;
+
+    /// <summary>떠 있는 알림이 다른 알림으로 바뀌면 다시 아래에서 살짝 떠오른다.</summary>
+    private void OnToastChanged()
+    {
+        var replaced = _toastShowing && _vm.Toast is not null;
+        _toastShowing = _vm.Toast is not null;
+        if (replaced && Motion.MotionCore.Enabled)
+            Motion.MotionCore.SlideIn(ToastCard, 0, 20, TimeSpan.Zero, Motion.MotionCore.Ms(360), fadeRatio: 0.5);
     }
 
     // ── Windows 11 백드롭 ─────────────────────────────────
@@ -78,6 +87,13 @@ public partial class MainWindow : Window
     private const int DwmwaUseImmersiveDarkMode = 20;
     private const int DwmwaSystemBackdropType = 38;
     private const int BackdropMica = 2, BackdropAcrylic = 3;
+
+    /// <summary>
+    /// 터치로 끝까지 넘겼을 때 창 전체가 끄는 방향으로 밀리는 WPF 기본 동작(경계 피드백)을 끈다.
+    /// Window는 이것을 클래스 처리기(이 메서드)에서 하므로, 이벤트 처리기(+=)로 Handled를 켜면 이미 창이 밀린 뒤라 늦다.
+    /// base를 부르지 않는다.
+    /// </summary>
+    protected override void OnManipulationBoundaryFeedback(ManipulationBoundaryFeedbackEventArgs e) => e.Handled = true;
 
     protected override void OnSourceInitialized(EventArgs e)
     {

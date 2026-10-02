@@ -130,7 +130,7 @@
 
         <!-- 이름 바꾸기 입력줄 (Y·연필 버튼으로 열림, 다 쓰면 Enter·B·다른 곳 누르기 = 저장) -->
         <Border DockPanel.Dock="Top" Style="{StaticResource CardPanel}" Margin="0,0,0,12"
-                Visibility="{Binding RenameRow, Converter={StaticResource NullVis}}">
+                m:Reveal.IsShown="{Binding RenameRow, Converter={x:Static local:HasValue.Instance}}" m:Reveal.Kind="Inline">
             <StackPanel>
                 <TextBlock Style="{StaticResource Caption}" Margin="0,0,0,8" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis">
                     <Run Text="{Binding RenameRow.Name, Mode=OneWay}" Foreground="{DynamicResource Text}" FontWeight="SemiBold"/><Run Text=" 이름 바꾸기 · 다 쓰면 Enter나 B를 눌러요"/>

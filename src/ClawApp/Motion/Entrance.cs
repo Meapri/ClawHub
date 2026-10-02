@@ -75,7 +75,8 @@ public static class Entrance
     {
         if (d is not FrameworkElement fe) return;
         Attach(fe);
-        if (!fe.IsLoaded || e.OldValue is null || Equals(e.OldValue, e.NewValue)) return;
+        // null로 바뀜 = 닫히는 중 (상태 패널 등): 다시 들어오는 모션을 돌리지 않는다
+        if (!fe.IsLoaded || e.OldValue is null || e.NewValue is null || Equals(e.OldValue, e.NewValue)) return;
         var dir = 1;
         if (e.OldValue is int a && e.NewValue is int b)
         {
