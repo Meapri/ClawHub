@@ -380,10 +380,4 @@ public partial class HomeView : UserControl
         _panning = false;
         if (!_panMoved && _vm is { IsEditing: true, Renaming: null, OpenFolder: null }) _vm.EndEdit();
     }
-
-    private void Scroller_Wheel(object sender, MouseWheelEventArgs e)
-    {
-        Scroller.ScrollToHorizontalOffset(Scroller.HorizontalOffset - e.Delta);
-        e.Handled = true;
-    }
 }

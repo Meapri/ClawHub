@@ -30,4 +30,8 @@
     <ApplicationIcon>Assets\ClawHub.ico</ApplicationIcon>
   </PropertyGroup>
 
+  <!-- 터치: 예전 WISP 대신 WM_POINTER 입력 경로 (지연이 적고 Windows 10+ 터치와 같은 판정) -->
+  <ItemGroup>
+    <RuntimeHostConfigurationOption Include="Switch.System.Windows.Input.Stylus.EnablePointerSupport" Value="true" />
+  </ItemGroup>
 </Project>

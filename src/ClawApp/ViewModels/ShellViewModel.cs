@@ -714,6 +714,13 @@ public sealed partial class ShellViewModel : ObservableObject
     [RelayCommand]
     private void GoToDesktop() => EnterDesktop(Settings.DesktopController == DesktopController.Gamepad);
 
+    /// <summary>사용자가 창을 최소화함 (Win+D 등): 게임 중이면 게임으로, 아니면 데스크톱 모드로.</summary>
+    public void OnMinimizedByUser()
+    {
+        if (RunningGame is not null) ReturnToBackground();
+        else GoToDesktop();
+    }
+
     /// <summary>데스크톱으로 — 컨트롤러는 게임패드 그대로.</summary>
     [RelayCommand]
     private void GoToDesktopGamepad() => EnterDesktop(gamepad: true);

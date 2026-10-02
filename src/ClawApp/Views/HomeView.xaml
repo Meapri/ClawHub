@@ -283,7 +283,7 @@
 
     <Grid>
     <ScrollViewer x:Name="Scroller" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
-                  PanningMode="HorizontalOnly" PreviewMouseWheel="Scroller_Wheel" Background="Transparent">
+                  PanningMode="HorizontalOnly" Background="Transparent">
         <StackPanel Orientation="Horizontal" Margin="48,24,48,0" VerticalAlignment="Top" m:Entrance.Stagger="Tiles">
 
             <!-- ── 지금 플레이 중 (게임 실행 중일 때만) ───────── -->

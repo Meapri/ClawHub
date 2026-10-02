@@ -48,6 +48,10 @@ public partial class MainWindow : Window
         PreviewKeyUp += OnKeyUp;
         // 포커스가 어디로 가든(패드 이동·페이지 전환·선택판) 화면 밖이면 스크롤해서 보여 준다
         AddHandler(Keyboard.GotKeyboardFocusEvent, new KeyboardFocusChangedEventHandler((_, _) => RevealFocused()), true);
+        AddHandler(PreviewMouseDownEvent, new MouseButtonEventHandler((_, _) => _pointerAt = Environment.TickCount64), true);
+        AddHandler(PreviewTouchDownEvent, new EventHandler<TouchEventArgs>((_, _) => _pointerAt = Environment.TickCount64), true);
+        // 터치로 끝까지 넘겼을 때 창 전체가 튕기는 WPF 기본 동작 끄기
+        ManipulationBoundaryFeedback += (_, e) => e.Handled = true;
         PreviewMouseDown += OnMouseButton;
         PreviewMouseUp += OnMouseButton;
         PreviewMouseWheel += OnMouseWheelCapture;
@@ -85,6 +89,8 @@ public partial class MainWindow : Window
         DwmExtendFrameIntoClientArea(hwnd, ref margins);
         var dark = Services.SystemTheme.IsLight ? 0 : 1;
         DwmSetWindowAttribute(hwnd, DwmwaUseImmersiveDarkMode, ref dark, sizeof(int));
+        var noTransitions = 1; // DWMWA_TRANSITIONS_FORCEDISABLED: 최소화·복원 애니메이션 끔
+        DwmSetWindowAttribute(hwnd, 3, ref noTransitions, sizeof(int));
         ApplyBackdrop();
         FitToScreen();
         // 해상도·배율이 실행 중에 바뀌어도 화면 전체를 덮게 (배율을 바꾸면 창이 예전 논리 크기로 남아 구석에 작게 붙는다)
@@ -168,10 +174,16 @@ public partial class MainWindow : Window
     [DllImport("dwmapi.dll")] private static extern int DwmExtendFrameIntoClientArea(IntPtr hwnd, ref Margins margins);
     [DllImport("dwmapi.dll")] private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int value, int size);
 
+    /// <summary>
+    /// 숨길 때도 작업 표시줄에 남도록 감추지 않고 최소화한다 — 데스크톱·다른 앱에서 작업 표시줄 단추로 허브에 돌아올 수 있게.
+    /// 최소화·복원 애니메이션은 꺼 둔다 (OnSourceInitialized) — 게임으로 넘어갈 때 창이 접히는 모습이 보이지 않게.
+    /// </summary>
     private void ApplyWindowVisibility()
     {
         if (_vm.IsWindowVisible)
         {
+            if (WindowState == WindowState.Minimized) WindowState = WindowState.Normal;
+            ShowActivated = true;
             Show();
             Topmost = true;
             ForceForeground();
@@ -179,8 +191,21 @@ public partial class MainWindow : Window
         }
         else
         {
-            Hide();
+            WindowState = WindowState.Minimized;
+            if (!IsVisible)
+            {
+                ShowActivated = false; // 숨은 채로 시작(Xbox 모드): 작업 표시줄에만 놓고 앞으로 오지 않게
+                Show();
+            }
         }
+    }
+
+    /// <summary>작업 표시줄 단추로 복원 → 허브로, 사용자가 최소화(Win+D 등) → 데스크톱(또는 게임)으로.</summary>
+    protected override void OnStateChanged(EventArgs e)
+    {
+        base.OnStateChanged(e);
+        if (WindowState != WindowState.Minimized && !_vm.IsWindowVisible) _vm.ShowFromOutside();
+        else if (WindowState == WindowState.Minimized && _vm.IsWindowVisible) _vm.OnMinimizedByUser();
     }
 
     /// <summary>
@@ -459,8 +484,12 @@ public partial class MainWindow : Window
     /// 포커스가 옮겨 간 요소를 스크롤해서 보여 준다 (위아래 여유 포함).
     /// WPF는 "마지막 입력이 키보드"일 때만 스스로 스크롤하므로 패드 입력에서는 직접 해 줘야 한다.
     /// </summary>
+    /// <summary>마지막으로 손가락·마우스로 누른 때. 누른 직후 생긴 포커스는 눌린 곳이 이미 보이므로 화면을 옮기지 않는다.</summary>
+    private long _pointerAt;
+
     private void RevealFocused() => Dispatcher.BeginInvoke(() =>
     {
+        if (Environment.TickCount64 - _pointerAt < 700) return; // 탭한 타일이 반쯤 보여도 화면이 끌려가지 않게
         if (Keyboard.FocusedElement is FrameworkElement { IsVisible: true } fe)
             fe.BringIntoView(new Rect(-16, -48, fe.ActualWidth + 32, fe.ActualHeight + 96));
     }, DispatcherPriority.Loaded);

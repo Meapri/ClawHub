@@ -5,10 +5,12 @@
         xmlns:m="clr-namespace:ClawApp.Motion"
         xmlns:local="clr-namespace:ClawApp"
         Title="ClawHub" Icon="Assets/ClawHub.ico"
-        WindowStyle="None" ResizeMode="NoResize" ShowInTaskbar="False" Topmost="True"
+        WindowStyle="None" ResizeMode="NoResize" ShowInTaskbar="True" Topmost="True"
         Background="Transparent"
         FontFamily="{StaticResource UiFont}" FontSize="16" Foreground="{DynamicResource Text}"
-        UseLayoutRounding="True" SnapsToDevicePixels="True">
+        UseLayoutRounding="True" SnapsToDevicePixels="True"
+        Stylus.IsPressAndHoldEnabled="False" Stylus.IsFlicksEnabled="False"
+        Stylus.IsTapFeedbackEnabled="False" Stylus.IsTouchFeedbackEnabled="False">
     <!--
       AllowsTransparency(레이어드 창)는 쓰지 않는다: ClearType이 꺼지고 글자가 뭉개진다.
       셸 화면은 흐린 게임 아트(Backdrop)가 창 전체를 덮고, 게임 위 오버레이일 때는 DWM Acrylic이 뒤 게임을 흐린다.

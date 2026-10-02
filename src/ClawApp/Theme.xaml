@@ -699,6 +699,9 @@
         <Setter Property="VerticalScrollBarVisibility" Value="Hidden"/>
         <Setter Property="HorizontalScrollBarVisibility" Value="Disabled"/>
         <Setter Property="PanningMode" Value="Both"/>
+        <!-- 손을 떼면 윈도우 기본 앱처럼 적당히 미끄러지다 선다 (WPF 기본 0.001은 너무 멀리 간다) -->
+        <Setter Property="PanningDeceleration" Value="0.0025"/>
+        <Setter Property="m:SmoothScroll.IsEnabled" Value="True"/>
     </Style>
 
     <!-- ── 페이지 도구 모음·목록 행 보조 (라이브러리·프로필·프로그램 추가) ── -->

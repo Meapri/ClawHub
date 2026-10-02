@@ -34,6 +34,7 @@ public partial class App : Application
         }) { IsBackground = true, Name = "ClawHub.Show" }.Start();
 
         Services.SystemTheme.Apply(this);
+        Services.FrameMeter.StartIfRequested();
 
         // UI 이벤트 처리 중 예외로 앱이 죽지 않게 (죽으면 게임 매핑 정리가 늦어진다)
         DispatcherUnhandledException += (_, ev) =>
