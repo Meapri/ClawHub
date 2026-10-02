@@ -86,7 +86,70 @@ public partial class MainWindow : Window
         var dark = Services.SystemTheme.IsLight ? 0 : 1;
         DwmSetWindowAttribute(hwnd, DwmwaUseImmersiveDarkMode, ref dark, sizeof(int));
         ApplyBackdrop();
+        FitToScreen();
+        // 해상도·배율이 실행 중에 바뀌어도 화면 전체를 덮게 (배율을 바꾸면 창이 예전 논리 크기로 남아 구석에 작게 붙는다)
+        Microsoft.Win32.SystemEvents.DisplaySettingsChanged += (_, _) => Dispatcher.BeginInvoke(FitToScreen);
+#if DEBUG
+        // 테스트: CLAWHUB_TESTSCALE=1.0 등 → 다른 배율의 논리 화면 크기를 흉내 낸다 (윈도우 설정은 건드리지 않음)
+        if (double.TryParse(Environment.GetEnvironmentVariable("CLAWHUB_TESTSCALE"), System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture, out var testScale) && testScale > 0
+            && Content is FrameworkElement root && PresentationSource.FromVisual(this)?.CompositionTarget is { } ct)
+        {
+            var k = testScale / ct.TransformToDevice.M11;
+            root.LayoutTransform = new ScaleTransform(k, k);
+        }
+        // 테스트: CLAWHUB_TESTDPICHANGE=96 → 8초 뒤 실행 중 배율 변경(WM_DPICHANGED)을 흉내 낸다
+        if (int.TryParse(Environment.GetEnvironmentVariable("CLAWHUB_TESTDPICHANGE"), out var testDpi) && testDpi > 0)
+        {
+            var t = new DispatcherTimer { Interval = TimeSpan.FromSeconds(8) };
+            t.Tick += (_, _) =>
+            {
+                t.Stop();
+                var scale = testDpi / 96.0;
+                var rect = new int[] { 0, 0, (int)(ActualWidth * scale), (int)(ActualHeight * scale) };
+                var mem = Marshal.AllocHGlobal(16);
+                Marshal.Copy(rect, 0, mem, 4);
+                SendMessage(hwnd, 0x02E0, (IntPtr)((testDpi << 16) | testDpi), mem);
+                Marshal.FreeHGlobal(mem);
+            };
+            t.Start();
+        }
+#endif
     }
+
+    protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
+    {
+        base.OnDpiChanged(oldDpi, newDpi);
+        Dispatcher.BeginInvoke(FitToScreen, DispatcherPriority.Loaded); // 시스템이 제안한 크기로 줄어든 뒤에 다시 맞춘다
+    }
+
+    /// <summary>창이 있는 모니터 전체(실제 픽셀)를 지금 배율의 논리 크기로 덮는다.</summary>
+    private void FitToScreen()
+    {
+        var hwnd = new WindowInteropHelper(this).Handle;
+        if (hwnd == IntPtr.Zero || PresentationSource.FromVisual(this)?.CompositionTarget is not { } ct) return;
+        var info = new MonitorInfo { Size = Marshal.SizeOf<MonitorInfo>() };
+        if (!GetMonitorInfo(MonitorFromWindow(hwnd, 2 /* NEAREST */), ref info)) return;
+        var m = ct.TransformFromDevice;
+        var topLeft = m.Transform(new Point(info.Left, info.Top));
+        var bottomRight = m.Transform(new Point(info.Right, info.Bottom));
+        Left = topLeft.X;
+        Top = topLeft.Y;
+        Width = bottomRight.X - topLeft.X;
+        Height = bottomRight.Y - topLeft.Y;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MonitorInfo
+    {
+        public int Size;
+        public int Left, Top, Right, Bottom;
+        public int WorkLeft, WorkTop, WorkRight, WorkBottom;
+        public int Flags;
+    }
+
+    [DllImport("user32.dll")] private static extern IntPtr MonitorFromWindow(IntPtr hwnd, int flags);
+    [DllImport("user32.dll")] private static extern bool GetMonitorInfo(IntPtr monitor, ref MonitorInfo info);
 
     /// <summary>셸 화면 = Mica(바탕화면 색이 은은히 비침). 창이 보이면 항상 셸이므로 Acrylic은 예비용.</summary>
     private void ApplyBackdrop()
@@ -511,6 +574,7 @@ public partial class MainWindow : Window
     [DllImport("user32.dll")] private static extern IntPtr GetForegroundWindow();
     [DllImport("user32.dll")] private static extern uint GetWindowThreadProcessId(IntPtr hwnd, IntPtr pid);
     [DllImport("kernel32.dll")] private static extern uint GetCurrentThreadId();
+    [DllImport("user32.dll")] private static extern IntPtr SendMessage(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam);
     [DllImport("user32.dll")] private static extern bool AttachThreadInput(uint attach, uint attachTo, bool on);
     [DllImport("user32.dll")] private static extern bool SetForegroundWindow(IntPtr hwnd);
     [DllImport("user32.dll")] private static extern bool BringWindowToTop(IntPtr hwnd);

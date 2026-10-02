@@ -36,7 +36,10 @@ public sealed class StartPanel : Panel
     protected override Size MeasureOverride(Size available)
     {
         var height = double.IsInfinity(available.Height) ? 6 * Unit : available.Height + Gap;
-        var rows = Math.Max(2, (int)(height / Unit));
+        // 가장 큰 타일이 들어갈 만큼은 늘 둔다 (배율이 커서 화면이 낮아도 큰 타일이 옆 타일을 덮지 않게 — 넘치면 아래가 잘릴 뿐)
+        var tallest = 2;
+        foreach (UIElement child in InternalChildren) tallest = Math.Max(tallest, Cell(child)?.Span ?? 2);
+        var rows = Math.Max(tallest, (int)(height / Unit));
         Rows = rows - rows % 2;
 
         var cols = Pack();

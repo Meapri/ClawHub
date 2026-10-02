@@ -158,7 +158,9 @@
 
             <!-- 날짜·시간 -->
             <StackPanel Visibility="{Binding StatusPanel, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=clock}">
-                <TextBlock Text="{Binding Clock}" FontSize="40" FontWeight="Bold"/>
+                <TextBlock FontSize="40" FontWeight="Bold">
+                    <Run Text="{Binding PanelClock, Mode=OneWay}"/><Run Text="{Binding PanelSeconds, Mode=OneWay}" FontSize="28" FontWeight="SemiBold" Foreground="{DynamicResource TextDim}"/>
+                </TextBlock>
                 <TextBlock Text="{Binding DateText}" FontSize="17" Margin="0,2,0,6"/>
                 <TextBlock Text="{Binding UptimeText}" Style="{StaticResource Caption}"/>
                 <Button Style="{StaticResource Link}" Command="{Binding OpenWindowsPageCommand}" CommandParameter="dateandtime" Margin="0,12,0,0"

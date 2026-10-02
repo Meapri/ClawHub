@@ -13,7 +13,39 @@ public sealed partial class ShellViewModel
     /// <summary>열린 패널 키 (null = 닫힘): service · perf · system · controller · network · sound · battery · clock.</summary>
     [ObservableProperty] private string? _statusPanel;
 
-    partial void OnStatusPanelChanged(string? value) => OnPropertyChanged(nameof(IsAnyPanelOpen));
+    partial void OnStatusPanelChanged(string? value)
+    {
+        OnPropertyChanged(nameof(IsAnyPanelOpen));
+        // 날짜·시간 패널이 열려 있는 동안만 초 단위로 갱신 (평소 시계는 10초 주기)
+        if (value == "clock")
+        {
+            UpdateClockPanel();
+            _secondsTimer ??= NewSecondsTimer();
+            _secondsTimer.Start();
+        }
+        else _secondsTimer?.Stop();
+    }
+
+    private System.Windows.Threading.DispatcherTimer? _secondsTimer;
+
+    private System.Windows.Threading.DispatcherTimer NewSecondsTimer()
+    {
+        var t = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
+        t.Tick += (_, _) => UpdateClockPanel();
+        return t;
+    }
+
+    /// <summary>날짜·시간 패널의 큰 시계 (초까지).</summary>
+    [ObservableProperty] private string _panelClock = "";
+    [ObservableProperty] private string _panelSeconds = "";
+
+    private void UpdateClockPanel()
+    {
+        var now = DateTime.Now;
+        PanelClock = now.ToString("tt h:mm");
+        PanelSeconds = now.ToString(":ss");
+        if (Clock != PanelClock) Clock = PanelClock; // 분이 바뀌면 상태 표시줄 시계도 바로
+    }
 
     [RelayCommand]
     private void OpenStatus(string key)
