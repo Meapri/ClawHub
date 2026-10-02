@@ -11,9 +11,9 @@
         <DockPanel>
             <!-- 하단 바: 배터리 + 전체 설정 -->
             <Border DockPanel.Dock="Bottom" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Divider}" BorderThickness="0,1,0,0"
-                    Padding="20,8">
+                    Padding="24,8">
                 <DockPanel>
-                    <Button DockPanel.Dock="Right" Style="{StaticResource NavItem}" Command="{Binding OpenAllSettingsCommand}" Width="40" Padding="0"
+                    <Button DockPanel.Dock="Right" Style="{StaticResource NavItem}" Command="{Binding OpenAllSettingsCommand}" Width="48" Padding="0"
                             HorizontalContentAlignment="Center" ToolTip="전체 설정">
                         <TextBlock Text="{StaticResource Icon.Settings}" Style="{StaticResource Icon}"/>
                     </Button>
@@ -28,23 +28,31 @@
                 <StackPanel m:Entrance.Stagger="Items" m:Entrance.Offset="48">
                     <TextBlock Text="빠른 설정" Style="{StaticResource H1}" Margin="0,0,0,16"/>
                     <!-- 실시간 상태 (2초마다) -->
-                    <Border Style="{StaticResource CardPanel}" Padding="14,10" Margin="0,0,0,14">
-                        <UniformGrid Columns="4">
-                            <StackPanel>
+                    <!-- 2×2: 한 칸이 넓어야 "3시간 20분" 같은 값이 잘리지 않는다 -->
+                    <Border Style="{StaticResource CardPanel}" Padding="16,12" Margin="0,0,0,16">
+                        <UniformGrid Columns="2">
+                            <UniformGrid.Resources>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="FontSize" Value="18"/>
+                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                    <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                </Style>
+                            </UniformGrid.Resources>
+                            <StackPanel Margin="0,0,8,8">
                                 <TextBlock Text="CPU" Style="{StaticResource Caption}"/>
-                                <TextBlock Text="{Binding CpuTempText}" FontSize="16" FontWeight="SemiBold"/>
+                                <TextBlock Text="{Binding CpuTempText}"/>
                             </StackPanel>
-                            <StackPanel>
+                            <StackPanel Margin="0,0,0,8">
                                 <TextBlock Text="CPU 전력" Style="{StaticResource Caption}"/>
-                                <TextBlock Text="{Binding GpuTempText}" FontSize="16" FontWeight="SemiBold"/>
+                                <TextBlock Text="{Binding GpuTempText}"/>
                             </StackPanel>
-                            <StackPanel>
+                            <StackPanel Margin="0,0,8,0">
                                 <TextBlock Text="배터리 소모" Style="{StaticResource Caption}"/>
-                                <TextBlock Text="{Binding PowerText}" FontSize="16" FontWeight="SemiBold"/>
+                                <TextBlock Text="{Binding PowerText}"/>
                             </StackPanel>
                             <StackPanel>
                                 <TextBlock Text="남은 시간" Style="{StaticResource Caption}"/>
-                                <TextBlock Text="{Binding RemainingText}" FontSize="14" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                                <TextBlock Text="{Binding RemainingText}"/>
                             </StackPanel>
                         </UniformGrid>
                     </Border>
@@ -69,7 +77,7 @@
                     <WrapPanel IsEnabled="{Binding PerfAvailable}">
                         <RadioButton Style="{StaticResource QuickTileRadio}" GroupName="perf" Tag="{StaticResource Icon.Leaf}" Content="절전" IsChecked="{Binding IsBattery}"/>
                         <RadioButton Style="{StaticResource QuickTileRadio}" GroupName="perf" Tag="{StaticResource Icon.Scale}" Content="균형" IsChecked="{Binding IsBalanced}"/>
-                        <RadioButton Style="{StaticResource QuickTileRadio}" GroupName="perf" Tag="{StaticResource Icon.Rocket}" Content="성능" IsChecked="{Binding IsPerformance}" Margin="0,0,0,10"/>
+                        <RadioButton Style="{StaticResource QuickTileRadio}" GroupName="perf" Tag="{StaticResource Icon.Rocket}" Content="성능" IsChecked="{Binding IsPerformance}"/>
                         <RadioButton Style="{StaticResource QuickTileRadio}" GroupName="perf" Tag="{StaticResource Icon.SlidersHorizontal}" Content="수동 TDP" IsChecked="{Binding IsManualMode}"/>
                         <ToggleButton Style="{StaticResource QuickTile}" Tag="{StaticResource Icon.Snowflake}" Content="쿨러 부스트" IsChecked="{Binding CoolerBoost}"/>
                     </WrapPanel>
@@ -78,13 +86,13 @@
                                Visibility="{Binding PerfNote, Converter={StaticResource NullVis}}"/>
                     <StackPanel Visibility="{Binding IsManual, Converter={StaticResource Vis}}" IsEnabled="{Binding PerfAvailable}" Margin="0,8,0,0">
                         <DockPanel>
-                            <TextBlock Text="PL1" Width="36" VerticalAlignment="Center" Foreground="{DynamicResource TextDim}"/>
-                            <TextBlock DockPanel.Dock="Right" Text="{Binding Pl1, StringFormat={}{0}W}" Width="36" TextAlignment="Right" VerticalAlignment="Center"/>
+                            <TextBlock Text="PL1" Width="40" VerticalAlignment="Center" Foreground="{DynamicResource TextDim}"/>
+                            <TextBlock DockPanel.Dock="Right" Text="{Binding Pl1, StringFormat={}{0}W}" Width="44" TextAlignment="Right" VerticalAlignment="Center"/>
                             <Slider Minimum="8" Maximum="45" SmallChange="1" Value="{Binding Pl1}"/>
                         </DockPanel>
                         <DockPanel>
-                            <TextBlock Text="PL2" Width="36" VerticalAlignment="Center" Foreground="{DynamicResource TextDim}"/>
-                            <TextBlock DockPanel.Dock="Right" Text="{Binding Pl2, StringFormat={}{0}W}" Width="36" TextAlignment="Right" VerticalAlignment="Center"/>
+                            <TextBlock Text="PL2" Width="40" VerticalAlignment="Center" Foreground="{DynamicResource TextDim}"/>
+                            <TextBlock DockPanel.Dock="Right" Text="{Binding Pl2, StringFormat={}{0}W}" Width="44" TextAlignment="Right" VerticalAlignment="Center"/>
                             <Slider Minimum="8" Maximum="45" SmallChange="1" Value="{Binding Pl2}"/>
                         </DockPanel>
                     </StackPanel>
@@ -97,7 +105,7 @@
                             <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <cv:ChoiceChip Style="{StaticResource Chip}" Content="{Binding Label}" MinWidth="48" IsChecked="{Binding IsSelected, Mode=OneWay}"
+                                    <cv:ChoiceChip Style="{StaticResource Chip}" Content="{Binding Label}" IsChecked="{Binding IsSelected, Mode=OneWay}"
                                                   Command="{Binding DataContext.PickFpsCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
@@ -107,7 +115,7 @@
                             <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <cv:ChoiceChip Style="{StaticResource Chip}" Content="{Binding Label}" MinWidth="48" IsChecked="{Binding IsSelected, Mode=OneWay}"
+                                    <cv:ChoiceChip Style="{StaticResource Chip}" Content="{Binding Label}" IsChecked="{Binding IsSelected, Mode=OneWay}"
                                                   Command="{Binding DataContext.PickFrameGenCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
@@ -118,12 +126,12 @@
                     <!-- 슬라이더: 아이콘 + 막대 (Windows 빠른 설정과 같은 배치) -->
                     <DockPanel Margin="0,16,0,0">
                         <TextBlock Text="{StaticResource Icon.Sun}" Style="{StaticResource Icon}" Width="30"/>
-                        <TextBlock DockPanel.Dock="Right" Text="{Binding Brightness}" Width="32" TextAlignment="Right" VerticalAlignment="Center"/>
+                        <TextBlock DockPanel.Dock="Right" Text="{Binding Brightness}" Width="40" TextAlignment="Right" VerticalAlignment="Center"/>
                         <Slider Minimum="0" Maximum="100" SmallChange="5" Value="{Binding Brightness}"/>
                     </DockPanel>
                     <DockPanel Margin="0,4,0,0">
                         <TextBlock Text="{StaticResource Icon.Volume2}" Style="{StaticResource Icon}" Width="30"/>
-                        <TextBlock DockPanel.Dock="Right" Text="{Binding Volume}" Width="32" TextAlignment="Right" VerticalAlignment="Center"/>
+                        <TextBlock DockPanel.Dock="Right" Text="{Binding Volume}" Width="40" TextAlignment="Right" VerticalAlignment="Center"/>
                         <Slider Minimum="0" Maximum="100" SmallChange="5" Value="{Binding Volume}"/>
                     </DockPanel>
 

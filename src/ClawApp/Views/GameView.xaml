@@ -24,8 +24,8 @@
         </Grid>
 
         <ScrollViewer Grid.Column="1" Margin="36,-6,0,0">
-            <StackPanel MaxWidth="640" HorizontalAlignment="Left" Margin="6,6,6,0" m:Entrance.Stagger="Items">
-                <TextBlock Style="{StaticResource Caption}" FontSize="15" Margin="0,0,0,18">
+            <StackPanel MaxWidth="720" HorizontalAlignment="Left" Margin="6,6,6,0" m:Entrance.Stagger="Items">
+                <TextBlock Style="{StaticResource Caption}" FontSize="16" Margin="0,0,0,16">
                     <Run Text="{Binding Tile.SourceLabel, Mode=OneWay}" Foreground="{DynamicResource Text}" FontWeight="SemiBold"/><Run Text="   ·   "/><Run Text="{Binding Tile.LastPlayedLabel, Mode=OneWay}"/>
                 </TextBlock>
 
@@ -33,7 +33,7 @@
                         HorizontalContentAlignment="Left" local:Nav.InitialFocus="True" Margin="0,0,0,8">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="{StaticResource Icon.Play}" Style="{StaticResource Icon}" FontSize="20" Margin="0,0,14,0"/>
-                        <TextBlock FontSize="19" Visibility="{Binding IsRunning, Converter={StaticResource NotVis}}">
+                        <TextBlock FontSize="20" Visibility="{Binding IsRunning, Converter={StaticResource NotVis}}">
                             <TextBlock.Style>
                                 <Style TargetType="TextBlock">
                                     <Setter Property="Text" Value="플레이"/>
@@ -41,7 +41,7 @@
                                 </Style>
                             </TextBlock.Style>
                         </TextBlock>
-                        <TextBlock Text="게임으로 돌아가기" FontSize="19" Visibility="{Binding IsRunning, Converter={StaticResource Vis}}"/>
+                        <TextBlock Text="게임으로 돌아가기" FontSize="20" Visibility="{Binding IsRunning, Converter={StaticResource Vis}}"/>
                     </StackPanel>
                 </Button>
 
@@ -53,7 +53,7 @@
                         <TextBlock DockPanel.Dock="Right" Text="A로 변경" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="12,0,0,0"/>
                         <StackPanel>
                             <TextBlock Text="게임 중 사용할 프로필" Style="{StaticResource Caption}"/>
-                            <TextBlock Text="{Binding ProfileText}" FontSize="19" FontWeight="SemiBold" Margin="0,2,0,0"/>
+                            <TextBlock Text="{Binding ProfileText}" FontSize="20" FontWeight="SemiBold" Margin="0,2,0,0"/>
                         </StackPanel>
                     </DockPanel>
                 </Button>
@@ -69,7 +69,7 @@
                         <TextBlock DockPanel.Dock="Right" Text="A로 변경" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="12,0,0,0"/>
                         <StackPanel>
                             <TextBlock Text="게임 중 성능 모드" Style="{StaticResource Caption}"/>
-                            <TextBlock Text="{Binding PerformanceText}" FontSize="19" FontWeight="SemiBold" Margin="0,2,0,0"/>
+                            <TextBlock Text="{Binding PerformanceText}" FontSize="20" FontWeight="SemiBold" Margin="0,2,0,0"/>
                         </StackPanel>
                     </DockPanel>
                 </Button>
@@ -80,7 +80,7 @@
                         <TextBlock DockPanel.Dock="Right" Text="A로 변경" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="12,0,0,0"/>
                         <StackPanel>
                             <TextBlock Text="게임 중 FPS 제한" Style="{StaticResource Caption}"/>
-                            <TextBlock Text="{Binding FpsText}" FontSize="19" FontWeight="SemiBold" Margin="0,2,0,0"/>
+                            <TextBlock Text="{Binding FpsText}" FontSize="20" FontWeight="SemiBold" Margin="0,2,0,0"/>
                         </StackPanel>
                     </DockPanel>
                 </Button>
@@ -90,13 +90,13 @@
 
                 <TextBlock Text="관리" Style="{StaticResource Section}"/>
                 <TextBlock Text="표시 이름" Style="{StaticResource Caption}" Margin="2,0,0,6"/>
-                <v:InlineEdit Text="{Binding GameTitle}" FontSize="16" Margin="0,0,0,4"/>
+                <v:InlineEdit Text="{Binding GameTitle}" Margin="0,0,0,4"/>
                 <Button Style="{StaticResource NavButton}" Command="{Binding ToggleKindCommand}" HorizontalContentAlignment="Stretch">
                     <DockPanel>
                         <TextBlock DockPanel.Dock="Right" Text="A로 변경" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="12,0,0,0"/>
                         <StackPanel>
                             <TextBlock Text="분류" Style="{StaticResource Caption}"/>
-                            <TextBlock Text="{Binding KindText}" FontSize="19" FontWeight="SemiBold" Margin="0,2,0,0"/>
+                            <TextBlock Text="{Binding KindText}" FontSize="20" FontWeight="SemiBold" Margin="0,2,0,0"/>
                             <TextBlock Text="{Binding KindNote}" Style="{StaticResource Caption}" Margin="0,2,0,0"/>
                         </StackPanel>
                     </DockPanel>

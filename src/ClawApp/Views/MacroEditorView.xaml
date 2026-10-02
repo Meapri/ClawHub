@@ -27,19 +27,19 @@
                 </StackPanel>
                 <Grid>
                     <Border Style="{StaticResource CardPanel}" Visibility="{Binding IsEmpty, Converter={StaticResource Vis}}" VerticalAlignment="Top" Padding="20">
-                        <TextBlock Style="{StaticResource Caption}" FontSize="14"
+                        <TextBlock Style="{StaticResource Caption}"
                                    Text="'단계 추가'로 키를 순서대로 넣으세요. 버튼을 한 번 누르면 단계가 차례로 실행돼요. 예: Ctrl(공격) → 50ms → Shift(스킬)"/>
                     </Border>
                     <ScrollViewer>
                         <ItemsControl ItemsSource="{Binding Steps}" Focusable="False" Margin="4" m:Entrance.Stagger="Items">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Button Style="{StaticResource NavItem}" Height="52" Tag="{Binding IsSelected}"
+                                    <Button Style="{StaticResource NavItem}" Height="56" Tag="{Binding IsSelected}"
                                             Command="{Binding DataContext.SelectCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                             CommandParameter="{Binding}" GotKeyboardFocus="Step_GotFocus">
                                         <StackPanel Orientation="Horizontal">
                                             <Border Width="30" Height="30" Background="{DynamicResource Accent}" TextElement.Foreground="{DynamicResource AccentText}" Margin="0,0,14,0">
-                                                <TextBlock Text="{Binding Number}" FontSize="13" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{Binding Number}" FontSize="14" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                             </Border>
                                             <StackPanel VerticalAlignment="Center">
                                                 <TextBlock Text="{Binding KeyLabel}" FontWeight="SemiBold"/>
@@ -70,9 +70,9 @@
                 <Border Style="{StaticResource CardPanel}">
                     <StackPanel>
                         <DockPanel><TextBlock DockPanel.Dock="Right" Text="{Binding HoldMs, StringFormat={}{0}ms}" Foreground="{DynamicResource TextDim}"/><TextBlock Text="누르고 있는 시간"/></DockPanel>
-                        <Slider Minimum="10" Maximum="2000" SmallChange="10" TickFrequency="10" Value="{Binding HoldMs}"/>
+                        <Slider Minimum="10" Maximum="2000" SmallChange="50" TickFrequency="10" Value="{Binding HoldMs}"/>
                         <DockPanel Margin="0,8,0,0"><TextBlock DockPanel.Dock="Right" Text="{Binding GapMs, StringFormat={}{0}ms}" Foreground="{DynamicResource TextDim}"/><TextBlock Text="다음 단계까지 쉬는 시간"/></DockPanel>
-                        <Slider Minimum="0" Maximum="2000" SmallChange="10" TickFrequency="10" Value="{Binding GapMs}"/>
+                        <Slider Minimum="0" Maximum="2000" SmallChange="50" TickFrequency="10" Value="{Binding GapMs}"/>
                     </StackPanel>
                 </Border>
                 <TextBlock Style="{StaticResource Caption}" Margin="2,4,0,0"

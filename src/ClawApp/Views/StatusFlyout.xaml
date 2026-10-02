@@ -14,31 +14,30 @@
         <Style x:Key="Row" TargetType="DockPanel">
             <Setter Property="Margin" Value="0,0,0,8"/>
         </Style>
+        <!-- 값 줄: 글자는 창 기본(본문 16) -->
         <Style x:Key="RowLabel" TargetType="TextBlock">
             <Setter Property="Foreground" Value="{DynamicResource TextDim}"/>
-            <Setter Property="FontSize" Value="15"/>
         </Style>
         <Style x:Key="RowValue" TargetType="TextBlock">
             <Setter Property="DockPanel.Dock" Value="Right"/>
-            <Setter Property="FontSize" Value="15"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
         </Style>
         <Style x:Key="Link" TargetType="Button" BasedOn="{StaticResource NavButton}">
-            <Setter Property="Padding" Value="14,10"/>
+            <Setter Property="Padding" Value="16,12"/>
             <Setter Property="Margin" Value="0,4,0,0"/>
             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
         </Style>
     </UserControl.Resources>
 
-    <Border Background="{DynamicResource Bg1}" BorderBrush="{DynamicResource Stroke}" BorderThickness="1" Padding="20,18">
+    <Border Background="{DynamicResource Bg1}" BorderBrush="{DynamicResource Stroke}" BorderThickness="1" Padding="20">
         <Grid>
             <!-- 서비스 -->
             <StackPanel Visibility="{Binding StatusPanel, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=service}">
                 <TextBlock Text="ClawHub 서비스" Style="{StaticResource Head}"/>
-                <TextBlock Style="{StaticResource Caption}" FontSize="14" TextWrapping="Wrap"
+                <TextBlock Style="{StaticResource Caption}" Margin="0,0,0,4"
                            Text="서비스가 꺼져 있어 성능·충전 한도·컨트롤러 설정·매핑을 바꿀 수 없어요. 설치 프로그램으로 다시 설치하거나 PC를 다시 시작해 보세요."/>
                 <Button Style="{StaticResource Link}" Command="{Binding OpenSettingsAtCommand}" CommandParameter="about" local:Nav.InitialFocus="True">
-                    <DockPanel><TextBlock DockPanel.Dock="Right" Text="{StaticResource Icon.ChevronRight}" Style="{StaticResource Icon}" FontSize="14"/><TextBlock Text="정보 · 상태 보기"/></DockPanel>
+                    <DockPanel><TextBlock DockPanel.Dock="Right" Text="{StaticResource Icon.ChevronRight}" Style="{StaticResource Icon}" FontSize="16"/><TextBlock Text="정보 · 상태 보기"/></DockPanel>
                 </Button>
             </StackPanel>
 
@@ -59,7 +58,7 @@
                     <TextBlock Text="쿨러 부스트"/>
                 </ToggleButton>
                 <Button Style="{StaticResource Link}" Command="{Binding DataContext.OpenSettingsAtCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="performance">
-                    <DockPanel><TextBlock DockPanel.Dock="Right" Text="{StaticResource Icon.ChevronRight}" Style="{StaticResource Icon}" FontSize="14"/><TextBlock Text="성능 설정 더 보기"/></DockPanel>
+                    <DockPanel><TextBlock DockPanel.Dock="Right" Text="{StaticResource Icon.ChevronRight}" Style="{StaticResource Icon}" FontSize="16"/><TextBlock Text="성능 설정 더 보기"/></DockPanel>
                 </Button>
             </StackPanel>
 
@@ -87,15 +86,15 @@
                     <TextBlock Text="지금 매핑" Style="{StaticResource RowLabel}"/>
                 </DockPanel>
                 <Button Style="{StaticResource Link}" Command="{Binding OpenProfilesCommand}" local:Nav.InitialFocus="True">
-                    <DockPanel><TextBlock DockPanel.Dock="Right" Text="{StaticResource Icon.ChevronRight}" Style="{StaticResource Icon}" FontSize="14"/>
+                    <DockPanel><TextBlock DockPanel.Dock="Right" Text="{StaticResource Icon.ChevronRight}" Style="{StaticResource Icon}" FontSize="16"/>
                         <StackPanel Orientation="Horizontal"><TextBlock Text="{StaticResource Icon.Keyboard}" Style="{StaticResource Icon}" FontSize="16" Margin="0,0,10,0"/><TextBlock Text="키 매핑 프로필"/></StackPanel></DockPanel>
                 </Button>
                 <Button Style="{StaticResource Link}" Command="{Binding OpenSettingsAtCommand}" CommandParameter="controller">
-                    <DockPanel><TextBlock DockPanel.Dock="Right" Text="{StaticResource Icon.ChevronRight}" Style="{StaticResource Icon}" FontSize="14"/>
+                    <DockPanel><TextBlock DockPanel.Dock="Right" Text="{StaticResource Icon.ChevronRight}" Style="{StaticResource Icon}" FontSize="16"/>
                         <StackPanel Orientation="Horizontal"><TextBlock Text="{StaticResource Icon.Gamepad2}" Style="{StaticResource Icon}" FontSize="16" Margin="0,0,10,0"/><TextBlock Text="진동·데드존·버튼 설정"/></StackPanel></DockPanel>
                 </Button>
                 <Button Style="{StaticResource Link}" Command="{Binding OpenSettingsAtCommand}" CommandParameter="light">
-                    <DockPanel><TextBlock DockPanel.Dock="Right" Text="{StaticResource Icon.ChevronRight}" Style="{StaticResource Icon}" FontSize="14"/>
+                    <DockPanel><TextBlock DockPanel.Dock="Right" Text="{StaticResource Icon.ChevronRight}" Style="{StaticResource Icon}" FontSize="16"/>
                         <StackPanel Orientation="Horizontal"><TextBlock Text="{StaticResource Icon.Lightbulb}" Style="{StaticResource Icon}" FontSize="16" Margin="0,0,10,0"/><TextBlock Text="스틱 조명"/></StackPanel></DockPanel>
                 </Button>
             </StackPanel>
@@ -105,14 +104,14 @@
                 <TextBlock Text="네트워크" Style="{StaticResource Head}"/>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                     <TextBlock Text="{Binding NetworkIcon}" Style="{StaticResource Icon}" FontSize="22" Margin="0,0,12,0"/>
-                    <TextBlock Text="{Binding NetworkText}" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding NetworkText}" FontWeight="SemiBold" VerticalAlignment="Center"/>
                 </StackPanel>
                 <Button Style="{StaticResource Link}" Command="{Binding OpenWindowsPageCommand}" CommandParameter="network-wifi" local:Nav.InitialFocus="True">
-                    <DockPanel><TextBlock DockPanel.Dock="Right" Text="{StaticResource Icon.ChevronRight}" Style="{StaticResource Icon}" FontSize="14"/>
+                    <DockPanel><TextBlock DockPanel.Dock="Right" Text="{StaticResource Icon.ChevronRight}" Style="{StaticResource Icon}" FontSize="16"/>
                         <StackPanel Orientation="Horizontal"><TextBlock Text="{StaticResource Icon.Wifi}" Style="{StaticResource Icon}" FontSize="16" Margin="0,0,10,0"/><TextBlock Text="Wi-Fi 고르기"/></StackPanel></DockPanel>
                 </Button>
                 <Button Style="{StaticResource Link}" Command="{Binding OpenWindowsPageCommand}" CommandParameter="bluetooth">
-                    <DockPanel><TextBlock DockPanel.Dock="Right" Text="{StaticResource Icon.ChevronRight}" Style="{StaticResource Icon}" FontSize="14"/>
+                    <DockPanel><TextBlock DockPanel.Dock="Right" Text="{StaticResource Icon.ChevronRight}" Style="{StaticResource Icon}" FontSize="16"/>
                         <StackPanel Orientation="Horizontal"><TextBlock Text="{StaticResource Icon.Bluetooth}" Style="{StaticResource Icon}" FontSize="16" Margin="0,0,10,0"/><TextBlock Text="Bluetooth 및 장치"/></StackPanel></DockPanel>
                 </Button>
                 <TextBlock Text="Windows 설정이 열리고 스틱이 마우스가 돼요. 왼쪽 MSI 버튼으로 돌아와요." Style="{StaticResource Caption}" Margin="0,8,0,0"/>
@@ -124,16 +123,16 @@
                 <TextBlock Text="밝기·소리" Style="{StaticResource Head}"/>
                 <DockPanel>
                     <TextBlock Text="{StaticResource Icon.Volume2}" Style="{StaticResource Icon}" Width="30"/>
-                    <TextBlock DockPanel.Dock="Right" Text="{Binding Volume}" Width="32" TextAlignment="Right" VerticalAlignment="Center"/>
+                    <TextBlock DockPanel.Dock="Right" Text="{Binding Volume}" Width="40" TextAlignment="Right" VerticalAlignment="Center"/>
                     <Slider Minimum="0" Maximum="100" SmallChange="5" Value="{Binding Volume}" local:Nav.InitialFocus="True"/>
                 </DockPanel>
                 <DockPanel Margin="0,4,0,0">
                     <TextBlock Text="{StaticResource Icon.Sun}" Style="{StaticResource Icon}" Width="30"/>
-                    <TextBlock DockPanel.Dock="Right" Text="{Binding Brightness}" Width="32" TextAlignment="Right" VerticalAlignment="Center"/>
+                    <TextBlock DockPanel.Dock="Right" Text="{Binding Brightness}" Width="40" TextAlignment="Right" VerticalAlignment="Center"/>
                     <Slider Minimum="0" Maximum="100" SmallChange="5" Value="{Binding Brightness}"/>
                 </DockPanel>
                 <Button Style="{StaticResource Link}" Command="{Binding DataContext.OpenWindowsPageCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="sound">
-                    <DockPanel><TextBlock DockPanel.Dock="Right" Text="{StaticResource Icon.ChevronRight}" Style="{StaticResource Icon}" FontSize="14"/><TextBlock Text="출력 장치 고르기 (Windows 설정)"/></DockPanel>
+                    <DockPanel><TextBlock DockPanel.Dock="Right" Text="{StaticResource Icon.ChevronRight}" Style="{StaticResource Icon}" FontSize="16"/><TextBlock Text="출력 장치 고르기 (Windows 설정)"/></DockPanel>
                 </Button>
             </StackPanel>
 
@@ -153,7 +152,7 @@
                     <RadioButton Style="{StaticResource ChipRadio}" GroupName="flimit" Content="60%" IsChecked="{Binding Limit60}"/>
                 </WrapPanel>
                 <Button Style="{StaticResource Link}" Command="{Binding DataContext.OpenSettingsAtCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="battery">
-                    <DockPanel><TextBlock DockPanel.Dock="Right" Text="{StaticResource Icon.ChevronRight}" Style="{StaticResource Icon}" FontSize="14"/><TextBlock Text="배터리·절전 설정 더 보기"/></DockPanel>
+                    <DockPanel><TextBlock DockPanel.Dock="Right" Text="{StaticResource Icon.ChevronRight}" Style="{StaticResource Icon}" FontSize="16"/><TextBlock Text="배터리·절전 설정 더 보기"/></DockPanel>
                 </Button>
             </StackPanel>
 
@@ -161,10 +160,10 @@
             <StackPanel Visibility="{Binding StatusPanel, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=clock}">
                 <TextBlock Text="{Binding Clock}" FontSize="40" FontWeight="Bold"/>
                 <TextBlock Text="{Binding DateText}" FontSize="17" Margin="0,2,0,6"/>
-                <TextBlock Text="{Binding UptimeText}" Style="{StaticResource Caption}" FontSize="13"/>
+                <TextBlock Text="{Binding UptimeText}" Style="{StaticResource Caption}"/>
                 <Button Style="{StaticResource Link}" Command="{Binding OpenWindowsPageCommand}" CommandParameter="dateandtime" Margin="0,12,0,0"
                         local:Nav.InitialFocus="True">
-                    <DockPanel><TextBlock DockPanel.Dock="Right" Text="{StaticResource Icon.ChevronRight}" Style="{StaticResource Icon}" FontSize="14"/><TextBlock Text="날짜 및 시간 설정 (Windows)"/></DockPanel>
+                    <DockPanel><TextBlock DockPanel.Dock="Right" Text="{StaticResource Icon.ChevronRight}" Style="{StaticResource Icon}" FontSize="16"/><TextBlock Text="날짜 및 시간 설정 (Windows)"/></DockPanel>
                 </Button>
             </StackPanel>
         </Grid>

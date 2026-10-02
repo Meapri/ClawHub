@@ -94,9 +94,8 @@
 
         <!-- 가운데 열의 작은 동작 버튼 -->
         <Style x:Key="SmallAction" TargetType="Button" BasedOn="{StaticResource NavButton}">
-            <Setter Property="Padding" Value="14,10"/>
-            <Setter Property="Margin" Value="0,0,6,6"/>
-            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Padding" Value="12,10"/>
+            <Setter Property="Margin" Value="0,0,8,8"/>
         </Style>
         </ResourceDictionary>
     </UserControl.Resources>
@@ -107,7 +106,7 @@
         <Grid x:Name="Board" Visibility="{Binding IsPickerOpen, Converter={StaticResource NotVis}}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="330"/>
+                <ColumnDefinition Width="360"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
@@ -166,7 +165,7 @@
                                                     Background="{DynamicResource TileFill}">
                                                 <TextBlock Text="{Binding Label}" FontWeight="SemiBold"/>
                                             </Border>
-                                            <TextBlock Margin="10,0,0,0" VerticalAlignment="Center" Foreground="{DynamicResource TextDim}" FontSize="13">
+                                            <TextBlock Margin="10,0,0,0" VerticalAlignment="Center" Foreground="{DynamicResource TextDim}" FontSize="14">
                                                 <Run Text="← "/><Run Text="{Binding Button, Mode=OneWay, TargetNullValue=지정 안 된 키}"/>
                                             </TextBlock>
                                         </DockPanel>
@@ -204,7 +203,7 @@
                                 <TextBlock DockPanel.Dock="Right" Text="A로 변경" Style="{StaticResource Caption}" VerticalAlignment="Center"/>
                                 <StackPanel>
                                     <TextBlock Text="컨트롤러 모드" Style="{StaticResource Caption}"/>
-                                    <TextBlock Text="{Binding ModeText}" FontSize="16" FontWeight="SemiBold" Margin="0,2,0,0"/>
+                                    <TextBlock Text="{Binding ModeText}" FontSize="20" FontWeight="SemiBold" Margin="0,2,0,0"/>
                                 </StackPanel>
                             </DockPanel>
                         </Button>
@@ -212,7 +211,7 @@
                             <Button Style="{StaticResource SmallAction}" Command="{Binding DuplicateCommand}">
                                 <StackPanel Orientation="Horizontal"><TextBlock Text="{StaticResource Icon.Copy}" Style="{StaticResource Icon}" FontSize="16" Margin="0,0,8,0"/><TextBlock Text="복제"/></StackPanel>
                             </Button>
-                            <Button Style="{StaticResource SmallAction}" Command="{Binding DeleteCommand}" Foreground="{DynamicResource Danger}" Margin="0,0,0,6">
+                            <Button Style="{StaticResource SmallAction}" Command="{Binding DeleteCommand}" Foreground="{DynamicResource Danger}" Margin="0,0,0,8">
                                 <StackPanel Orientation="Horizontal"><TextBlock Text="{StaticResource Icon.Trash2}" Style="{StaticResource Icon}" FontSize="16" Margin="0,0,8,0"/><TextBlock Text="삭제"/></StackPanel>
                             </Button>
                         </UniformGrid>
@@ -242,20 +241,20 @@
                         </Button>
                         <ToggleButton Style="{StaticResource Chip}" IsChecked="{Binding MultiKey}" Margin="0,0,8,0" Focusable="False">
                             <StackPanel Orientation="Horizontal">
-                                <v:ButtonGlyph Key="Y" Width="22" Height="22" Margin="0,0,8,0"/>
+                                <v:ButtonGlyph Key="Y" Width="24" Height="24" Margin="0,0,8,0"/>
                                 <TextBlock Text="여러 키 자유 조합" VerticalAlignment="Center"/>
                             </StackPanel>
                         </ToggleButton>
                         <Button Style="{StaticResource SmallAction}" Command="{Binding ClearEditingCommand}" Margin="0" Focusable="False">
                             <StackPanel Orientation="Horizontal">
-                                <v:ButtonGlyph Key="X" Width="22" Height="22" Margin="0,0,8,0"/>
+                                <v:ButtonGlyph Key="X" Width="24" Height="24" Margin="0,0,8,0"/>
                                 <TextBlock Text="게임패드 그대로" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Button>
                     </StackPanel>
                     <v:ButtonGlyph DockPanel.Dock="Left" Key="{Binding EditingRow.Button}" Width="44" Height="44" Margin="0,0,16,0" VerticalAlignment="Center"/>
                     <StackPanel VerticalAlignment="Center">
-                        <TextBlock Style="{StaticResource Caption}" FontSize="13"><Run Text="{Binding EditingRow.Name, Mode=OneWay}"/><Run Text=" 버튼을 누르면"/></TextBlock>
+                        <TextBlock Style="{StaticResource Caption}"><Run Text="{Binding EditingRow.Name, Mode=OneWay}"/><Run Text=" 버튼을 누르면"/></TextBlock>
                         <Grid Margin="0,4,0,0">
                             <ItemsControl ItemsSource="{Binding EditingKeyLabels}" AlternationCount="8" Focusable="False" ItemsPanel="{StaticResource Row}"
                                           ItemTemplate="{StaticResource KeycapLabel}" TextElement.FontSize="18"/>
@@ -307,7 +306,7 @@
                         <ItemsControl ItemsSource="{Binding Modifiers}" Focusable="False" ItemsPanel="{StaticResource Row}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Button Style="{StaticResource KeycapButton}" Tag="{Binding IsOn}" Width="76" Height="40" Margin="0,0,6,0"
+                                    <Button Style="{StaticResource KeycapButton}" Tag="{Binding IsOn}" Width="76" Height="44" Margin="0,0,6,0"
                                             Command="{Binding DataContext.ToggleModifierCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                             CommandParameter="{Binding}">
                                         <TextBlock Text="{Binding Label}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -333,7 +332,7 @@
                 <StackPanel Visibility="{Binding CategoryIndex, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=1}">
                     <ItemsControl ItemsSource="{Binding MouseKeys}" Focusable="False" ItemsPanel="{StaticResource Wrap}" ItemTemplate="{StaticResource KeyTile}"
                                   m:Entrance.Stagger="Items" m:Entrance.Offset="24"/>
-                    <TextBlock Style="{StaticResource Caption}" Margin="2,8,0,0" FontSize="13"
+                    <TextBlock Style="{StaticResource Caption}" Margin="2,8,0,0"
                                Text="스틱으로 마우스 커서를 움직이려면 이 프로필의 '게임 중 컨트롤러 모드'를 데스크톱으로 바꾸세요."/>
                 </StackPanel>
 
@@ -359,7 +358,7 @@
 
                 <!-- 게임패드 -->
                 <StackPanel Visibility="{Binding CategoryIndex, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=3}">
-                    <TextBlock Style="{StaticResource Caption}" Margin="2,0,0,10" FontSize="13"
+                    <TextBlock Style="{StaticResource Caption}" Margin="2,0,0,10"
                                Text="다른 패드 버튼처럼 동작하게 해요. 예: 뒷면 M1 = A (엄지를 떼지 않고 점프)."/>
                     <ItemsControl ItemsSource="{Binding GamepadKeys}" Focusable="False" ItemsPanel="{StaticResource Wrap}" ItemTemplate="{StaticResource KeyTile}"
                                   m:Entrance.Stagger="Items" m:Entrance.Offset="24"/>

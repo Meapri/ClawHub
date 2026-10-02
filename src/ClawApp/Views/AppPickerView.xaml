@@ -10,12 +10,12 @@
         <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
             <Button DockPanel.Dock="Right" Style="{StaticResource NavButton}" Command="{Binding PickFileCommand}" Margin="10,0,0,0" Padding="16,12">
                 <StackPanel Orientation="Horizontal">
-                    <v:ButtonGlyph Key="Y" Width="22" Height="22" Margin="0,0,10,0"/>
+                    <v:ButtonGlyph Key="Y" Width="24" Height="24" Margin="0,0,10,0"/>
                     <TextBlock Text="파일에서 고르기" VerticalAlignment="Center"/>
                 </StackPanel>
             </Button>
             <Grid>
-                <v:InlineEdit Text="{Binding Query}" Placeholder="이름으로 찾기 (A를 누르면 키보드)" InnerPadding="44,12,18,12" FontSize="16"/>
+                <v:InlineEdit Text="{Binding Query}" Placeholder="이름으로 찾기 (A를 누르면 키보드)" InnerPadding="44,12,18,12"/>
                 <TextBlock Text="{StaticResource Icon.Search}" Style="{StaticResource Icon}" Margin="16,0,0,0" HorizontalAlignment="Left"
                            IsHitTestVisible="False" Opacity="0.7"/>
             </Grid>
@@ -24,19 +24,19 @@
         <DockPanel DockPanel.Dock="Top" Margin="0,4,0,8">
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                 <TextBlock Text="추가할 분류" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="{DynamicResource TextDim}"/>
-                <RadioButton Style="{StaticResource ChipRadio}" GroupName="kind" IsChecked="{Binding AddAsApp}" Margin="0,0,6,0">
-                    <StackPanel Orientation="Horizontal"><TextBlock Text="{StaticResource Icon.AppWindow}" Style="{StaticResource Icon}" FontSize="15" Margin="0,0,8,0"/><TextBlock Text="앱"/></StackPanel>
+                <RadioButton Style="{StaticResource ChipRadio}" GroupName="kind" IsChecked="{Binding AddAsApp}" Margin="0,0,8,0">
+                    <StackPanel Orientation="Horizontal"><TextBlock Text="{StaticResource Icon.AppWindow}" Style="{StaticResource Icon}" FontSize="16" Margin="0,0,8,0"/><TextBlock Text="앱"/></StackPanel>
                 </RadioButton>
                 <RadioButton Style="{StaticResource ChipRadio}" GroupName="kind" IsChecked="{Binding AddAsGame}" Margin="0">
-                    <StackPanel Orientation="Horizontal"><TextBlock Text="{StaticResource Icon.Gamepad2}" Style="{StaticResource Icon}" FontSize="15" Margin="0,0,8,0"/><TextBlock Text="게임"/></StackPanel>
+                    <StackPanel Orientation="Horizontal"><TextBlock Text="{StaticResource Icon.Gamepad2}" Style="{StaticResource Icon}" FontSize="16" Margin="0,0,8,0"/><TextBlock Text="게임"/></StackPanel>
                 </RadioButton>
             </StackPanel>
-            <TextBlock Text="{Binding CountText}" Style="{StaticResource Caption}" FontSize="13" VerticalAlignment="Center" Margin="2,0,0,0"/>
+            <TextBlock Text="{Binding CountText}" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="2,0,0,0"/>
         </DockPanel>
 
         <Grid>
             <TextBlock Text="찾는 프로그램이 없어요. 오른쪽 위 '파일에서 고르기'로 직접 추가할 수 있어요."
-                       Style="{StaticResource Caption}" FontSize="15" VerticalAlignment="Top" Margin="2,8,0,0"
+                       Style="{StaticResource Caption}" FontSize="16" VerticalAlignment="Top" Margin="2,8,0,0"
                        Visibility="{Binding IsEmpty, Converter={StaticResource Vis}}"/>
             <ScrollViewer Margin="-6,-6,-6,0">
                 <ItemsControl x:Name="List" ItemsSource="{Binding Items}" Focusable="False" Margin="6,6,6,12" m:Entrance.Stagger="Items" m:Entrance.Offset="24">
@@ -61,7 +61,7 @@
                                                Foreground="{DynamicResource Accent}" Margin="10,0,0,0"
                                                Visibility="{Binding IsAdded, Converter={StaticResource Vis}}"/>
                                     <StackPanel VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding Name}" FontSize="15" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
                                         <TextBlock Style="{StaticResource Caption}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis">
                                             <Run Text="{Binding Folder, Mode=OneWay, TargetNullValue=시작 메뉴}"/>
                                         </TextBlock>
