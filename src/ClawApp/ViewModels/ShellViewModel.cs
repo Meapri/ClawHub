@@ -238,7 +238,7 @@ public sealed partial class ShellViewModel : ObservableObject
         });
         Service.EventReceived += e => Ui(() =>
         {
-            if (e.Event == Ops.EventButton && e.Button is { } b) OnMsiButton(b);
+            if (e.Event == Ops.EventButton && e.Button is { } b) OnMsiButton(b, hardware: true);
             else if (e.Event == Ops.EventStatus && e.Status is { } s) { Status = s; ReconcileWithStatus(s); }
             else if (e.Event == Ops.EventAppCommand && e.Command is { } c) OnWidgetCommand(c);
         });
@@ -507,12 +507,14 @@ public sealed partial class ShellViewModel : ObservableObject
     [RelayCommand]
     private void OpenQuickSettings() => OnQuickSettingsButton();
 
-    /// <summary>본체 버튼 (서비스 이벤트) 또는 패드 Menu/View, 키보드 F1/F2. 항상 UI 스레드에서 호출된다.</summary>
-    public void OnMsiButton(MsiButton button)
+    /// <summary>
+    /// 본체 버튼 (서비스 이벤트, <paramref name="hardware"/> = true) 또는 패드 Menu/View, 키보드 F1/F2. 항상 UI 스레드에서 호출된다.
+    /// </summary>
+    public void OnMsiButton(MsiButton button, bool hardware = false)
     {
         CancelConfirm(); // 확인 대화 상자는 본체 버튼으로 빠져나간다
         if (button == MsiButton.MainMenu) OnHomeButton();
-        else OnQuickSettingsButton();
+        else OnQuickSettingsButton(hardware);
     }
 
     /// <summary>
@@ -546,10 +548,13 @@ public sealed partial class ShellViewModel : ObservableObject
     }
 
     /// <summary>
-    /// 오른쪽 버튼 = 빠른 설정. 런처가 보이면 앱 안 패널, 게임·데스크톱 중이면 Game Bar의 ClawHub 위젯
-    /// (위젯이 없으면 Game Bar 자체 — OEM 위젯 등).
+    /// 오른쪽 버튼 = 빠른 설정.
+    /// · 본체 버튼(<paramref name="hardware"/>): Windows가 이 버튼으로 Game Bar(OEM 위젯 = ClawHub 위젯)를 직접 연다 —
+    ///   막을 수 없으므로 위젯을 쓴다. 런처 위에서는 위젯이 뜨지 않았을 때만(위젯이 "보임"을 알려 오지 않으면) 앱 안 패널로.
+    ///   예전에는 런처 위에서 앱 안 패널도 함께 열어 둘이 겹쳐 떴다.
+    /// · 화면의 빠른 설정 버튼·패드 View·F2: 런처가 보이면 앱 안 패널, 게임·데스크톱 중이면 Game Bar의 ClawHub 위젯.
     /// </summary>
-    private void OnQuickSettingsButton()
+    private void OnQuickSettingsButton(bool hardware = false)
     {
         // 앱 안 패널이 열려 있으면 같은 버튼으로 닫기
         if (IsWindowVisible && IsQuickAccessOpen)
@@ -558,21 +563,22 @@ public sealed partial class ShellViewModel : ObservableObject
             return;
         }
 
-        // 우리가 연 Game Bar가 앞에 떠 있으면 같은 버튼으로 닫기 (Win+G 토글)
+        // 위젯이 떠 있으면 같은 버튼으로 닫기 (Win+G 토글). 본체 버튼은 Windows가 먼저 닫을 수 있으니
+        // 잠시 기다려 아직 떠 있을 때만 누른다 (둘 다 누르면 닫혔다 다시 열린다)
         if (_handoff == Handoff.GameBar && _handoffSeen && (_widgetShown || XboxIntegration.IsGameBar(XboxIntegration.ForegroundOwner())))
         {
-            XboxIntegration.PressWinG(); // 닫히면 OnHandoffTick이 매핑을 되돌린다
+            if (hardware) _ = CloseGameBarIfStillShownAsync();
+            else XboxIntegration.PressWinG(); // 닫히면 위젯이 알려 와 매핑을 되돌린다
             return;
         }
 
         // "데스크톱으로" 중(스틱 = 마우스): 기본은 터치 키보드 토글 (설정에서 Game Bar로 바꿀 수 있음)
         if (TryDesktopRightButton()) return;
 
-        // 런처가 보이면 앱 안 패널을 바로 연다. 예전에는 여기서도 위젯을 먼저 열고, Game Bar가 앞에 뜬 걸 못 보면
-        // 5초 뒤 패널을 대신 띄웠는데 — 위젯이 떠도 앞 창은 ClawHub로 남는 일이 많아 둘이 함께 뜨고 패널은 늦었다.
         if (IsWindowVisible)
         {
-            OpenQuickPanel();
+            if (hardware && XboxIntegration.IsWidgetInstalled()) _ = QuickPanelUnlessWidgetAsync();
+            else OpenQuickPanel();
             return;
         }
 
@@ -585,6 +591,25 @@ public sealed partial class ShellViewModel : ObservableObject
         // 위젯 없음 + 게임/데스크톱 중: 우리 오버레이 대신 Windows Game Bar를 연다
         XboxIntegration.PressWinG();
         BeginHandoff(Handoff.GameBar, retryWinG: false);
+    }
+
+    /// <summary>
+    /// 런처 위에서 본체 버튼: Windows가 여는 위젯을 기다린다. 위젯 열기 URI도 보내 두고(이미 열렸으면 그대로),
+    /// 잠시 뒤에도 위젯이 "보임"을 알려 오지 않으면 Game Bar가 꺼져 있는 것 — 그때만 앱 안 패널.
+    /// </summary>
+    private async Task QuickPanelUnlessWidgetAsync()
+    {
+        if (!_widgetShown && XboxIntegration.TryOpenWidget()) BeginHandoff(Handoff.GameBar);
+        await Task.Delay(1200); // UI 스레드로 돌아옴
+        if (_widgetShown || !IsWindowVisible || IsQuickAccessOpen) return;
+        if (_handoff == Handoff.GameBar && !_handoffSeen) EndHandoff();
+        OpenQuickPanel();
+    }
+
+    private async Task CloseGameBarIfStillShownAsync()
+    {
+        await Task.Delay(500);
+        if (_widgetShown) XboxIntegration.PressWinG();
     }
 
     private void OpenQuickPanel()
