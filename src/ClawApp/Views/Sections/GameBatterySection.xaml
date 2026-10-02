@@ -1,32 +1,97 @@
-<!-- 게임별 배터리 전용 성능 모드·FPS 제한. DataContext = GameViewModel. 게임 상세의 다른 줄과 같은 모양. -->
+<!--
+    게임 상세의 "성능·FPS" 묶음. DataContext = GameViewModel.
+    전원 연결 / 배터리 두 칸을 나란히 두고, 지금 전원 상태 쪽에 "지금" 표시. 각 칸은 A를 누를 때마다 다음 값으로.
+-->
 <UserControl x:Class="ClawApp.Views.Sections.GameBatterySection"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <UserControl.Resources>
+        <!-- 값 칸: 위 작은 이름, 아래 큰 값, 오른쪽 > -->
+        <Style x:Key="ValueCell" TargetType="Button" BasedOn="{StaticResource NavButton}">
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Padding" Value="16,10"/>
+        </Style>
+    </UserControl.Resources>
     <StackPanel>
-        <TextBlock Text="배터리로 돌 때" Style="{StaticResource Section}"/>
+        <DockPanel>
+            <TextBlock DockPanel.Dock="Right" Text="{Binding PowerNowText}" Style="{StaticResource Caption}" VerticalAlignment="Bottom" Margin="0,0,0,8"/>
+            <TextBlock Text="성능·FPS" Style="{StaticResource Section}"/>
+        </DockPanel>
 
-        <Button Style="{StaticResource NavButton}" Command="{Binding CyclePerformanceOnBatteryCommand}" HorizontalContentAlignment="Stretch">
-            <DockPanel>
-                <TextBlock DockPanel.Dock="Right" Text="A로 변경" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="12,0,0,0"/>
-                <StackPanel>
-                    <TextBlock Text="배터리일 때 성능 모드" Style="{StaticResource Caption}"/>
-                    <TextBlock Text="{Binding PerformanceOnBatteryText}" FontSize="20" FontWeight="SemiBold" Margin="0,2,0,0"/>
-                </StackPanel>
-            </DockPanel>
-        </Button>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="4"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
 
-        <Button Style="{StaticResource NavButton}" Command="{Binding CycleFpsOnBatteryCommand}" HorizontalContentAlignment="Stretch"
-                Visibility="{Binding GpuAvailable, Converter={StaticResource Vis}}">
-            <DockPanel>
-                <TextBlock DockPanel.Dock="Right" Text="A로 변경" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="12,0,0,0"/>
-                <StackPanel>
-                    <TextBlock Text="배터리일 때 FPS 제한" Style="{StaticResource Caption}"/>
-                    <TextBlock Text="{Binding FpsOnBatteryText}" FontSize="20" FontWeight="SemiBold" Margin="0,2,0,0"/>
-                </StackPanel>
-            </DockPanel>
-        </Button>
+            <!-- 머리글: 전원 연결 | 배터리 (지금 쓰는 쪽에 "지금") -->
+            <StackPanel Orientation="Horizontal" Margin="2,0,0,6">
+                <TextBlock Text="{StaticResource Icon.PlugZap}" Style="{StaticResource Icon}" FontSize="16" Margin="0,0,8,0"/>
+                <TextBlock Text="전원 연결" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                <Border Style="{StaticResource Badge}" Margin="8,0,0,0" Visibility="{Binding OnAc, Converter={StaticResource Vis}}">
+                    <TextBlock Text="지금"/>
+                </Border>
+            </StackPanel>
+            <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="2,0,0,6">
+                <TextBlock Text="{StaticResource Icon.BatteryMedium}" Style="{StaticResource Icon}" FontSize="16" Margin="0,0,8,0"/>
+                <TextBlock Text="배터리" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                <Border Style="{StaticResource Badge}" Margin="8,0,0,0" Visibility="{Binding OnBattery, Converter={StaticResource Vis}}">
+                    <TextBlock Text="지금"/>
+                </Border>
+            </StackPanel>
+
+            <Button Grid.Row="1" Style="{StaticResource ValueCell}" Command="{Binding CyclePerformanceCommand}">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Right" Text="{StaticResource Icon.ChevronRight}" Style="{StaticResource Icon}" FontSize="16"
+                               Foreground="{DynamicResource TextDim}" Margin="8,0,0,0"/>
+                    <StackPanel>
+                        <TextBlock Text="성능 모드" Style="{StaticResource Caption}" TextWrapping="NoWrap"/>
+                        <TextBlock Text="{Binding PerformanceText}" FontSize="18" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+                </DockPanel>
+            </Button>
+            <Button Grid.Row="1" Grid.Column="2" Style="{StaticResource ValueCell}" Command="{Binding CyclePerformanceOnBatteryCommand}">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Right" Text="{StaticResource Icon.ChevronRight}" Style="{StaticResource Icon}" FontSize="16"
+                               Foreground="{DynamicResource TextDim}" Margin="8,0,0,0"/>
+                    <StackPanel>
+                        <TextBlock Text="성능 모드" Style="{StaticResource Caption}" TextWrapping="NoWrap"/>
+                        <TextBlock Text="{Binding PerformanceOnBatteryText}" FontSize="18" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+                </DockPanel>
+            </Button>
+
+            <Button Grid.Row="2" Style="{StaticResource ValueCell}" Command="{Binding CycleFpsCommand}"
+                    Visibility="{Binding GpuAvailable, Converter={StaticResource Vis}}">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Right" Text="{StaticResource Icon.ChevronRight}" Style="{StaticResource Icon}" FontSize="16"
+                               Foreground="{DynamicResource TextDim}" Margin="8,0,0,0"/>
+                    <StackPanel>
+                        <TextBlock Text="FPS 제한" Style="{StaticResource Caption}" TextWrapping="NoWrap"/>
+                        <TextBlock Text="{Binding FpsText}" FontSize="18" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+                </DockPanel>
+            </Button>
+            <Button Grid.Row="2" Grid.Column="2" Style="{StaticResource ValueCell}" Command="{Binding CycleFpsOnBatteryCommand}"
+                    Visibility="{Binding GpuAvailable, Converter={StaticResource Vis}}">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Right" Text="{StaticResource Icon.ChevronRight}" Style="{StaticResource Icon}" FontSize="16"
+                               Foreground="{DynamicResource TextDim}" Margin="8,0,0,0"/>
+                    <StackPanel>
+                        <TextBlock Text="FPS 제한" Style="{StaticResource Caption}" TextWrapping="NoWrap"/>
+                        <TextBlock Text="{Binding FpsOnBatteryText}" FontSize="18" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+                </DockPanel>
+            </Button>
+        </Grid>
 
         <TextBlock Style="{StaticResource Caption}" Margin="2,6,0,0"
-                   Text="'따로 안 씀'이면 배터리여도 위의 값을 써요. 전원을 꽂거나 뽑으면 게임 중에도 바로 바뀌어요."/>
+                   Text="'기본값 따름'이면 설정 → 성능의 기본값을 써요. 배터리 칸이 '전원 연결과 같게'면 배터리여도 왼쪽 값을 써요. 전원을 꽂거나 뽑으면 게임 중에도 바로 바뀌어요."/>
     </StackPanel>
 </UserControl>

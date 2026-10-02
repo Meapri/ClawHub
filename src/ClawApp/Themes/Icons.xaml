@@ -102,4 +102,9 @@
     <sys:String x:Key="Icon.Volume1">&#xE1AA;</sys:String>
     <sys:String x:Key="Icon.VolumeX">&#xE1AC;</sys:String>
     <sys:String x:Key="Icon.BluetoothOff">&#xE1B9;</sys:String>
+    <!-- 페이지 UX (라이브러리 정렬, 프로필 관리) -->
+    <sys:String x:Key="Icon.ArrowUpDown">&#xE37D;</sys:String>
+    <sys:String x:Key="Icon.CopyPlus">&#xE3FD;</sys:String>
+    <sys:String x:Key="Icon.BadgeCheck">&#xE241;</sys:String>
+    <sys:String x:Key="Icon.User">&#xE19F;</sys:String>
 </ResourceDictionary>

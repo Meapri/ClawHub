@@ -28,6 +28,11 @@ public sealed partial class GameTileViewModel(ShellViewModel shell, GameEntry ga
             OnPropertyChanged(p);
     }
 
+    // 라이브러리 타일 표시용 (라이브러리가 채운다 — 홈은 쓰지 않음)
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(HasBadge))] private bool _isPinned;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(HasBadge))] private bool _isRunning;
+    public bool HasBadge => IsPinned || IsRunning;
+
     public string SourceLabel => Game.Source switch
     {
         GameSource.Steam => "Steam",

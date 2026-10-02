@@ -4,61 +4,123 @@
              xmlns:local="clr-namespace:ClawApp"
              xmlns:m="clr-namespace:ClawApp.Motion"
              xmlns:v="clr-namespace:ClawApp.Views"
+             xmlns:vm="clr-namespace:ClawApp.ViewModels"
              KeyboardNavigation.DirectionalNavigation="Contained">
+    <!--
+        라이브러리: 피벗 탭(개수 포함, LB/RB 또는 터치) · 도구 모음(이름 찾기 LT · 정렬 RT · 프로그램 추가 Y) · 커버 타일.
+        커버 왼쪽 위 = 실행 중, 오른쪽 위 핀 = 시작 화면에 고정됨. 빈 분류에는 안내와 바로 할 수 있는 버튼.
+    -->
+    <UserControl.Resources>
+        <DataTemplate x:Key="LibraryTile" DataType="{x:Type vm:GameTileViewModel}">
+            <Button Style="{StaticResource TileButton}" Command="{Binding OpenCommand}" m:Backdrop.FocusSource="{Binding Hero}"
+                    local:Nav.InitialFocus="True" GotKeyboardFocus="Tile_GotKeyboardFocus" LostKeyboardFocus="Tile_LostKeyboardFocus">
+                <Grid>
+                    <ContentControl Content="{Binding}" ContentTemplate="{StaticResource CoverFace}" Focusable="False"/>
+                    <Border Style="{StaticResource Badge}" HorizontalAlignment="Left" VerticalAlignment="Top" Padding="8,3"
+                            Visibility="{Binding IsRunning, Converter={StaticResource Vis}}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{StaticResource Icon.Play}" Style="{StaticResource Icon}" FontSize="13" Margin="0,0,5,0"/>
+                            <TextBlock Text="실행 중"/>
+                        </StackPanel>
+                    </Border>
+                    <Border HorizontalAlignment="Right" VerticalAlignment="Top" Width="30" Height="30" Background="#B3000000"
+                            Visibility="{Binding IsPinned, Converter={StaticResource Vis}}" ToolTip="시작 화면에 고정됨">
+                        <TextBlock Text="{StaticResource Icon.Pin}" Style="{StaticResource Icon}" FontSize="15" Foreground="White"
+                                   HorizontalAlignment="Center"/>
+                    </Border>
+                </Grid>
+            </Button>
+        </DataTemplate>
+    </UserControl.Resources>
+
     <DockPanel Margin="48,0,40,0">
-        <DockPanel DockPanel.Dock="Top">
-        <!-- 프로그램 추가 (Y): 시작 메뉴 목록에서 고른다 -->
-        <Button DockPanel.Dock="Right" Style="{StaticResource NavButton}" Command="{Binding AddProgramCommand}" VerticalAlignment="Top"
-                Padding="16,10" Margin="0,2,0,0">
-            <StackPanel Orientation="Horizontal">
-                <v:ButtonGlyph Key="Y" Width="24" Height="24" Margin="0,0,10,0"/>
-                <TextBlock Text="프로그램 추가" VerticalAlignment="Center"/>
-            </StackPanel>
-        </Button>
-        <!-- 피벗 머리글 (LB/RB): 고른 분류만 밝게. 바뀌면 이동 방향으로 미끄러진다 -->
-        <!-- 표시 전용 Selector: SelectedIndex = TabIndex, 패드 포커스는 받지 않는다 -->
-        <ListBox ItemsSource="{Binding Tabs}" SelectedIndex="{Binding TabIndex, Mode=OneWay}"
-                 Focusable="False" IsHitTestVisible="False" Margin="0,0,0,16"
-                 m:Entrance.Stagger="Items" m:Entrance.Key="{Binding TabIndex}" m:Entrance.Offset="36">
-            <ListBox.Template>
-                <ControlTemplate TargetType="ListBox"><ItemsPresenter/></ControlTemplate>
-            </ListBox.Template>
-            <ListBox.ItemsPanel>
+        <!-- 피벗 머리글 (LB/RB, 터치로 눌러도 됨): 고른 분류만 밝게 + 개수. 바뀌면 이동 방향으로 미끄러진다 -->
+        <ItemsControl DockPanel.Dock="Top" ItemsSource="{Binding Tabs}" Focusable="False" Margin="0,0,0,10"
+                      m:Entrance.Stagger="Items" m:Entrance.Key="{Binding TabIndex}" m:Entrance.Offset="36">
+            <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
-            </ListBox.ItemsPanel>
-            <ListBox.ItemContainerStyle>
-                <Style TargetType="ListBoxItem">
-                    <Setter Property="Focusable" Value="False"/>
-                    <Setter Property="Template">
-                        <Setter.Value>
-                            <ControlTemplate TargetType="ListBoxItem">
-                                <StackPanel Margin="0,0,32,0">
-                                    <TextBlock x:Name="Label" Text="{Binding Label}" Style="{StaticResource PivotItem}"/>
-                                    <!-- 고른 분류 밑의 강조색 막대 -->
-                                    <Border x:Name="Bar" Height="3" Width="24" HorizontalAlignment="Left" Margin="1,4,0,0"
-                                            Background="{DynamicResource Accent}" Visibility="Hidden"/>
-                                </StackPanel>
-                                <ControlTemplate.Triggers>
-                                    <Trigger Property="IsSelected" Value="True">
-                                        <Setter TargetName="Label" Property="Foreground" Value="{DynamicResource Text}"/>
-                                        <Setter TargetName="Bar" Property="Visibility" Value="Visible"/>
-                                    </Trigger>
-                                </ControlTemplate.Triggers>
-                            </ControlTemplate>
-                        </Setter.Value>
-                    </Setter>
-                </Style>
-            </ListBox.ItemContainerStyle>
-        </ListBox>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <Button Style="{StaticResource PivotTabButton}"
+                            Command="{Binding DataContext.SelectTabCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                            CommandParameter="{Binding}">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock x:Name="Label" Text="{Binding Label}" Style="{StaticResource PivotItem}"/>
+                                <TextBlock x:Name="Count" Text="{Binding Count}" FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource PivotDim}"
+                                           VerticalAlignment="Bottom" Margin="7,0,0,4"/>
+                            </StackPanel>
+                            <!-- 고른 분류 밑의 강조색 막대 -->
+                            <Border x:Name="Bar" Height="3" Width="24" HorizontalAlignment="Left" Margin="1,4,0,0"
+                                    Background="{DynamicResource Accent}" Visibility="Hidden"/>
+                        </StackPanel>
+                    </Button>
+                    <DataTemplate.Triggers>
+                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                            <Setter TargetName="Label" Property="Foreground" Value="{DynamicResource Text}"/>
+                            <Setter TargetName="Count" Property="Foreground" Value="{DynamicResource TextDim}"/>
+                            <Setter TargetName="Bar" Property="Visibility" Value="Visible"/>
+                        </DataTrigger>
+                    </DataTemplate.Triggers>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <!-- 도구 모음: 찾기 · (지우기) · 개수 ······ 정렬 · 프로그램 추가 -->
+        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,14">
+            <Button DockPanel.Dock="Right" Style="{StaticResource ToolButton}" Command="{Binding AddProgramCommand}" Margin="8,0,0,0">
+                <StackPanel Orientation="Horizontal">
+                    <v:ButtonGlyph Key="Y" Width="24" Height="24" Margin="0,0,10,0"/>
+                    <TextBlock Text="프로그램 추가" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+            <Button DockPanel.Dock="Right" Style="{StaticResource ToolButton}" Command="{Binding CycleSortCommand}" Margin="8,0,0,0">
+                <StackPanel Orientation="Horizontal">
+                    <v:ButtonGlyph Key="RT" Width="24" Height="24" Margin="0,0,10,0"/>
+                    <TextBlock Text="{StaticResource Icon.ArrowUpDown}" Style="{StaticResource Icon}" FontSize="16" Margin="0,0,8,0"/>
+                    <TextBlock Text="{Binding SortLabel}" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                </StackPanel>
+            </Button>
+            <StackPanel Orientation="Horizontal">
+                <!-- 평소엔 버튼이라 패드로 지나가도 키보드가 뜨지 않는다. A 또는 LT → 입력 -->
+                <Grid Width="320">
+                    <v:InlineEdit x:Name="SearchBox" Text="{Binding Filter}" Placeholder="이름으로 찾기" InnerPadding="44,0,18,0" Height="48"/>
+                    <TextBlock Text="{StaticResource Icon.Search}" Style="{StaticResource Icon}" Margin="16,0,0,0" HorizontalAlignment="Left"
+                               IsHitTestVisible="False" Opacity="0.7"/>
+                </Grid>
+                <Button Style="{StaticResource IconButton}" Command="{Binding ClearFilterCommand}" Margin="4,0,0,0" ToolTip="찾기 지우기"
+                        Visibility="{Binding HasFilter, Converter={StaticResource Vis}}">
+                    <TextBlock Text="{StaticResource Icon.X}" Style="{StaticResource Icon}"/>
+                </Button>
+                <TextBlock Text="{Binding CountText}" Style="{StaticResource Caption}" FontSize="16" VerticalAlignment="Center" Margin="16,0,0,0"
+                           TextWrapping="NoWrap"/>
+            </StackPanel>
         </DockPanel>
 
         <Grid>
-            <TextBlock Text="이 분류에는 아직 아무것도 없어요" Style="{StaticResource H2}" Foreground="{DynamicResource TextDim}"
-                       HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,8,0,0"
-                       Visibility="{Binding IsEmpty, Converter={StaticResource Vis}}"/>
+            <!-- 빈 분류: 무엇을 하면 되는지 + 바로 할 수 있는 버튼 (패드 포커스가 여기로) -->
+            <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top" MaxWidth="620" Margin="0,12,0,0"
+                        Visibility="{Binding IsEmpty, Converter={StaticResource Vis}}" m:Entrance.Stagger="Self">
+                <TextBlock Text="{Binding EmptyTitle}" Style="{StaticResource H2}" TextWrapping="Wrap"/>
+                <TextBlock Text="{Binding EmptyText}" Style="{StaticResource Caption}" FontSize="16" Margin="0,8,0,20"/>
+                <StackPanel Orientation="Horizontal">
+                    <Button x:Name="EmptyPrimary" Style="{StaticResource PrimaryButton}" Command="{Binding RunEmptyActionCommand}" MinWidth="220" Height="52"
+                            local:Nav.InitialFocus="True">
+                        <TextBlock Text="{Binding EmptyActionLabel}"/>
+                    </Button>
+                    <Button Style="{StaticResource ToolButton}" Command="{Binding AddProgramCommand}" Height="52" Margin="12,0,0,0"
+                            Visibility="{Binding HasSecondaryEmptyAction, Converter={StaticResource Vis}}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{StaticResource Icon.Plus}" Style="{StaticResource Icon}" Margin="0,0,10,0"/>
+                            <TextBlock Text="직접 추가" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </StackPanel>
             <!-- 포커스 테두리가 잘리지 않게 스크롤 영역을 바깥으로 6px 넓힌다 -->
-            <ScrollViewer Margin="-6,-6,0,0">
-                <ItemsControl ItemsSource="{Binding Tiles}" ItemTemplate="{StaticResource CoverTile}" Focusable="False" Margin="6,6,0,12"
+            <ScrollViewer Margin="-6,-6,0,0" Visibility="{Binding IsEmpty, Converter={StaticResource NotVis}}">
+                <ItemsControl x:Name="TileList" ItemsSource="{Binding Tiles}" ItemTemplate="{StaticResource LibraryTile}" Focusable="False" Margin="6,6,0,12"
                               m:Entrance.Stagger="Items" m:Entrance.Key="{Binding TabIndex}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>

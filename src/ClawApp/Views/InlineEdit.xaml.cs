@@ -65,6 +65,13 @@ public partial class InlineEdit : UserControl
         ValueText.Visibility = empty ? Visibility.Collapsed : Visibility.Visible;
     }
 
+    /// <summary>코드에서 바로 입력을 시작한다 (패드 단축키: 라이브러리 LT = 찾기, 프로필 Y = 이름 바꾸기).</summary>
+    public void BeginEdit()
+    {
+        if (Editor.Visibility == Visibility.Visible) return;
+        Display_Click(this, new RoutedEventArgs());
+    }
+
     private void Display_Click(object sender, RoutedEventArgs e)
     {
         Editor.Text = Text;

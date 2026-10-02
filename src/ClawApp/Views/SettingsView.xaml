@@ -60,9 +60,15 @@
             </Grid.ColumnDefinitions>
             <StackPanel Margin="6,4,6,16">
 
+                <!-- 분류 머리: 이름 + 한 줄 설명 (포커스 없음). 분류가 바뀌면 함께 미끄러져 들어온다 -->
+                <StackPanel Margin="2,0,0,16" m:Entrance.Stagger="Self" m:Entrance.Key="{Binding Selected.Key}">
+                    <TextBlock Text="{Binding Selected.Label}" Style="{StaticResource H2}"/>
+                    <TextBlock Text="{Binding Selected.Description}" Style="{StaticResource Caption}" FontSize="15" Margin="0,4,0,0"/>
+                </StackPanel>
+
                 <!-- ── 일반 ──────────────────────────────── -->
                 <StackPanel Visibility="{Binding Selected.Key, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=general}" m:Entrance.Stagger="Items">
-                    <TextBlock Text="시작 화면" Style="{StaticResource Section}" Margin="2,0,0,8"/>
+                    <TextBlock Text="시작 방식" Style="{StaticResource Section}" Margin="2,0,0,8"/>
                     <Border Style="{StaticResource CardPanel}">
                         <StackPanel>
                             <WrapPanel>
@@ -140,6 +146,7 @@
                             <TextBlock Text="사진에서 가장 눈에 띄는 색을 골라 타일·버튼 색으로 써요. 끄면 Windows 강조색으로 돌아와요." Style="{StaticResource Caption}"/>
                         </StackPanel>
                     </ToggleButton>
+                    <TextBlock Text="투명도·흐림" Style="{StaticResource Section}"/>
                     <Border Style="{StaticResource CardPanel}">
                         <StackPanel>
                             <DockPanel><TextBlock DockPanel.Dock="Right" Text="{Binding TileTransparency, StringFormat={}{0}%}" Style="{StaticResource Value}"/><TextBlock Text="타일 투명도" Style="{StaticResource SliderTitle}"/></DockPanel>
@@ -198,9 +205,27 @@
                 </StackPanel>
 
                 <!-- ── 컨트롤러 ──────────────────────────── -->
-                <StackPanel Visibility="{Binding Selected.Key, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=controller}" m:Entrance.Stagger="Items"
-                            IsEnabled="{Binding ControllerAvailable}">
-                    <TextBlock Text="감도" Style="{StaticResource Section}" Margin="2,0,0,8"/>
+                <StackPanel Visibility="{Binding Selected.Key, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=controller}" m:Entrance.Stagger="Items">
+                    <!-- 가장 자주 쓰는 것: 게임별 키 매핑 (컨트롤러 연결과 관계없이 편집 가능) -->
+                    <TextBlock Text="키 매핑" Style="{StaticResource Section}" Margin="2,0,0,8"/>
+                    <Button Style="{StaticResource NavButton}" Command="{Binding OpenProfilesCommand}" HorizontalContentAlignment="Stretch">
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Left" Text="{StaticResource Icon.Keyboard}" Style="{StaticResource Icon}" Margin="0,0,16,0"/>
+                            <TextBlock DockPanel.Dock="Right" Text="{StaticResource Icon.ChevronRight}" Style="{StaticResource Icon}" FontSize="16" Foreground="{DynamicResource TextDim}"/>
+                            <StackPanel>
+                                <TextBlock Text="키 매핑 프로필"/>
+                                <TextBlock Text="버튼을 키보드·마우스 입력으로 바꾸는 게임별 설정" Style="{StaticResource Caption}"/>
+                            </StackPanel>
+                        </DockPanel>
+                    </Button>
+                    <Border Style="{StaticResource CardPanel}" Margin="0,16,0,0" Visibility="{Binding ControllerAvailable, Converter={StaticResource NotVis}}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{StaticResource Icon.TriangleAlert}" Style="{StaticResource Icon}" Foreground="{DynamicResource Warn}" Margin="0,0,12,0"/>
+                            <TextBlock Text="컨트롤러가 연결되지 않아 아래 설정은 바꿀 수 없어요" Style="{StaticResource Caption}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                    <StackPanel IsEnabled="{Binding ControllerAvailable}">
+                    <TextBlock Text="감도" Style="{StaticResource Section}"/>
                     <Border Style="{StaticResource CardPanel}">
                         <StackPanel>
                             <DockPanel><TextBlock DockPanel.Dock="Right" Text="{Binding Vibration}" Style="{StaticResource Value}"/><TextBlock Text="진동 세기" Style="{StaticResource SliderTitle}"/></DockPanel>
@@ -231,26 +256,24 @@
                             <TextBlock Text="격투·퍼즐 게임에서 오입력 방지" Style="{StaticResource Caption}"/>
                         </StackPanel>
                     </ToggleButton>
-                    <Button Style="{StaticResource NavButton}" Command="{Binding OpenProfilesCommand}" HorizontalContentAlignment="Stretch">
-                        <DockPanel>
-                            <TextBlock DockPanel.Dock="Left" Text="{StaticResource Icon.Keyboard}" Style="{StaticResource Icon}" Margin="0,0,16,0"/>
-                            <TextBlock DockPanel.Dock="Right" Text="{StaticResource Icon.ChevronRight}" Style="{StaticResource Icon}" FontSize="16" Foreground="{DynamicResource TextDim}"/>
-                            <StackPanel>
-                                <TextBlock Text="키 매핑 프로필"/>
-                                <TextBlock Text="버튼을 키보드·마우스 입력으로 바꾸는 게임별 설정" Style="{StaticResource Caption}"/>
-                            </StackPanel>
-                        </DockPanel>
-                    </Button>
-                    <Button Style="{StaticResource NavButton}" Command="{Binding ResetControllerCommand}" Margin="0,12,0,4">
+                    <TextBlock Text="초기화" Style="{StaticResource Section}"/>
+                    <Button Style="{StaticResource NavButton}" Command="{Binding ResetControllerCommand}">
                         <StackPanel Orientation="Horizontal"><TextBlock Text="{StaticResource Icon.RotateCcw}" Style="{StaticResource Icon}" Margin="0,0,14,0"/><TextBlock Text="컨트롤러 설정 원래대로"/></StackPanel>
                     </Button>
                     <TextBlock Style="{StaticResource Caption}" Margin="2,0,0,0"
                                Text="설정은 컨트롤러 메모리에만 쓰고 ClawHub가 켜질 때마다 다시 적용해요. 펌웨어(플래시)는 건드리지 않아요."/>
+                    </StackPanel>
                 </StackPanel>
 
                 <!-- ── 조명 ──────────────────────────────── -->
-                <StackPanel Visibility="{Binding Selected.Key, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=light}" m:Entrance.Stagger="Items"
-                            IsEnabled="{Binding ControllerAvailable}">
+                <StackPanel Visibility="{Binding Selected.Key, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=light}" m:Entrance.Stagger="Items">
+                    <Border Style="{StaticResource CardPanel}" Margin="0,0,0,12" Visibility="{Binding ControllerAvailable, Converter={StaticResource NotVis}}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{StaticResource Icon.TriangleAlert}" Style="{StaticResource Icon}" Foreground="{DynamicResource Warn}" Margin="0,0,12,0"/>
+                            <TextBlock Text="컨트롤러가 연결되지 않아 조명을 바꿀 수 없어요" Style="{StaticResource Caption}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                    <StackPanel IsEnabled="{Binding ControllerAvailable}">
                     <TextBlock Text="스틱 조명" Style="{StaticResource Section}" Margin="2,0,0,8"/>
                     <Border Style="{StaticResource CardPanel}">
                         <StackPanel>
@@ -300,6 +323,7 @@
                             <Slider Minimum="0" Maximum="100" SmallChange="10" TickFrequency="10" Value="{Binding AbxyBrightness}"/>
                         </StackPanel>
                     </Border>
+                    </StackPanel>
                 </StackPanel>
 
                 <!-- ── 성능 (빠른 설정과 공유) ───────────── -->
@@ -386,6 +410,7 @@
                 <!-- ── 배터리 ────────────────────────────── -->
                 <StackPanel Visibility="{Binding Selected.Key, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=battery}" m:Entrance.Stagger="Items">
                 <StackPanel DataContext="{Binding Quick}">
+                    <TextBlock Text="지금 상태" Style="{StaticResource Section}" Margin="2,0,0,8"/>
                     <Border Style="{StaticResource CardPanel}" Margin="0,0,0,4">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="{StaticResource Icon.Battery}" Style="{StaticResource Icon}" FontSize="24" Margin="0,0,16,0"/>
@@ -411,8 +436,9 @@
 
                 <!-- ── Windows 설정 ─────────────────────── -->
                 <StackPanel Visibility="{Binding Selected.Key, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=windows}" m:Entrance.Stagger="Items">
-                    <TextBlock Style="{StaticResource Caption}" Margin="2,0,0,12"
-                               Text="Windows 설정 화면을 열어요. 스틱이 마우스로 바뀌고, 왼쪽 MSI 버튼을 누르면 ClawHub로 돌아와요."/>
+                    <TextBlock Text="바로 열기" Style="{StaticResource Section}" Margin="2,0,0,4"/>
+                    <TextBlock Style="{StaticResource Caption}" Margin="2,0,0,10"
+                               Text="여는 동안 스틱이 마우스로 바뀌고, 왼쪽 MSI 버튼을 누르면 ClawHub로 돌아와요."/>
                     <Button Style="{StaticResource NavButton}" Command="{Binding OpenWindowsCommand}" CommandParameter="network-wifi">
                         <StackPanel Orientation="Horizontal"><TextBlock Text="{StaticResource Icon.Wifi}" Style="{StaticResource Icon}" Margin="0,0,16,0"/><TextBlock Text="Wi-Fi"/></StackPanel>
                     </Button>
@@ -435,12 +461,14 @@
 
                 <!-- ── 라이브러리 ────────────────────────── -->
                 <StackPanel Visibility="{Binding Selected.Key, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=library}" m:Entrance.Stagger="Items">
+                    <TextBlock Text="추가" Style="{StaticResource Section}" Margin="2,0,0,8"/>
                     <Button Style="{StaticResource NavButton}" Command="{Binding OpenAppPickerCommand}">
                         <StackPanel Orientation="Horizontal"><TextBlock Text="{StaticResource Icon.Plus}" Style="{StaticResource Icon}" Margin="0,0,16,0"/><TextBlock Text="프로그램 추가 (설치된 프로그램 목록)"/></StackPanel>
                     </Button>
                     <Button Style="{StaticResource NavButton}" Command="{Binding AddGameCommand}">
                         <StackPanel Orientation="Horizontal"><TextBlock Text="{StaticResource Icon.FileSearch}" Style="{StaticResource Icon}" Margin="0,0,16,0"/><TextBlock Text="파일에서 직접 고르기 (exe·바로가기)"/></StackPanel>
                     </Button>
+                    <TextBlock Text="정리" Style="{StaticResource Section}"/>
                     <Button Style="{StaticResource NavButton}" Command="{Binding RescanCommand}">
                         <StackPanel Orientation="Horizontal"><TextBlock Text="{StaticResource Icon.RefreshCw}" Style="{StaticResource Icon}" Margin="0,0,16,0"/><TextBlock Text="설치된 게임 다시 찾기"/></StackPanel>
                     </Button>
@@ -453,6 +481,7 @@
 
                 <!-- ── 정보 ──────────────────────────────── -->
                 <StackPanel Visibility="{Binding Selected.Key, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=about}" m:Entrance.Stagger="Items">
+                    <TextBlock Text="버전·상태" Style="{StaticResource Section}" Margin="2,0,0,8"/>
                     <Border Style="{StaticResource CardPanel}">
                         <Grid>
                             <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition/></Grid.ColumnDefinitions>
