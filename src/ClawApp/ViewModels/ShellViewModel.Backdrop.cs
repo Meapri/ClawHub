@@ -35,7 +35,7 @@ public sealed partial class ShellViewModel
         if (_customBackdropPath != Settings.Home.BackdropImage)
         {
             _customBackdropPath = Settings.Home.BackdropImage;
-            _customBackdrop = ArtCache.LoadImage(_customBackdropPath);
+            _customBackdrop = ArtCache.LoadFullScreen(_customBackdropPath); // 화면 전체·타일 그림 — 원본 해상도로
         }
         return _customBackdrop;
     }
@@ -66,6 +66,7 @@ public sealed partial class ShellViewModel
         var home = Settings.Home;
         var tilePicture = home.BackdropMode == BackdropMode.TilePicture;
         Motion.Backdrop.FollowFocus = home.BackdropMode == BackdropMode.GameArt;
+        Motion.Backdrop.Sharp = home.BackdropBlur < 24; // 흐림이 약하면 그림을 화면 해상도로
         Motion.TilePicture.SetSource(tilePicture ? CustomBackdrop() : null);
 
         var res = Application.Current.Resources;

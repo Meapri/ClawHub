@@ -1,6 +1,7 @@
 <UserControl x:Class="ClawApp.Views.SettingsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:cv="clr-namespace:ClawApp.Views"
              xmlns:local="clr-namespace:ClawApp"
              xmlns:m="clr-namespace:ClawApp.Motion"
              xmlns:v="clr-namespace:ClawApp.Views"
@@ -176,14 +177,14 @@
                                 <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <ToggleButton Style="{StaticResource Chip}" IsChecked="{Binding Pinned, Mode=OneWay}"
+                                        <cv:ChoiceChip Style="{StaticResource Chip}" IsChecked="{Binding Pinned, Mode=OneWay}"
                                                       Command="{Binding DataContext.PinActionCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                       CommandParameter="{Binding}">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="{Binding Glyph}" Style="{StaticResource Icon}" FontSize="15" Margin="0,0,8,0"/>
                                                 <TextBlock Text="{Binding Info.Label}"/>
                                             </StackPanel>
-                                        </ToggleButton>
+                                        </cv:ChoiceChip>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
@@ -279,14 +280,14 @@
                                 <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <ToggleButton Style="{StaticResource Chip}" IsChecked="{Binding IsSelected, Mode=OneWay}"
+                                        <cv:ChoiceChip Style="{StaticResource Chip}" IsChecked="{Binding IsSelected, Mode=OneWay}"
                                                       Command="{Binding DataContext.PickColorCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                       CommandParameter="{Binding}">
                                             <StackPanel Orientation="Horizontal">
                                                 <Ellipse Width="14" Height="14" Fill="{Binding Swatch}" Margin="0,0,8,0" Stroke="#40000000"/>
                                                 <TextBlock Text="{Binding Label}"/>
                                             </StackPanel>
-                                        </ToggleButton>
+                                        </cv:ChoiceChip>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
@@ -357,7 +358,7 @@
                                 <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <ToggleButton Style="{StaticResource Chip}" Content="{Binding Label}" IsChecked="{Binding IsSelected, Mode=OneWay}"
+                                        <cv:ChoiceChip Style="{StaticResource Chip}" Content="{Binding Label}" IsChecked="{Binding IsSelected, Mode=OneWay}"
                                                       Command="{Binding DataContext.ApplyDisplayCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
@@ -371,7 +372,7 @@
                                 <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <ToggleButton Style="{StaticResource Chip}" Content="{Binding Label}" IsChecked="{Binding IsSelected, Mode=OneWay}"
+                                        <cv:ChoiceChip Style="{StaticResource Chip}" Content="{Binding Label}" IsChecked="{Binding IsSelected, Mode=OneWay}"
                                                       Command="{Binding DataContext.ApplyDisplayCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>

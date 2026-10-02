@@ -17,6 +17,26 @@ public sealed partial class SettingsViewModel
         set { if (value) SetDesktopRight(DesktopRightButton.GameBar); }
     }
 
+    public bool DesktopMouse
+    {
+        get => _shell.Settings.DesktopController == DesktopController.Mouse;
+        set { if (value) SetDesktopController(DesktopController.Mouse); }
+    }
+
+    public bool DesktopGamepad
+    {
+        get => _shell.Settings.DesktopController == DesktopController.Gamepad;
+        set { if (value) SetDesktopController(DesktopController.Gamepad); }
+    }
+
+    private void SetDesktopController(DesktopController choice)
+    {
+        _shell.Settings.DesktopController = choice;
+        _shell.Settings.Save();
+        OnPropertyChanged(nameof(DesktopMouse));
+        OnPropertyChanged(nameof(DesktopGamepad));
+    }
+
     private void SetDesktopRight(DesktopRightButton choice)
     {
         _shell.Settings.DesktopRightButton = choice;

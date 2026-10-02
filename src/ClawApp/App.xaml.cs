@@ -18,6 +18,11 @@ public partial class App : Application
             return;
         }
 
+        // WPF 애니메이션 기본값은 60fps — 화면 주사율(Claw 8: 120Hz)에 맞춰 부드럽게
+        var hz = Services.DisplayControls.Current()?.Hz is > 0 and var h ? h : 60;
+        System.Windows.Media.Animation.Timeline.DesiredFrameRateProperty.OverrideMetadata(
+            typeof(System.Windows.Media.Animation.Timeline), new FrameworkPropertyMetadata { DefaultValue = Math.Clamp(hz, 60, 240) });
+
         _show = new EventWaitHandle(false, EventResetMode.AutoReset, ShowEventName);
         new Thread(() =>
         {

@@ -96,16 +96,55 @@ public static class Backdrop
         };
     }
 
+    /// <summary>
+    /// 흐림이 약할 때(설정 → 홈 화면 → 배경 흐림 &lt; 24): 그림을 화면 해상도로 다시 읽고, 층도 반 해상도 캐시 없이 그린다.
+    /// 많이 흐릴 땐 작은 그림·반 해상도로도 차이가 안 보이니 가볍게 둔다.
+    /// </summary>
+    public static bool Sharp
+    {
+        get => _sharp;
+        set
+        {
+            if (_sharp == value) return;
+            _sharp = value;
+            if (_host is not null && _host.TryGetTarget(out var host))
+            {
+                ApplyQuality(host);
+                _initialized = false; // 같은 그림이어도 해상도를 바꿔 다시 그린다
+                Show(_showingDefault ? null : _shown);
+            }
+        }
+    }
+
+    private static bool _sharp;
+
+    private static void ApplyQuality(Panel host)
+    {
+        for (var i = 0; i < 2; i++)
+        {
+            if (LayerAt(host, i) is not { } l) continue;
+            l.Layer.CacheMode = new BitmapCache(_sharp ? 1 : 0.5);
+            RenderOptions.SetBitmapScalingMode(l.Image, _sharp ? BitmapScalingMode.HighQuality : BitmapScalingMode.LowQuality);
+        }
+    }
+
+    /// <summary>타일용 작은 그림(600px)이면 화면 해상도 그림으로 바꾼다.</summary>
+    private static ImageSource? Sharpen(ImageSource? source) =>
+        _sharp && source is System.Windows.Media.Imaging.BitmapImage { UriSource: { IsFile: true } uri }
+            ? Services.ArtCache.LoadFullScreen(uri.LocalPath) ?? source
+            : source;
+
     private static void Show(ImageSource? source)
     {
         if (_host is null || !_host.TryGetTarget(out var host)) return;
         _showingDefault = source is null;
-        source ??= GetDefault(host);
+        source = Sharpen(source ?? GetDefault(host));
         if (_initialized && ReferenceEquals(source, _shown)) return;
         _shown = source;
 
         if (LayerAt(host, _front) is not { } front || LayerAt(host, 1 - _front) is not { } back) return;
 
+        if (!_initialized) ApplyQuality(host);
         if (!_initialized || !MotionCore.Enabled)
         {
             _initialized = true;

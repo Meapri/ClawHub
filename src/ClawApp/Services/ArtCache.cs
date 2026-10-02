@@ -10,22 +10,38 @@ public static class ArtCache
 {
     private static readonly Dictionary<string, ImageSource?> Cache = [];
 
-    public static ImageSource? LoadImage(string? path)
+    /// <summary>타일·미리보기용 (가로 600px로 줄여서 읽음 — 메모리 절약).</summary>
+    public static ImageSource? LoadImage(string? path) => Load(path, 600);
+
+    /// <summary>
+    /// 화면 전체에 까는 배경용: 화면 실제 픽셀 너비로 읽는다 (원본이 더 작으면 원본 그대로).
+    /// 타일용 600px를 화면에 늘리면 뭉개져 보인다.
+    /// </summary>
+    public static ImageSource? LoadFullScreen(string? path) =>
+        Load(path, (int)Math.Ceiling(SystemParameters.PrimaryScreenWidth * DpiScale()));
+
+    private static double DpiScale() =>
+        Application.Current?.MainWindow is { } w && PresentationSource.FromVisual(w) is { CompositionTarget: { } ct } ? ct.TransformToDevice.M11 : 1.5;
+
+    private static ImageSource? Load(string? path, int decodeWidth)
     {
         if (string.IsNullOrEmpty(path) || !File.Exists(path)) return null;
-        if (Cache.TryGetValue(path, out var hit)) return hit;
+        var key = $"{decodeWidth}:{path}";
+        if (Cache.TryGetValue(key, out var hit)) return hit;
         try
         {
+            // 원본보다 크게 디코딩하지 않는다 (작은 그림을 억지로 키우면 더 흐려짐)
+            var frame = BitmapDecoder.Create(new Uri(path), BitmapCreateOptions.DelayCreation, BitmapCacheOption.None).Frames[0];
             var bmp = new BitmapImage();
             bmp.BeginInit();
             bmp.CacheOption = BitmapCacheOption.OnLoad; // 파일 잠금 방지
             bmp.UriSource = new Uri(path);
-            bmp.DecodePixelWidth = 600;
+            if (frame.PixelWidth > decodeWidth) bmp.DecodePixelWidth = decodeWidth;
             bmp.EndInit();
             bmp.Freeze();
-            return Cache[path] = bmp;
+            return Cache[key] = bmp;
         }
-        catch (Exception) { return Cache[path] = null; }
+        catch (Exception) { return Cache[key] = null; }
     }
 
     /// <summary>받은 이미지 바이트 → 미리보기 (캐시하지 않음, 다른 스레드에서 불러도 됨).</summary>

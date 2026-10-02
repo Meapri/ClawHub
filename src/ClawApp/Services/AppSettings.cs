@@ -8,6 +8,9 @@ public enum StartupMode { Auto, Shell, Companion }
 /// <summary>"데스크톱으로" 중 오른쪽 본체 버튼이 할 일.</summary>
 public enum DesktopRightButton { TouchKeyboard, GameBar }
 
+/// <summary>"데스크톱으로"·앱 실행 중 컨트롤러: 스틱이 마우스(Desktop 모드) 또는 게임패드 그대로.</summary>
+public enum DesktopController { Mouse, Gamepad }
+
 /// <summary>
 /// 전체 화면 배경: 고른 게임의 아트(포커스를 따라 바뀜) · 전체 화면 이미지 · 단색 ·
 /// 타일 그림(Windows 10 Mobile처럼 바탕은 단색, 사진은 타일 안에서만 보임).
@@ -56,6 +59,9 @@ public sealed class AppSettings
 
     /// <summary>데스크톱 모드(스틱 = 마우스)에서 오른쪽 버튼: 터치 키보드 토글(기본) 또는 Game Bar.</summary>
     public DesktopRightButton DesktopRightButton { get; set; } = DesktopRightButton.TouchKeyboard;
+
+    /// <summary>"데스크톱으로"·앱 실행 때 컨트롤러 (기본: 스틱 = 마우스).</summary>
+    public DesktopController DesktopController { get; set; } = DesktopController.Mouse;
 
     /// <summary>
     /// 게임 중(런처가 숨어 있을 때) 화면 꺼짐·절전 방지. 패드 입력은 Windows 유휴 타이머를 항상 되돌리지는 않아서

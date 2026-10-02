@@ -34,6 +34,14 @@
         <ScaleTransform x:Key="DimScale" ScaleX="0.9" ScaleY="0.9"/>
         <ScaleTransform x:Key="LiftScale" ScaleX="1.06" ScaleY="1.06"/>
 
+        <!-- 끌거나 고른 타일이 이웃 위로 -->
+        <Style x:Key="StartTileContainer" TargetType="ContentPresenter">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsSelected}" Value="True"><Setter Property="Panel.ZIndex" Value="5"/></DataTrigger>
+                <DataTrigger Binding="{Binding IsDragging}" Value="True"><Setter Property="Panel.ZIndex" Value="10"/></DataTrigger>
+            </Style.Triggers>
+        </Style>
+
         <DataTemplate x:Key="StartTile" DataType="{x:Type vm:StartTileViewModel}">
             <Grid x:Name="Root" Width="{Binding Pixels}" Height="{Binding Pixels}" RenderTransformOrigin="0.5,0.5" Background="Transparent">
                 <Button x:Name="Tile" Style="{StaticResource MetroTile}" Width="{Binding Pixels}" Height="{Binding Pixels}" Margin="0"
@@ -59,25 +67,63 @@
                         <Image x:Name="AppIcon" Source="{Binding Game.Icon}" Width="48" Height="48" Visibility="Collapsed"
                                RenderOptions.BitmapScalingMode="HighQuality"/>
 
-                        <!-- 폴더: 안에 든 타일 미리보기 -->
-                        <ItemsControl x:Name="Previews" ItemsSource="{Binding Previews}" Focusable="False" Margin="10,10,10,34" Visibility="Collapsed">
+                        <!-- 폴더: 안에 든 타일의 축소판을 3열 격자로 (보통 2줄 · 크게 3줄), 아래에 이름과 개수 -->
+                        <ItemsControl x:Name="Previews" ItemsSource="{Binding Previews}" Focusable="False" Margin="10,10,0,0" Visibility="Collapsed"
+                                      HorizontalAlignment="Left" VerticalAlignment="Top"
+                                      Width="{Binding PreviewGridWidth}" Height="{Binding PreviewGridHeight}">
                             <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate><UniformGrid Columns="{Binding DataContext.PreviewColumns, RelativeSource={RelativeSource AncestorType=ItemsControl}}" Rows="{Binding DataContext.PreviewColumns, RelativeSource={RelativeSource AncestorType=ItemsControl}}" HorizontalAlignment="Left" VerticalAlignment="Top"/></ItemsPanelTemplate>
+                                <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
                             </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Margin="2" Background="{DynamicResource TileAccent}" ClipToBounds="True"
+                                    <Border x:Name="Cell" Margin="0,0,4,4" ClipToBounds="True" Background="{DynamicResource TileFill}"
                                             Width="{Binding DataContext.PreviewCell, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                             Height="{Binding DataContext.PreviewCell, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
-                                        <Grid>
-                                            <Image Source="{Binding Image}" Stretch="UniformToFill"/>
-                                            <TextBlock Text="{Binding Glyph}" FontFamily="{StaticResource LucideFont}" FontSize="16"
-                                                       Foreground="{DynamicResource TileAccentText}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        <Grid Margin="0,0,4,4" Background="Transparent">
+                                            <Border Visibility="{Binding Art, Converter={StaticResource NullVis}}">
+                                                <Border.Background><ImageBrush ImageSource="{Binding Art}" Stretch="UniformToFill"/></Border.Background>
+                                            </Border>
+                                            <Image Source="{Binding Icon}" Margin="22%" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"
+                                                   Visibility="{Binding Icon, Converter={StaticResource NullVis}}"/>
+                                            <Viewbox x:Name="GlyphBox" Margin="10" Visibility="Collapsed">
+                                                <TextBlock Text="{Binding Glyph}" FontFamily="{StaticResource LucideFont}"/>
+                                            </Viewbox>
                                         </Grid>
                                     </Border>
+                                    <DataTemplate.Triggers>
+                                        <!-- 기능 타일 = 강조색 칸 / 유리 기능 타일 = 흰 반투명 칸 -->
+                                        <DataTrigger Binding="{Binding Accent}" Value="True">
+                                            <Setter TargetName="Cell" Property="Background" Value="{DynamicResource TileAccent}"/>
+                                            <Setter TargetName="GlyphBox" Property="TextElement.Foreground" Value="{DynamicResource TileAccentText}"/>
+                                        </DataTrigger>
+                                        <MultiDataTrigger>
+                                            <MultiDataTrigger.Conditions>
+                                                <Condition Binding="{Binding Art}" Value="{x:Null}"/>
+                                                <Condition Binding="{Binding Icon}" Value="{x:Null}"/>
+                                            </MultiDataTrigger.Conditions>
+                                            <Setter TargetName="GlyphBox" Property="Visibility" Value="Visible"/>
+                                        </MultiDataTrigger>
+                                    </DataTemplate.Triggers>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
+                        <!-- 폴더 이름 · 개수 -->
+                        <DockPanel x:Name="FolderLabel" VerticalAlignment="Bottom" Margin="12,0,10,10" Visibility="Collapsed">
+                            <Border DockPanel.Dock="Right" Background="{DynamicResource TileAccent}" MinWidth="22" Height="22" Padding="6,0" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding CountText}" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource TileAccentText}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{StaticResource Icon.Folder}" FontFamily="{StaticResource LucideFont}" FontSize="14" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBlock Text="{Binding Title}" FontSize="14" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </DockPanel>
+                        <!-- 작은 폴더: 아이콘 + 개수 -->
+                        <Border x:Name="SmallCount" Visibility="Collapsed" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,5,5,0"
+                                Background="{DynamicResource TileAccent}" MinWidth="18" Height="18" Padding="4,0">
+                            <TextBlock Text="{Binding CountText}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TileAccentText}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
 
                         <!-- 로고 / 이름 (작은 타일은 없음) -->
                         <Image Source="{Binding Game.Logo}" MaxHeight="72" Stretch="Uniform" HorizontalAlignment="Left" VerticalAlignment="Bottom"
@@ -95,8 +141,6 @@
                     </Grid>
                 </Button>
 
-                <!-- 폴더가 열려 있음 / 열린 폴더 안의 타일: 아래 강조색 띠 -->
-                <Border x:Name="FolderBar" Height="5" VerticalAlignment="Bottom" Background="{DynamicResource Accent}" Visibility="Collapsed" IsHitTestVisible="False"/>
                 <!-- 끌어 온 타일을 놓으면 폴더가 됨 -->
                 <Border x:Name="MergeHint" BorderBrush="{DynamicResource Accent}" BorderThickness="5" Visibility="Collapsed" IsHitTestVisible="False"
                         Background="#40000000">
@@ -113,7 +157,7 @@
                             HorizontalAlignment="Right" VerticalAlignment="Bottom"
                             Command="{Binding DataContext.ResizeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
                     <Button Style="{StaticResource TileEditButton}" Content="{StaticResource Icon.FolderOutput}" ToolTip="폴더에서 꺼내기"
-                            HorizontalAlignment="Left" VerticalAlignment="Bottom" Visibility="{Binding IsInOpenFolder, Converter={StaticResource Vis}}"
+                            HorizontalAlignment="Left" VerticalAlignment="Bottom" Visibility="{Binding IsInFolder, Converter={StaticResource Vis}}"
                             Command="{Binding DataContext.TakeOutCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
                     <Button Style="{StaticResource TileEditButton}" Content="{StaticResource Icon.FolderPen}" ToolTip="폴더 이름"
                             HorizontalAlignment="Left" VerticalAlignment="Top" Visibility="{Binding IsFolder, Converter={StaticResource Vis}}"
@@ -146,9 +190,11 @@
                     </MultiDataTrigger.Conditions>
                     <Setter TargetName="AppIcon" Property="Visibility" Value="Visible"/>
                 </MultiDataTrigger>
-                <!-- 폴더: 보통·크게면 미리보기, 작게면 폴더 아이콘 -->
+                <!-- 폴더: 보통·크게면 축소판 격자 + 이름·개수, 작게면 폴더 아이콘 + 개수 -->
                 <DataTrigger Binding="{Binding IsFolder}" Value="True">
                     <Setter TargetName="Previews" Property="Visibility" Value="Visible"/>
+                    <Setter TargetName="FolderLabel" Property="Visibility" Value="Visible"/>
+                    <Setter TargetName="Label" Property="Visibility" Value="Collapsed"/>
                     <Setter TargetName="Glyph" Property="Visibility" Value="Collapsed"/>
                 </DataTrigger>
                 <MultiDataTrigger>
@@ -157,7 +203,9 @@
                         <Condition Binding="{Binding IsSmall}" Value="True"/>
                     </MultiDataTrigger.Conditions>
                     <Setter TargetName="Previews" Property="Visibility" Value="Collapsed"/>
+                    <Setter TargetName="FolderLabel" Property="Visibility" Value="Collapsed"/>
                     <Setter TargetName="Glyph" Property="Visibility" Value="Visible"/>
+                    <Setter TargetName="SmallCount" Property="Visibility" Value="Visible"/>
                 </MultiDataTrigger>
                 <!-- 작은 타일: 아이콘만 가운데 -->
                 <DataTrigger Binding="{Binding IsSmall}" Value="True">
@@ -174,13 +222,6 @@
                     <Setter TargetName="Label" Property="FontSize" Value="20"/>
                     <Setter TargetName="AppIcon" Property="Width" Value="96"/>
                     <Setter TargetName="AppIcon" Property="Height" Value="96"/>
-                </DataTrigger>
-                <DataTrigger Binding="{Binding IsFolderOpen}" Value="True">
-                    <Setter TargetName="FolderBar" Property="Visibility" Value="Visible"/>
-                </DataTrigger>
-                <DataTrigger Binding="{Binding IsInOpenFolder}" Value="True">
-                    <Setter TargetName="FolderBar" Property="Visibility" Value="Visible"/>
-                    <Setter TargetName="FolderBar" Property="Height" Value="3"/>
                 </DataTrigger>
                 <!-- 편집: 고르지 않은 타일은 작고 흐리게, 고른 타일은 모서리 버튼 -->
                 <DataTrigger Binding="{Binding IsDimmed}" Value="True">
@@ -259,22 +300,63 @@
                 </StackPanel>
             </StackPanel>
 
-            <!-- ── 시작 화면 타일 ─────────────────────────────── -->
-            <ItemsControl x:Name="Board" ItemsSource="{Binding Tiles}" ItemTemplate="{StaticResource StartTile}" Focusable="False"
-                          Margin="0">
+            <!-- ── 시작 화면 구역들: 제목 + 타일 판 (편집 중엔 제목을 눌러 이름 바꾸기) ── -->
+            <ItemsControl x:Name="GroupsHost" ItemsSource="{Binding Groups}" Focusable="False">
                 <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate><v:StartPanel/></ItemsPanelTemplate>
+                    <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
                 </ItemsControl.ItemsPanel>
-                <ItemsControl.ItemContainerStyle>
-                    <Style TargetType="ContentPresenter">
-                        <Style.Triggers>
-                            <!-- 끌거나 고른 타일이 이웃 위로 -->
-                            <DataTrigger Binding="{Binding IsSelected}" Value="True"><Setter Property="Panel.ZIndex" Value="5"/></DataTrigger>
-                            <DataTrigger Binding="{Binding IsDragging}" Value="True"><Setter Property="Panel.ZIndex" Value="10"/></DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </ItemsControl.ItemContainerStyle>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type vm:StartGroupViewModel}">
+                        <Grid Margin="0,0,48,0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="38"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <!-- 평소: 제목 글자 -->
+                            <TextBlock Text="{Binding Title}" Style="{StaticResource GroupHeader}" Margin="0" VerticalAlignment="Top"
+                                       Visibility="{Binding IsEditing, Converter={StaticResource NotVis}}"/>
+                            <!-- 편집 중: 제목 버튼 -->
+                            <Button Visibility="{Binding IsEditing, Converter={StaticResource Vis}}" HorizontalAlignment="Left"
+                                    VerticalAlignment="Top" Margin="-8,-6,0,0" Cursor="Hand" FocusVisualStyle="{x:Null}"
+                                    Command="{Binding DataContext.RenameGroupCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    CommandParameter="{Binding}">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="Bd" Background="{DynamicResource TileFill}" Padding="8,4" BorderThickness="2" BorderBrush="Transparent">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="{Binding EditTitle}" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource Text}"/>
+                                                <TextBlock Text="{StaticResource Icon.Pencil}" FontFamily="{StaticResource LucideFont}" FontSize="14"
+                                                           Margin="10,0,0,0" VerticalAlignment="Center" Foreground="{DynamicResource TextDim}"/>
+                                            </StackPanel>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource FocusOuter}"/></Trigger>
+                                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Bd" Property="Background" Value="{DynamicResource TileFillHover}"/></Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                            <ItemsControl Grid.Row="1" ItemsSource="{Binding Tiles}" ItemTemplate="{StaticResource StartTile}" Focusable="False"
+                                          ItemContainerStyle="{StaticResource StartTileContainer}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate><v:StartPanel/></ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                            </ItemsControl>
+                        </Grid>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
             </ItemsControl>
+
+            <!-- 편집 중: 여기에 끌어 놓으면 새 구역 -->
+            <Border x:Name="NewGroupZone" Width="168" Margin="0,38,0,0" VerticalAlignment="Stretch" BorderThickness="2"
+                    BorderBrush="{DynamicResource StrokeStrong}" Background="{DynamicResource TileFill}" Opacity="0.7"
+                    Visibility="{Binding IsEditing, Converter={StaticResource Vis}}">
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <TextBlock Text="{StaticResource Icon.Plus}" FontFamily="{StaticResource LucideFont}" FontSize="28" HorizontalAlignment="Center"/>
+                    <TextBlock Text="새 구역" FontSize="15" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,8,0,0"/>
+                    <TextBlock Text="여기에 끌어 놓기" Style="{StaticResource Caption}" HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Border>
         </StackPanel>
     </ScrollViewer>
 
@@ -282,15 +364,54 @@
     <Border VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="48,0,0,8" Padding="14,8" Background="{DynamicResource TileFill}"
             Visibility="{Binding IsEditing, Converter={StaticResource Vis}}" IsHitTestVisible="False">
         <TextBlock Style="{StaticResource Caption}" FontSize="13"
-                   Text="끌어서 옮기기 · 다른 타일 가운데에 잠시 대면 폴더 · 빈 곳을 누르거나 B로 끝"/>
+                   Text="끌어서 옮기기 · 다른 타일 가운데에 잠시 대면 폴더 · 구역 제목을 눌러 이름 바꾸기 · 빈 곳을 누르거나 B로 끝"/>
     </Border>
 
-    <!-- 폴더 이름 바꾸기 -->
+    <!-- ── 폴더 창: 바깥을 누르거나 B로 닫힘 ─────────────────── -->
+    <Grid x:Name="FolderLayer" Visibility="{Binding OpenFolder, Converter={StaticResource NullVis}}">
+        <Border x:Name="FolderScrim" Background="{DynamicResource Scrim}"/>
+        <Border x:Name="FolderCard" Background="{DynamicResource Bg1}" BorderBrush="{DynamicResource Stroke}" BorderThickness="1"
+                HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="1200" Padding="28,22,28,26"
+                KeyboardNavigation.DirectionalNavigation="Contained" m:Entrance.Stagger="Self" m:Entrance.Offset="24">
+            <DockPanel>
+                <DockPanel DockPanel.Dock="Top" Margin="0,0,0,18">
+                    <Button DockPanel.Dock="Right" Style="{StaticResource StatusButton}" Command="{Binding CloseFolderCommand}" ToolTip="닫기"
+                            VerticalAlignment="Top">
+                        <TextBlock Text="{StaticResource Icon.X}" Style="{StaticResource StatusIcon}" FontSize="20"/>
+                    </Button>
+                    <Button DockPanel.Dock="Right" Style="{StaticResource StatusButton}" Command="{Binding StartRenameCommand}" CommandParameter="{Binding OpenFolder}"
+                            ToolTip="폴더 이름 바꾸기" VerticalAlignment="Top" Margin="0,0,6,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{StaticResource Icon.FolderPen}" Style="{StaticResource StatusIcon}" FontSize="17"/>
+                            <TextBlock Text="이름 바꾸기" Style="{StaticResource StatusText}" FontSize="14"/>
+                        </StackPanel>
+                    </Button>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{StaticResource Icon.Folder}" Style="{StaticResource Icon}" FontSize="26" Margin="0,0,12,0" Foreground="{DynamicResource Accent}"/>
+                        <TextBlock Text="{Binding OpenFolder.Title}" Style="{StaticResource H1}" FontSize="28"/>
+                        <TextBlock Style="{StaticResource Caption}" FontSize="15" VerticalAlignment="Bottom" Margin="12,0,0,5">
+                            <Run Text="{Binding OpenFolder.CountText, Mode=OneWay}"/><Run Text="개"/>
+                        </TextBlock>
+                    </StackPanel>
+                </DockPanel>
+                <ScrollViewer x:Name="FolderScroller" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" PanningMode="HorizontalOnly">
+                    <ItemsControl x:Name="FolderBoard" ItemsSource="{Binding FolderTiles}" ItemTemplate="{StaticResource StartTile}" Focusable="False"
+                                  ItemContainerStyle="{StaticResource StartTileContainer}" Height="344" Margin="4">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate><v:StartPanel/></ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                    </ItemsControl>
+                </ScrollViewer>
+            </DockPanel>
+        </Border>
+    </Grid>
+
+    <!-- 폴더·구역 이름 바꾸기 -->
     <Border Visibility="{Binding Renaming, Converter={StaticResource NullVis}}" Background="{DynamicResource Scrim}">
         <Border Style="{StaticResource CardPanel}" Width="460" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="22,18">
             <StackPanel>
-                <TextBlock Text="폴더 이름" Style="{StaticResource H2}" Margin="0,0,0,12"/>
-                <v:InlineEdit x:Name="RenameBox" Text="{Binding RenameText}" FontSize="17" Margin="0,0,0,10"/>
+                <TextBlock Text="{Binding RenameTitle}" Style="{StaticResource H2}" Margin="0,0,0,12"/>
+                <v:InlineEdit x:Name="RenameBox" Text="{Binding RenameText}" FontSize="17" Margin="0,0,0,10" Placeholder="이름 없음"/>
                 <Button Style="{StaticResource PrimaryButton}" Command="{Binding FinishRenameCommand}" Content="완료" HorizontalAlignment="Right"/>
             </StackPanel>
         </Border>

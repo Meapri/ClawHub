@@ -44,6 +44,7 @@ public sealed partial class ShellViewModel
     partial void OnIsWindowVisibleChanged(bool value)
     {
         if (value) _ = RefreshStatusBarAsync(); // 게임에서 돌아오면 바로 최신 값
+        _ = SyncFpsAsync(); // 런처가 보이는 동안은 드라이버 FPS 제한을 푼다
     }
 
     partial void OnServiceConnectedChanged(bool value) => _ = RefreshStatusBarAsync(); // 온도는 서비스가 붙자마자

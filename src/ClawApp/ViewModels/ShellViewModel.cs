@@ -37,6 +37,8 @@ public sealed partial class ShellViewModel : ObservableObject
     private DispatcherTimer? _toastTimer;
     private IntPtr _returnWindow;
     private bool _inDesktop;
+    /// <summary>"데스크톱으로" 중에도 컨트롤러를 게임패드(XInput)로 둔다 (스틱 = 마우스 대신).</summary>
+    private bool _desktopGamepad;
     private string? _appliedProfileId;
     private GamepadMode? _appliedMode;
     private PerformanceMode? _appliedPerf;
@@ -54,12 +56,15 @@ public sealed partial class ShellViewModel : ObservableObject
         await SyncControllerAsync();
     }
 
-    public int CurrentFps => _appliedFps ?? _fpsBaseline ?? 0;
+    /// <summary>설정상 FPS 제한 (런처가 보이는 동안 잠깐 풀어 둔 값이 아니라 게임에 걸리는 값).</summary>
+    public int CurrentFps => EffectiveFps() ?? _fpsBaseline ?? 0;
 
     /// <summary>FPS 제한: 게임별 값 > 사용자 기본값 > ClawHub 시작 때 드라이버 값 (배터리 전용 값은 EffectiveFps 참고).</summary>
     private async Task SyncFpsAsync()
     {
-        var fps = EffectiveFps() ?? _fpsBaseline;
+        // 드라이버 FPS 제한은 모든 앱에 걸린다 — 런처가 앞에 있는 동안은 풀어서 ClawHub 화면이 끊기지 않게,
+        // 게임(또는 데스크톱)으로 돌아가면 다시 건다
+        var fps = IsWindowVisible ? 0 : EffectiveFps() ?? _fpsBaseline;
         if (fps is not { } f || f == _appliedFps || !Gpu.Available) return;
         if (await Task.Run(() => Gpu.SetFrameLimit(f))) _appliedFps = f;
     }
@@ -674,9 +679,16 @@ public sealed partial class ShellViewModel : ObservableObject
         });
 
     [RelayCommand]
-    private void GoToDesktop()
+    private void GoToDesktop() => EnterDesktop(Settings.DesktopController == DesktopController.Gamepad);
+
+    /// <summary>데스크톱으로 — 컨트롤러는 게임패드 그대로.</summary>
+    [RelayCommand]
+    private void GoToDesktopGamepad() => EnterDesktop(gamepad: true);
+
+    private void EnterDesktop(bool gamepad)
     {
         _inDesktop = true;
+        _desktopGamepad = gamepad;
         _returnWindow = IntPtr.Zero;
         ReturnToBackground();
     }
@@ -705,6 +717,7 @@ public sealed partial class ShellViewModel : ObservableObject
         Library.MarkPlayed(app);
         Home.Reload();
         _inDesktop = true;
+        _desktopGamepad = Settings.DesktopController == DesktopController.Gamepad;
         _returnWindow = IntPtr.Zero;
         HideWindow(); // 방금 띄운 앱이 앞으로 온다
         _ = SyncControllerAsync();
@@ -797,7 +810,7 @@ public sealed partial class ShellViewModel : ObservableObject
             GamepadMode? mode = profile?.Mode
                 ?? (!Settings.AutoControllerMode ? null
                     : IsWindowVisible || handedOff || RunningGame is not null ? GamepadMode.XInput
-                    : _inDesktop ? GamepadMode.Desktop
+                    : _inDesktop ? (_desktopGamepad ? GamepadMode.XInput : GamepadMode.Desktop)
                     : IsCompanion ? GamepadMode.XInput : null);
 
             if (profile?.Id != _appliedProfileId)

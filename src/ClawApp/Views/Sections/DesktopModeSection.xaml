@@ -4,6 +4,24 @@
     <!-- 데스크톱 모드 설정 (DataContext = SettingsViewModel). -->
     <StackPanel>
         <TextBlock Text="데스크톱 모드" Style="{StaticResource Section}" Margin="2,0,0,8"/>
+        <TextBlock Text="'데스크톱으로'·앱 실행 때 컨트롤러" Style="{StaticResource Caption}" Margin="2,0,0,6"/>
+        <StackPanel Orientation="Horizontal">
+            <RadioButton Style="{StaticResource ChipRadio}" GroupName="desktopPad" IsChecked="{Binding DesktopMouse}" Margin="0,0,8,0">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="{DynamicResource Icon.MousePointer}" FontFamily="{DynamicResource LucideFont}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <TextBlock Text="스틱 = 마우스"/>
+                </StackPanel>
+            </RadioButton>
+            <RadioButton Style="{StaticResource ChipRadio}" GroupName="desktopPad" IsChecked="{Binding DesktopGamepad}">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="{DynamicResource Icon.Gamepad2}" FontFamily="{DynamicResource LucideFont}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <TextBlock Text="게임패드 그대로"/>
+                </StackPanel>
+            </RadioButton>
+        </StackPanel>
+        <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="2,6,0,12"
+                   Text="게임패드 그대로면 데스크톱에서도 컨트롤러가 Xbox 패드로 보여요 (Steam·에뮬레이터 등). 시작 화면의 '데스크톱 (게임패드)' 타일은 이 설정과 관계없이 늘 게임패드예요."/>
+
         <TextBlock Text="'데스크톱으로' 중 오른쪽 버튼" Style="{StaticResource Caption}" Margin="2,0,0,6"/>
         <StackPanel Orientation="Horizontal">
             <RadioButton Style="{StaticResource ChipRadio}" GroupName="desktopRight" IsChecked="{Binding DesktopRightKeyboard}" Margin="0,0,8,0">
@@ -20,6 +38,6 @@
             </RadioButton>
         </StackPanel>
         <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="2,6,0,0"
-                   Text="데스크톱에서는 스틱이 마우스로 움직여요. 왼쪽 버튼을 누르면 ClawHub로 돌아와요."/>
+                   Text="왼쪽 MSI 버튼을 누르면 ClawHub로 돌아와요."/>
     </StackPanel>
 </UserControl>

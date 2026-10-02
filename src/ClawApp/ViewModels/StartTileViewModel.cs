@@ -7,7 +7,10 @@ using CommunityToolkit.Mvvm.ComponentModel;
 namespace ClawApp.ViewModels;
 
 /// <summary>폴더 타일 미리보기 한 칸 (안에 든 타일의 그림 또는 아이콘).</summary>
-public sealed record FolderPreview(ImageSource? Image, string? Glyph, bool Glass);
+/// <summary>
+/// 폴더 타일 미리보기 한 칸 = 안에 든 타일의 축소판: 게임 = 아트 꽉 채움, 앱 = 아이콘을 유리 칸 가운데, 기능 = 강조색 칸에 아이콘.
+/// </summary>
+public sealed record FolderPreview(ImageSource? Art, ImageSource? Icon, string? Glyph, bool Accent);
 
 /// <summary>시작 화면 타일 하나. 같은 <see cref="StartTileDef"/>에 대해 계속 재사용된다 (위치 애니메이션·포커스 유지).</summary>
 public sealed partial class StartTileViewModel : ObservableObject, IStartCell
@@ -82,9 +85,8 @@ public sealed partial class StartTileViewModel : ObservableObject, IStartCell
     [ObservableProperty] private bool _isDragging;
     /// <summary>끌고 있는 타일을 이 위에 놓으면 폴더가 된다는 표시.</summary>
     [ObservableProperty] private bool _isMergeTarget;
-    /// <summary>열린 폴더 안의 타일 (폴더 뒤에 이어서 보인다).</summary>
-    [ObservableProperty] private bool _isInOpenFolder;
-    [ObservableProperty] private bool _isFolderOpen;
+    /// <summary>폴더 창에 보이는 타일 (편집 중 "폴더에서 꺼내기" 버튼).</summary>
+    [ObservableProperty] private bool _isInFolder;
 
     /// <summary>편집 중인데 고르지 않은 타일 — 흐리고 작게 (W10M).</summary>
     public bool IsDimmed => IsEditing && !IsSelected && !IsDragging;
@@ -93,11 +95,15 @@ public sealed partial class StartTileViewModel : ObservableObject, IStartCell
     partial void OnIsSelectedChanged(bool value) => OnPropertyChanged(nameof(IsDimmed));
     partial void OnIsDraggingChanged(bool value) => OnPropertyChanged(nameof(IsDimmed));
 
-    /// <summary>폴더 미리보기: 안에 든 타일 최대 4개 (보통) 또는 9개 (크게).</summary>
+    // ── 폴더 미리보기: 3열 격자 (보통 2줄 · 크게 3줄) ──────────
     [ObservableProperty] private IReadOnlyList<FolderPreview> _previews = [];
-    public int PreviewColumns => IsLarge ? 3 : 2;
-    /// <summary>미리보기 한 칸 크기 (타일 안 여백·이름 줄을 빼고 정사각형으로).</summary>
-    public double PreviewCell => IsLarge ? 92 : 54;
+    public int PreviewRows => IsLarge ? 3 : 2;
+    /// <summary>미리보기 한 칸 (간격 포함): 보통 48 · 크게 96.</summary>
+    public double PreviewCell => IsLarge ? 96 : 48;
+    public double PreviewGridWidth => PreviewCell * 3;
+    public double PreviewGridHeight => PreviewCell * PreviewRows;
+    public int ChildCount => Def.Children.Count;
+    public string CountText => $"{ChildCount}";
 
     /// <summary>정의(크기·이름·안의 타일)나 라이브러리가 바뀌었을 때. continueGame = 이어서 플레이에 보일 게임.</summary>
     public void Refresh(GameTileViewModel? continueGame)
@@ -111,14 +117,15 @@ public sealed partial class StartTileViewModel : ObservableObject, IStartCell
         };
         if (IsFolder)
         {
-            Previews = [.. Def.Children.Take(IsLarge ? 9 : 4).Select(c =>
+            Previews = [.. Def.Children.Take(PreviewRows * 3).Select(c =>
             {
                 var game = c.Kind == StartTileKind.Game ? _shell.Library.Games.FirstOrDefault(g => g.Id == c.Ref) : null;
-                var action = c.Kind == StartTileKind.Action ? StartActions.Find(c.Ref) : null;
-                ImageSource? img = game is null ? null
-                    : game.IsApp ? ArtCache.LoadIcon(game.IconSource ?? game.LaunchTarget)
-                    : ArtCache.LoadImage(game.HeroImage) ?? ArtCache.LoadImage(game.CoverImage) ?? ArtCache.LoadIcon(game.IconSource);
-                return new FolderPreview(img, action is null ? (img is null ? Res("Icon.Square") : null) : Res("Icon." + action.Icon), action?.Glass ?? true);
+                if (game is not null && !game.IsApp && (ArtCache.LoadImage(game.HeroImage) ?? ArtCache.LoadImage(game.CoverImage)) is { } art)
+                    return new FolderPreview(art, null, null, false);
+                if (game is not null)
+                    return new FolderPreview(null, ArtCache.LoadIcon(game.IconSource ?? game.LaunchTarget), Res("Icon.AppWindow"), false);
+                var action = StartActions.Find(c.Ref);
+                return new FolderPreview(null, null, Res("Icon." + (action?.Icon ?? "Square")), action is { Glass: false });
             })];
         }
         OnPropertyChanged(string.Empty);
