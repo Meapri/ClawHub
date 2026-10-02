@@ -32,7 +32,7 @@ public sealed partial class LibraryViewModel : ObservableObject, INavPage
     }
 
     public string Title => "라이브러리";
-    public IReadOnlyList<Hint> Hints => [new("A", "열기"), new("Y", "프로그램 추가"), new("B", "뒤로"), new("LB", "이전 탭"), new("RB", "다음 탭")];
+    public IReadOnlyList<Hint> Hints => [new("A", "열기"), new("X", "시작 화면에 고정/해제"), new("Y", "프로그램 추가"), new("B", "뒤로"), new("LB", "이전 탭"), new("RB", "다음 탭")];
     public bool IsEmpty => Tiles.Count == 0;
 
     partial void OnTabIndexChanged(int value) => Apply();
@@ -53,6 +53,22 @@ public sealed partial class LibraryViewModel : ObservableObject, INavPage
         OnPropertyChanged(nameof(IsEmpty));
     }
 
+    /// <summary>포커스한 게임·앱을 시작 화면에 고정하거나 푼다.</summary>
+    private void TogglePin()
+    {
+        if ((System.Windows.Input.Keyboard.FocusedElement as System.Windows.FrameworkElement)?.DataContext is not GameTileViewModel tile) return;
+        if (_shell.Start.IsPinned(tile.Game))
+        {
+            _shell.Start.Unpin(tile.Game);
+            _shell.ShowToast($"{tile.Title}: 시작 화면에서 뺐어요");
+        }
+        else
+        {
+            _shell.Start.Pin(tile.Game);
+            _shell.ShowToast($"{tile.Title}: 시작 화면 끝에 고정했어요");
+        }
+    }
+
     public bool Handle(NavAction action)
     {
         switch (action)
@@ -60,6 +76,7 @@ public sealed partial class LibraryViewModel : ObservableObject, INavPage
             case NavAction.TabPrev: TabIndex = (TabIndex + Tabs.Count - 1) % Tabs.Count; break;
             case NavAction.TabNext: TabIndex = (TabIndex + 1) % Tabs.Count; break;
             case NavAction.Options: AddProgram(); return true;
+            case NavAction.Secondary: TogglePin(); return true;
             default: return false;
         }
         _shell.RequestFocus();

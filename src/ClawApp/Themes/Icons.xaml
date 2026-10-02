@@ -74,6 +74,13 @@
     <sys:String x:Key="Icon.Clock">&#xE087;</sys:String>
     <sys:String x:Key="Icon.ArrowRight">&#xE049;</sys:String>
     <sys:String x:Key="Icon.Undo2">&#xE2A1;</sys:String>
+    <!-- 시작 화면 편집 -->
+    <sys:String x:Key="Icon.Folder">&#xE0D7;</sys:String>
+    <sys:String x:Key="Icon.FolderOutput">&#xE337;</sys:String>
+    <sys:String x:Key="Icon.FolderPen">&#xE338;</sys:String>
+    <sys:String x:Key="Icon.Pin">&#xE259;</sys:String>
+    <sys:String x:Key="Icon.PinOff">&#xE2B6;</sys:String>
+    <sys:String x:Key="Icon.Scaling">&#xE2EC;</sys:String>
     <!-- 프로그램 추가 -->
     <sys:String x:Key="Icon.FileSearch">&#xE0CB;</sys:String>
     <sys:String x:Key="Icon.CircleCheck">&#xE226;</sys:String>

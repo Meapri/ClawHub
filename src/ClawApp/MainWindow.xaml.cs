@@ -251,10 +251,13 @@ public partial class MainWindow : Window
                 else if (!(_vm.CurrentPage?.Handle(a) ?? false) && !_vm.GoBack() && _vm.RunningGame is not null)
                     _vm.ReturnToBackground(); // 게임 중 첫 화면에서 B → 게임으로 (홈은 HomeViewModel.Handle이 처리)
                 return;
+            // 페이지가 먼저 받을 기회 (시작 화면 편집: 잡은 타일 옮기기·A로 잡기/놓기)
             case NavAction.Up or NavAction.Down or NavAction.Left or NavAction.Right:
+                if (!_vm.IsAnyPanelOpen && _vm.CurrentPage?.Handle(a) == true) return;
                 MoveFocus(a);
                 return;
             case NavAction.Accept:
+                if (Keyboard.FocusedElement is not TextBox && !_vm.IsAnyPanelOpen && _vm.CurrentPage?.Handle(a) == true) return;
                 Invoke(Keyboard.FocusedElement as UIElement);
                 return;
             default:
@@ -335,7 +338,7 @@ public partial class MainWindow : Window
     private void FocusCurrent()
     {
         // 앱 안 빠른 설정 패널(위젯이 없을 때의 대체 경로)
-        DependencyObject root = _vm.IsQuickAccessOpen ? QuickPanel : PageHost;
+        DependencyObject root = _vm.IsQuickAccessOpen ? QuickPanel : _vm.StatusPanel is not null ? StatusFlyout : PageHost;
 
         if (root == PageHost && _vm.CurrentPage is { } page && _focusMemory.TryGetValue(page, out var index))
         {
@@ -378,7 +381,15 @@ public partial class MainWindow : Window
         return null;
     }
 
-    private void Scrim_MouseDown(object sender, MouseButtonEventArgs e) => _vm.ClosePanels();
+    /// <summary>패널 바깥을 누르면 닫힌다. 상단 표시줄의 다른 항목을 누른 거면 그 패널로 바로 바꾼다.</summary>
+    private void Scrim_MouseDown(object sender, MouseButtonEventArgs e)
+    {
+        var target = Shell.InputHitTest(e.GetPosition(Shell)) as DependencyObject;
+        while (target is not null and not ButtonBase) target = VisualTreeHelper.GetParent(target);
+        _vm.ClosePanels();
+        if (target is Button { Command: { } cmd } b && b.Style == FindResource("StatusButton") && cmd.CanExecute(b.CommandParameter))
+            cmd.Execute(b.CommandParameter);
+    }
 
     [DllImport("user32.dll")] private static extern IntPtr GetForegroundWindow();
     [DllImport("user32.dll")] private static extern uint GetWindowThreadProcessId(IntPtr hwnd, IntPtr pid);

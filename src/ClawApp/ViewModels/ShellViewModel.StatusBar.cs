@@ -53,6 +53,7 @@ public sealed partial class ShellViewModel
         OnPropertyChanged(nameof(PerfIcon));
         OnPropertyChanged(nameof(PerfText));
         OnPropertyChanged(nameof(ControllerConnected));
+        OnPropertyChanged(nameof(ControllerStatusText));
     }
 
     private void UpdateBattery()

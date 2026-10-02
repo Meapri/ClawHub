@@ -1,0 +1,68 @@
+using ClawApp.Services;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+
+namespace ClawApp.ViewModels;
+
+/// <summary>
+/// 상단 상태 표시줄 항목을 누르면 열리는 작은 패널 (성능·시스템·컨트롤러·네트워크·밝기와 소리·배터리·날짜).
+/// 값과 동작은 빠른 설정(QuickAccess)과 같은 것을 쓴다. 바깥을 누르거나 B로 닫힌다.
+/// </summary>
+public sealed partial class ShellViewModel
+{
+    /// <summary>열린 패널 키 (null = 닫힘): service · perf · system · controller · network · sound · battery · clock.</summary>
+    [ObservableProperty] private string? _statusPanel;
+
+    partial void OnStatusPanelChanged(string? value) => OnPropertyChanged(nameof(IsAnyPanelOpen));
+
+    [RelayCommand]
+    private void OpenStatus(string key)
+    {
+        if (StatusPanel == key)
+        {
+            ClosePanels();
+            return;
+        }
+        IsQuickAccessOpen = false;
+        QuickAccess.Refresh(); // 성능·밝기·볼륨·충전 한도 값을 읽고 실시간 상태를 2초마다 갱신
+        StatusPanel = key;
+        OnPropertyChanged(nameof(DateText));
+        OnPropertyChanged(nameof(UptimeText));
+        AfterPanelChange();
+    }
+
+    public string DateText => DateTime.Now.ToString("yyyy년 M월 d일 dddd");
+    public string UptimeText
+    {
+        get
+        {
+            var up = TimeSpan.FromMilliseconds(Environment.TickCount64);
+            return up.TotalDays >= 1 ? $"켠 지 {(int)up.TotalDays}일 {up.Hours}시간" : $"켠 지 {up.Hours}시간 {up.Minutes}분";
+        }
+    }
+
+    public string ControllerStatusText => ControllerConnected
+        ? Status?.ControllerMode is { } m ? $"연결됨 · {(m.ToString() == "Desktop" ? "데스크톱 모드 (스틱 = 마우스)" : "XInput 모드")}" : "연결됨"
+        : "연결 안 됨";
+
+    /// <summary>Windows 설정 화면 열기 (스틱이 마우스로, 왼쪽 버튼으로 돌아온다).</summary>
+    [RelayCommand]
+    private void OpenWindowsPage(string page)
+    {
+        ClosePanels();
+        SystemControls.OpenWindowsSettings(page);
+        GoToDesktopCommand.Execute(null);
+        ShowToast("왼쪽 MSI 버튼을 누르면 ClawHub로 돌아와요");
+    }
+
+    /// <summary>패널에서 다른 화면으로 갈 때 (닫고 이동).</summary>
+    [RelayCommand]
+    private void OpenSettingsAt(string category)
+    {
+        ClosePanels();
+        var settings = new SettingsViewModel(this);
+        if (settings.Categories.FirstOrDefault(c => c.Key == category) is { } c) settings.Selected = c;
+        IsShellVisible = true;
+        Navigate(settings);
+    }
+}

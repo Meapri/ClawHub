@@ -140,35 +140,48 @@ public sealed partial class SettingsViewModel
     private void RefreshHomeSection()
     {
         foreach (var p in BackdropProps) OnPropertyChanged(p);
-        OnPropertyChanged(nameof(TileOverrideText));
+        OnPropertyChanged(nameof(StartActionItems));
     }
 
-    // ── 타일 ──────────────────────────────────────────────
+    // ── 시작 화면 ─────────────────────────────────────────
 
-    private void SetHero(HeroTileSize size) { HomeSet.HeroSize = size; ApplyHome(nameof(HeroLarge), nameof(HeroMedium), nameof(HeroHidden)); }
-    public bool HeroLarge { get => HomeSet.HeroSize == HeroTileSize.Large; set { if (value) SetHero(HeroTileSize.Large); } }
-    public bool HeroMedium { get => HomeSet.HeroSize == HeroTileSize.Medium; set { if (value) SetHero(HeroTileSize.Medium); } }
-    public bool HeroHidden { get => HomeSet.HeroSize == HeroTileSize.Hidden; set { if (value) SetHero(HeroTileSize.Hidden); } }
+    public bool AutoPinNew
+    {
+        get => _shell.Settings.Start.AutoPinNew;
+        set { _shell.Settings.Start.AutoPinNew = value; _shell.Settings.Save(); OnPropertyChanged(); }
+    }
 
-    private void SetTileDefault(TileSize size) { HomeSet.RecentTileSize = size; ApplyHome(nameof(TileSmall), nameof(TileMedium), nameof(TileLarge)); }
-    public bool TileSmall { get => HomeSet.RecentTileSize == TileSize.Small; set { if (value) SetTileDefault(TileSize.Small); } }
-    public bool TileMedium { get => HomeSet.RecentTileSize == TileSize.Medium; set { if (value) SetTileDefault(TileSize.Medium); } }
-    public bool TileLarge { get => HomeSet.RecentTileSize == TileSize.Large; set { if (value) SetTileDefault(TileSize.Large); } }
-
-    private void SetCount(int n) { HomeSet.RecentCount = n; ApplyHome(nameof(Count6), nameof(Count12), nameof(Count18)); }
-    public bool Count6 { get => HomeSet.RecentCount == 6; set { if (value) SetCount(6); } }
-    public bool Count12 { get => HomeSet.RecentCount == 12; set { if (value) SetCount(12); } }
-    public bool Count18 { get => HomeSet.RecentCount == 18; set { if (value) SetCount(18); } }
-
-    public string TileOverrideText => HomeSet.TileSizes.Count == 0
-        ? "홈에서 게임 타일에 놓고 X를 누르면 그 타일만 작게·보통·크게로 바뀌어요"
-        : $"따로 크기를 바꾼 타일 {HomeSet.TileSizes.Count}개 — 홈에서 X로 바꾸거나 아래에서 모두 기본 크기로 돌릴 수 있어요";
+    /// <summary>뺐던 ClawHub 기능 타일을 다시 고정하는 목록.</summary>
+    public IReadOnlyList<StartActionItem> StartActionItems =>
+        [.. StartActions.All.Select(a => new StartActionItem(a, _shell.Start.IsActionPinned(a.Key)))];
 
     [RelayCommand]
-    private void ResetTileSizes()
+    private void PinAction(StartActionItem item)
     {
-        HomeSet.TileSizes.Clear();
-        ApplyHome(nameof(TileOverrideText));
-        _shell.ShowToast("모든 타일을 기본 크기로 돌렸어요");
+        if (item.Pinned) { _shell.ShowToast($"{item.Info.Label} 타일은 이미 시작 화면에 있어요"); return; }
+        _shell.Start.PinAction(item.Info.Key);
+        OnPropertyChanged(nameof(StartActionItems));
+        _shell.ShowToast($"{item.Info.Label} 타일을 시작 화면 끝에 붙였어요");
     }
+
+    private DateTime _resetArmedAt;
+
+    [RelayCommand]
+    private void ResetStart()
+    {
+        if (DateTime.UtcNow - _resetArmedAt > TimeSpan.FromSeconds(3))
+        {
+            _resetArmedAt = DateTime.UtcNow;
+            _shell.ShowToast("한 번 더 누르면 시작 화면을 처음 배치로 되돌려요 (폴더·크기·순서가 지워져요)");
+            return;
+        }
+        _shell.Start.ResetToDefault(_shell.Library);
+        OnPropertyChanged(nameof(StartActionItems));
+        _shell.ShowToast("시작 화면을 처음 배치로 되돌렸어요");
+    }
+}
+
+public sealed record StartActionItem(StartActions.Info Info, bool Pinned)
+{
+    public string Glyph => System.Windows.Application.Current?.TryFindResource("Icon." + Info.Icon) as string ?? "";
 }

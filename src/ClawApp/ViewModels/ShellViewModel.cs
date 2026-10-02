@@ -28,6 +28,8 @@ public sealed partial class ShellViewModel : ObservableObject
     public AppSettings Settings { get; } = AppSettings.Load();
     public QuickAccessViewModel QuickAccess { get; }
     public HomeViewModel Home { get; }
+    /// <summary>시작 화면 배치 (고정·순서·크기·폴더).</summary>
+    public StartScreen Start { get; }
 
     private readonly Stack<INavPage> _back = new();
     private readonly SemaphoreSlim _syncLock = new(1, 1);
@@ -86,7 +88,7 @@ public sealed partial class ShellViewModel : ObservableObject
     public void RequestFocus() => FocusRequested?.Invoke();
 
     public GameSession? Session { get; private set; }
-    public bool IsAnyPanelOpen => IsQuickAccessOpen;
+    public bool IsAnyPanelOpen => IsQuickAccessOpen || StatusPanel is not null;
 
     /// <summary>
     /// 왼쪽 메인 메뉴 패널은 없어졌다 (홈 화면이 그 역할). 예전 XAML 바인딩이 남아 있어도
@@ -175,6 +177,7 @@ public sealed partial class ShellViewModel : ObservableObject
         Instance = this;
         Library.Refresh();
         QuickAccess = new QuickAccessViewModel(this);
+        Start = new StartScreen(Settings);
         Home = new HomeViewModel(this);
         InitBackdrop();
         CurrentPage = Home;
@@ -347,7 +350,7 @@ public sealed partial class ShellViewModel : ObservableObject
 
     public void UpdateHints()
     {
-        IReadOnlyList<Hint> hints = IsQuickAccessOpen
+        IReadOnlyList<Hint> hints = IsAnyPanelOpen
             ? [new("A", "선택"), new("B", "닫기")]
             : CurrentPage?.Hints ?? [];
         Hints = new ObservableCollection<Hint>(hints);
@@ -363,7 +366,11 @@ public sealed partial class ShellViewModel : ObservableObject
         AfterPanelChange();
     }
 
-    private void CloseMenus() => IsQuickAccessOpen = false;
+    private void CloseMenus()
+    {
+        IsQuickAccessOpen = false;
+        StatusPanel = null;
+    }
 
     private void AfterPanelChange()
     {

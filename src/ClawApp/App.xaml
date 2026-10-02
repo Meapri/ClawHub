@@ -50,36 +50,6 @@
                 </Button>
             </DataTemplate>
 
-            <!-- 라이브 커버 타일 (홈): 커버 ↔ 정보(제목·마지막 플레이)가 몇 초마다 위로 굴러 바뀐다 -->
-            <DataTemplate x:Key="LiveCoverTile" DataType="{x:Type vm:GameTileViewModel}">
-                <!-- 크기는 타일마다 (홈에서 X: 작게 112×168 · 보통 168×256 · 크게 344×520) -->
-                <Button Style="{StaticResource TileButton}" Command="{Binding OpenCommand}" m:Backdrop.FocusSource="{Binding Hero}"
-                        Width="{Binding TileWidth}" Height="{Binding TileHeight}" HorizontalAlignment="Left">
-                    <Grid ClipToBounds="True" m:LiveTile.IsLive="True">
-                        <ContentControl Content="{Binding}" ContentTemplate="{StaticResource CoverFace}" Focusable="False"/>
-                        <Grid Background="{DynamicResource TileAccent}" Visibility="Hidden" TextElement.Foreground="{DynamicResource TileAccentText}">
-                            <StackPanel x:Name="Info" Margin="14,14,14,14">
-                                <Image x:Name="InfoIcon" Source="{Binding Icon}" Width="32" Height="32" HorizontalAlignment="Left" Margin="0,0,0,10"/>
-                                <TextBlock x:Name="InfoTitle" Text="{Binding Title}" FontSize="19" FontWeight="Bold" TextWrapping="Wrap" MaxHeight="128"
-                                           TextTrimming="CharacterEllipsis"/>
-                            </StackPanel>
-                            <StackPanel x:Name="InfoBottom" VerticalAlignment="Bottom" Margin="14,0,14,14">
-                                <TextBlock Text="{Binding SourceLabel}" FontSize="12" Opacity="0.8"/>
-                                <TextBlock Text="{Binding LastPlayedLabel}" FontSize="13" FontWeight="SemiBold" Margin="0,2,0,0"/>
-                            </StackPanel>
-                        </Grid>
-                    </Grid>
-                </Button>
-                <DataTemplate.Triggers>
-                    <!-- 작은 타일: 뒷면은 제목만 작게 -->
-                    <DataTrigger Binding="{Binding IsSmall}" Value="True">
-                        <Setter TargetName="InfoIcon" Property="Visibility" Value="Collapsed"/>
-                        <Setter TargetName="InfoTitle" Property="FontSize" Value="14"/>
-                        <Setter TargetName="Info" Property="Margin" Value="10"/>
-                        <Setter TargetName="InfoBottom" Property="Visibility" Value="Collapsed"/>
-                    </DataTrigger>
-                </DataTemplate.Triggers>
-            </DataTemplate>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

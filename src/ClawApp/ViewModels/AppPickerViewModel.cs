@@ -86,7 +86,8 @@ public sealed partial class AppPickerViewModel : ObservableObject, INavPage
             _shell.ShowToast($"{item.Name}은(는) 이미 라이브러리에 있어요");
             return;
         }
-        _shell.Library.AddCustom(item.Name, item.App.LinkPath, item.App.TargetPath, isApp: AddAsApp);
+        var entry = _shell.Library.AddCustom(item.Name, item.App.LinkPath, item.App.TargetPath, isApp: AddAsApp);
+        if (_shell.Settings.Start.AutoPinNew) _shell.Start.Pin(entry);
         item.IsAdded = true;
         _shell.Home.Reload();
         _shell.ShowToast($"{item.Name}을(를) {(AddAsApp ? "앱" : "게임")}으로 추가했어요");
@@ -106,6 +107,7 @@ public sealed partial class AppPickerViewModel : ObservableObject, INavPage
         if (dlg.ShowDialog() != true) return;
         var target = dlg.FileName.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase) ? StartMenuApps.Resolve(dlg.FileName) : null;
         var game = shell.Library.AddCustom(Path.GetFileNameWithoutExtension(dlg.FileName), dlg.FileName, target);
+        if (shell.Settings.Start.AutoPinNew) shell.Start.Pin(game);
         shell.Home.Reload();
         shell.ShowToast($"{game.Title}을(를) 라이브러리에 추가했어요");
     }

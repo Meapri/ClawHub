@@ -89,6 +89,32 @@
         <Setter Property="Margin" Value="20,0,0,0"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
+    <!-- 상태 표시줄 항목 = 누르면 패널이 열리는 버튼 (터치·마우스용, 패드는 빠른 설정으로) -->
+    <Style x:Key="StatusButton" TargetType="Button">
+        <Setter Property="Focusable" Value="False"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Height" Value="36"/>
+        <Setter Property="Padding" Value="10,0"/>
+        <Setter Property="Margin" Value="2,0"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Foreground" Value="{DynamicResource Text}"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid>
+                        <Border Background="{TemplateBinding Background}"/>
+                        <Border x:Name="Hover" Background="{DynamicResource TileFillHover}" Opacity="0"/>
+                        <ContentPresenter Margin="{TemplateBinding Padding}" VerticalAlignment="Center"/>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Hover" Property="Opacity" Value="1"/></Trigger>
+                        <Trigger Property="IsPressed" Value="True"><Setter TargetName="Hover" Property="Opacity" Value="0.6"/></Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
     <Style x:Key="StatusIcon" TargetType="TextBlock" BasedOn="{StaticResource Icon}">
         <Setter Property="FontSize" Value="18"/>
     </Style>

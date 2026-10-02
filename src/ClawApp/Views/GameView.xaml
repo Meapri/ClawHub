@@ -101,6 +101,9 @@
                         </StackPanel>
                     </DockPanel>
                 </Button>
+                <Button Style="{StaticResource NavButton}" Command="{Binding TogglePinCommand}">
+                    <StackPanel Orientation="Horizontal"><TextBlock Text="{StaticResource Icon.Pin}" Style="{StaticResource Icon}" Margin="0,0,14,0"/><TextBlock Text="{Binding PinText}"/></StackPanel>
+                </Button>
                 <s:GameArtSection/>
                 <Button Style="{StaticResource NavButton}" Command="{Binding HideCommand}" Foreground="{DynamicResource TextDim}">
                     <StackPanel Orientation="Horizontal"><TextBlock Text="{StaticResource Icon.EyeOff}" Style="{StaticResource Icon}" Margin="0,0,14,0"/><TextBlock Text="라이브러리에서 숨기기"/></StackPanel>

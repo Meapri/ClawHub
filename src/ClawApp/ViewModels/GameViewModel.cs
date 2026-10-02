@@ -160,6 +160,19 @@ public sealed partial class GameViewModel(ShellViewModel shell, GameTileViewMode
     [RelayCommand]
     private void OpenArtPicker() => shell.Navigate(new ArtPickerViewModel(shell, Tile));
 
+    // ── 시작 화면 고정 ────────────────────────────────────
+    public bool IsPinned => shell.Start.IsPinned(Tile.Game);
+    public string PinText => IsPinned ? "시작 화면에서 빼기" : "시작 화면에 고정";
+
+    [RelayCommand]
+    private void TogglePin()
+    {
+        if (IsPinned) shell.Start.Unpin(Tile.Game); else shell.Start.Pin(Tile.Game);
+        OnPropertyChanged(nameof(IsPinned));
+        OnPropertyChanged(nameof(PinText));
+        shell.ShowToast(IsPinned ? $"{Tile.Title}: 시작 화면 끝에 고정했어요" : $"{Tile.Title}: 시작 화면에서 뺐어요");
+    }
+
     // ── 분류: 게임 / 앱 ─────────────────────────────────────
     public bool IsApp => Tile.Game.IsApp;
     public bool IsGame => !Tile.Game.IsApp;
@@ -191,6 +204,8 @@ public sealed partial class GameViewModel(ShellViewModel shell, GameTileViewMode
         OnPropertyChanged(nameof(Profile));
         OnPropertyChanged(nameof(ProfileText));
         OnPropertyChanged(nameof(IsRunning));
+        OnPropertyChanged(nameof(IsPinned));
+        OnPropertyChanged(nameof(PinText));
     }
 
     public bool Handle(NavAction action)

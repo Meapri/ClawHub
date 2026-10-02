@@ -18,7 +18,7 @@
 
     <Grid>
         <!-- ── 셸 화면 ─────────────────────────────────────── -->
-        <Grid Visibility="{Binding IsShellVisible, Converter={StaticResource Vis}}">
+        <Grid x:Name="Shell" Visibility="{Binding IsShellVisible, Converter={StaticResource Vis}}">
             <!-- 패널이 열리면 뒤 화면을 흐리게 (앱 안의 Acrylic) -->
             <Grid.Style>
                 <Style TargetType="Grid">
@@ -64,81 +64,80 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <!-- 상태 표시줄: 실행 중 게임 · 성능 · 온도 · 컨트롤러 · 네트워크 · 볼륨 · 배터리 · 시계 (모두 32px 높이, 아이콘 18 / 글자 16) -->
-                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,8,0,0">
-                    <Border Background="{DynamicResource Accent}" Height="32" Padding="12,0" VerticalAlignment="Center" MaxWidth="260"
-                            Visibility="{Binding RunningGame, Converter={StaticResource NullVis}}">
+                <!-- 상태 표시줄: 실행 중 게임 · 성능 · 온도 · 컨트롤러 · 네트워크 · 볼륨 · 배터리 · 시계. 누르면 그 항목의 패널이 열린다 (터치·마우스) -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,6,0,0">
+                    <Button Style="{StaticResource StatusButton}" Command="{Binding RunningTile.OpenCommand}" ToolTip="실행 중인 게임"
+                            Visibility="{Binding RunningGame, Converter={StaticResource NullVis}}" Background="{DynamicResource Accent}" MaxWidth="260">
                         <StackPanel Orientation="Horizontal" TextElement.Foreground="{DynamicResource AccentText}">
-                            <TextBlock Text="{StaticResource Icon.Play}" Style="{StaticResource StatusIcon}" FontSize="16"/>
+                            <TextBlock Text="{StaticResource Icon.Play}" Style="{StaticResource StatusIcon}" FontSize="16" Foreground="{DynamicResource AccentText}"/>
                             <TextBlock Text="{Binding RunningGame.Title}" Style="{StaticResource StatusText}" FontWeight="SemiBold" Foreground="{DynamicResource AccentText}"/>
                         </StackPanel>
-                    </Border>
-                    <StackPanel Style="{StaticResource StatusItem}" ToolTip="ClawHub 서비스 연결 안 됨"
-                                Visibility="{Binding ServiceConnected, Converter={StaticResource NotVis}}">
-                        <TextBlock Text="{StaticResource Icon.TriangleAlert}" Style="{StaticResource StatusIcon}" Foreground="{DynamicResource Warn}"/>
-                        <TextBlock Text="서비스 꺼짐" Style="{StaticResource StatusText}" Foreground="{DynamicResource Warn}"/>
-                    </StackPanel>
-                    <StackPanel Style="{StaticResource StatusItem}" ToolTip="성능 모드 · 지속 전력"
-                                Visibility="{Binding PerfText, Converter={StaticResource NullVis}}">
-                        <TextBlock Text="{Binding PerfIcon}" Style="{StaticResource StatusIcon}"/>
-                        <TextBlock Text="{Binding PerfText}" Style="{StaticResource StatusText}"/>
-                    </StackPanel>
-                    <StackPanel Style="{StaticResource StatusItem}" ToolTip="CPU 온도"
-                                Visibility="{Binding CpuTempText, Converter={StaticResource NullVis}}">
-                        <TextBlock Text="{StaticResource Icon.Thermometer}">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock" BasedOn="{StaticResource StatusIcon}">
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding CpuHot}" Value="True"><Setter Property="Foreground" Value="{DynamicResource Warn}"/></DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
-                        <TextBlock Text="{Binding CpuTempText}" Style="{StaticResource StatusText}" Margin="6,0,0,0"/>
-                    </StackPanel>
-                    <StackPanel Style="{StaticResource StatusItem}" ToolTip="컨트롤러 연결됨"
-                                Visibility="{Binding ControllerConnected, Converter={StaticResource Vis}}">
+                    </Button>
+                    <Button Style="{StaticResource StatusButton}" Command="{Binding OpenStatusCommand}" CommandParameter="service" ToolTip="ClawHub 서비스 연결 안 됨"
+                            Visibility="{Binding ServiceConnected, Converter={StaticResource NotVis}}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{StaticResource Icon.TriangleAlert}" Style="{StaticResource StatusIcon}" Foreground="{DynamicResource Warn}"/>
+                            <TextBlock Text="서비스 꺼짐" Style="{StaticResource StatusText}" Foreground="{DynamicResource Warn}"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource StatusButton}" Command="{Binding OpenStatusCommand}" CommandParameter="perf" ToolTip="성능 모드"
+                            Visibility="{Binding PerfText, Converter={StaticResource NullVis}}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{Binding PerfIcon}" Style="{StaticResource StatusIcon}"/>
+                            <TextBlock Text="{Binding PerfText}" Style="{StaticResource StatusText}"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource StatusButton}" Command="{Binding OpenStatusCommand}" CommandParameter="system" ToolTip="시스템 상태"
+                            Visibility="{Binding CpuTempText, Converter={StaticResource NullVis}}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{StaticResource Icon.Thermometer}">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource StatusIcon}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding CpuHot}" Value="True"><Setter Property="Foreground" Value="{DynamicResource Warn}"/></DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                            <TextBlock Text="{Binding CpuTempText}" Style="{StaticResource StatusText}" Margin="6,0,0,0"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource StatusButton}" Command="{Binding OpenStatusCommand}" CommandParameter="controller" ToolTip="컨트롤러"
+                            Visibility="{Binding ControllerConnected, Converter={StaticResource Vis}}">
                         <TextBlock Text="{StaticResource Icon.Gamepad2}" Style="{StaticResource StatusIcon}"/>
-                    </StackPanel>
-                    <StackPanel Style="{StaticResource StatusItem}" ToolTip="{Binding NetworkText}">
+                    </Button>
+                    <Button Style="{StaticResource StatusButton}" Command="{Binding OpenStatusCommand}" CommandParameter="network" ToolTip="{Binding NetworkText}">
                         <TextBlock Text="{Binding NetworkIcon}" Style="{StaticResource StatusIcon}"/>
-                    </StackPanel>
-                    <StackPanel Style="{StaticResource StatusItem}" ToolTip="볼륨"
-                                Visibility="{Binding VolumeText, Converter={StaticResource NullVis}}">
-                        <TextBlock Text="{Binding VolumeIcon}" Style="{StaticResource StatusIcon}"/>
-                        <TextBlock Text="{Binding VolumeText}" Style="{StaticResource StatusText}" Margin="6,0,0,0"/>
-                    </StackPanel>
-                    <StackPanel Style="{StaticResource StatusItem}" ToolTip="배터리">
-                        <TextBlock Text="{Binding BatteryIcon}">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock" BasedOn="{StaticResource StatusIcon}">
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding BatteryLow}" Value="True"><Setter Property="Foreground" Value="{DynamicResource Danger}"/></DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
-                        <TextBlock Text="{Binding BatteryText}" Style="{StaticResource StatusText}" Margin="6,0,0,0"/>
-                    </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource StatusButton}" Command="{Binding OpenStatusCommand}" CommandParameter="sound" ToolTip="밝기·소리"
+                            Visibility="{Binding VolumeText, Converter={StaticResource NullVis}}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{Binding VolumeIcon}" Style="{StaticResource StatusIcon}"/>
+                            <TextBlock Text="{Binding VolumeText}" Style="{StaticResource StatusText}" Margin="6,0,0,0"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource StatusButton}" Command="{Binding OpenStatusCommand}" CommandParameter="battery" ToolTip="배터리">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{Binding BatteryIcon}">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource StatusIcon}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding BatteryLow}" Value="True"><Setter Property="Foreground" Value="{DynamicResource Danger}"/></DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                            <TextBlock Text="{Binding BatteryText}" Style="{StaticResource StatusText}" Margin="6,0,0,0"/>
+                        </StackPanel>
+                    </Button>
                     <!-- 구분선 뒤 시계: 같은 16px, 굵기만 다르게 -->
-                    <Border Width="1" Height="20" Background="{DynamicResource StrokeStrong}" Opacity="0.5" Margin="20,0,0,0" VerticalAlignment="Center"/>
-                    <TextBlock Text="{Binding Clock}" Style="{StaticResource StatusText}" FontWeight="SemiBold" Margin="20,0,0,0"/>
+                    <Border Width="1" Height="20" Background="{DynamicResource StrokeStrong}" Opacity="0.5" Margin="8,0" VerticalAlignment="Center"/>
+                    <Button Style="{StaticResource StatusButton}" Command="{Binding OpenStatusCommand}" CommandParameter="clock" ToolTip="날짜·시간">
+                        <TextBlock Text="{Binding Clock}" Style="{StaticResource StatusText}" FontWeight="SemiBold" Margin="0"/>
+                    </Button>
                     <!-- 터치용 빠른 설정 (패드는 QS 버튼) -->
-                    <Button Command="{Binding OpenQuickSettingsCommand}" Focusable="False" Margin="12,0,0,0" ToolTip="빠른 설정"
-                            Width="32" Height="32" Cursor="Hand" VerticalAlignment="Center">
-                        <Button.Template>
-                            <ControlTemplate TargetType="Button">
-                                <Border x:Name="Bd" Background="Transparent">
-                                    <TextBlock Text="{StaticResource Icon.SlidersHorizontal}" FontFamily="{StaticResource LucideFont}" FontSize="18"
-                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                </Border>
-                                <ControlTemplate.Triggers>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter TargetName="Bd" Property="Background" Value="{DynamicResource TileFillHover}"/>
-                                    </Trigger>
-                                </ControlTemplate.Triggers>
-                            </ControlTemplate>
-                        </Button.Template>
+                    <Button Style="{StaticResource StatusButton}" Command="{Binding OpenQuickSettingsCommand}" ToolTip="빠른 설정">
+                        <TextBlock Text="{StaticResource Icon.SlidersHorizontal}" Style="{StaticResource StatusIcon}"/>
                     </Button>
                 </StackPanel>
                 <StackPanel VerticalAlignment="Top" HorizontalAlignment="Left" Margin="0,0,24,0">
@@ -171,6 +170,11 @@
         <!-- ── 패널 뒤 어둡게 ─────────────────────────────── -->
         <Border Background="{DynamicResource Scrim}" Visibility="{Binding IsAnyPanelOpen, Converter={StaticResource Vis}}"
                 MouseDown="Scrim_MouseDown"/>
+
+        <!-- ── 상태 표시줄 항목 패널 (표시줄 바로 아래 오른쪽) ── -->
+        <v:StatusFlyout x:Name="StatusFlyout" Width="380" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,58,40,0"
+                        m:Entrance.Stagger="Self" m:Entrance.Offset="24"
+                        Visibility="{Binding StatusPanel, Converter={StaticResource NullVis}}"/>
 
         <!-- ── 빠른 설정 (오른쪽 가장자리에서 미끄러져 나오는 참 바) ── -->
         <v:QuickAccessPanel x:Name="QuickPanel" Width="400" HorizontalAlignment="Right"

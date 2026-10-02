@@ -37,7 +37,7 @@ public sealed partial class QuickAccessViewModel : ObservableObject
         _telemetryTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
         _telemetryTimer.Tick += async (_, _) =>
         {
-            if (!_shell.IsQuickAccessOpen) { _telemetryTimer.Stop(); return; }
+            if (!_shell.IsAnyPanelOpen) { _telemetryTimer.Stop(); return; }
             await RefreshTelemetryAsync();
         };
     }
