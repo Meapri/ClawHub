@@ -214,6 +214,7 @@ public partial class HomeView : UserControl
     private void OnHold(object? sender, EventArgs e)
     {
         _hold.Stop();
+        if (Motion.SmoothScroll.IsPanning(SurfaceScroller)) { _pressTile = null; return; } // 손가락으로 화면을 넘기는 중
         if (_pressTile is { } t && Mouse.LeftButton == MouseButtonState.Pressed) StartDrag(t);
     }
 

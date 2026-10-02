@@ -67,7 +67,8 @@
                 </StackPanel>
 
                 <!-- ── 일반 ──────────────────────────────── -->
-                <StackPanel Visibility="{Binding Selected.Key, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=general}" m:Entrance.Stagger="Items">
+                <v:LazyContent Visibility="{Binding Selected.Key, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=general}"><DataTemplate>
+                <StackPanel m:Entrance.Stagger="Items">
                     <TextBlock Text="시작 방식" Style="{StaticResource Section}" Margin="2,0,0,8"/>
                     <Border Style="{StaticResource CardPanel}">
                         <StackPanel>
@@ -103,9 +104,11 @@
                     </ToggleButton>
                     <s:DesktopModeSection Margin="0,20,0,0"/>
                 </StackPanel>
+                </DataTemplate></v:LazyContent>
 
                 <!-- ── 홈 화면 (배경·타일) ───────────────── -->
-                <StackPanel Visibility="{Binding Selected.Key, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=home}" m:Entrance.Stagger="Items">
+                <v:LazyContent Visibility="{Binding Selected.Key, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=home}"><DataTemplate>
+                <StackPanel m:Entrance.Stagger="Items">
                     <TextBlock Text="배경" Style="{StaticResource Section}" Margin="2,0,0,8"/>
                     <Border Style="{StaticResource CardPanel}">
                         <StackPanel>
@@ -203,9 +206,11 @@
                         <StackPanel Orientation="Horizontal"><TextBlock Text="{StaticResource Icon.RotateCcw}" Style="{StaticResource Icon}" Margin="0,0,14,0"/><TextBlock Text="시작 화면 처음 배치로 되돌리기"/></StackPanel>
                     </Button>
                 </StackPanel>
+                </DataTemplate></v:LazyContent>
 
                 <!-- ── 컨트롤러 ──────────────────────────── -->
-                <StackPanel Visibility="{Binding Selected.Key, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=controller}" m:Entrance.Stagger="Items">
+                <v:LazyContent Visibility="{Binding Selected.Key, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=controller}"><DataTemplate>
+                <StackPanel m:Entrance.Stagger="Items">
                     <!-- 가장 자주 쓰는 것: 게임별 키 매핑 (컨트롤러 연결과 관계없이 편집 가능) -->
                     <TextBlock Text="키 매핑" Style="{StaticResource Section}" Margin="2,0,0,8"/>
                     <Button Style="{StaticResource NavButton}" Command="{Binding OpenProfilesCommand}" HorizontalContentAlignment="Stretch">
@@ -264,9 +269,11 @@
                                Text="설정은 컨트롤러 메모리에만 쓰고 ClawHub가 켜질 때마다 다시 적용해요. 펌웨어(플래시)는 건드리지 않아요."/>
                     </StackPanel>
                 </StackPanel>
+                </DataTemplate></v:LazyContent>
 
                 <!-- ── 조명 ──────────────────────────────── -->
-                <StackPanel Visibility="{Binding Selected.Key, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=light}" m:Entrance.Stagger="Items">
+                <v:LazyContent Visibility="{Binding Selected.Key, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=light}"><DataTemplate>
+                <StackPanel m:Entrance.Stagger="Items">
                     <Border Style="{StaticResource CardPanel}" Margin="0,0,0,12" Visibility="{Binding ControllerAvailable, Converter={StaticResource NotVis}}">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="{StaticResource Icon.TriangleAlert}" Style="{StaticResource Icon}" Foreground="{DynamicResource Warn}" Margin="0,0,12,0"/>
@@ -325,9 +332,11 @@
                     </Border>
                     </StackPanel>
                 </StackPanel>
+                </DataTemplate></v:LazyContent>
 
                 <!-- ── 성능 (빠른 설정과 공유) ───────────── -->
-                <StackPanel Visibility="{Binding Selected.Key, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=performance}" m:Entrance.Stagger="Items">
+                <v:LazyContent Visibility="{Binding Selected.Key, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=performance}"><DataTemplate>
+                <StackPanel m:Entrance.Stagger="Items">
                 <StackPanel DataContext="{Binding Quick}">
                     <TextBlock Text="기본 성능 모드" Style="{StaticResource Section}" Margin="2,0,0,8"/>
                     <TextBlock Text="{Binding PerfUnavailableText}" Style="{StaticResource Caption}" Foreground="{DynamicResource Warn}" Margin="0,0,0,8"
@@ -360,9 +369,11 @@
                 </StackPanel>
                 <s:EnduranceGamingSection DataContext="{Binding Power}" Margin="0,20,0,0"/>
                 </StackPanel>
+                </DataTemplate></v:LazyContent>
 
                 <!-- ── 디스플레이·사운드 ────────────────── -->
-                <StackPanel Visibility="{Binding Selected.Key, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=display}" m:Entrance.Stagger="Items">
+                <v:LazyContent Visibility="{Binding Selected.Key, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=display}"><DataTemplate>
+                <StackPanel m:Entrance.Stagger="Items">
                     <TextBlock Text="밝기 및 소리" Style="{StaticResource Section}" Margin="2,0,0,8"/>
                     <Border Style="{StaticResource CardPanel}" DataContext="{Binding Quick}">
                         <StackPanel>
@@ -406,9 +417,11 @@
                     </Border>
                     <s:DisplayQualitySection DataContext="{Binding DisplayQuality}" Margin="0,20,0,0"/>
                 </StackPanel>
+                </DataTemplate></v:LazyContent>
 
                 <!-- ── 배터리 ────────────────────────────── -->
-                <StackPanel Visibility="{Binding Selected.Key, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=battery}" m:Entrance.Stagger="Items">
+                <v:LazyContent Visibility="{Binding Selected.Key, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=battery}"><DataTemplate>
+                <StackPanel m:Entrance.Stagger="Items">
                 <StackPanel DataContext="{Binding Quick}">
                     <TextBlock Text="지금 상태" Style="{StaticResource Section}" Margin="2,0,0,8"/>
                     <Border Style="{StaticResource CardPanel}" Margin="0,0,0,4">
@@ -433,9 +446,11 @@
                 <s:PowerPlanSection DataContext="{Binding PowerPlan}" Margin="0,20,0,0"/>
                 <s:BatteryHealthSection DataContext="{Binding Power}" Margin="0,20,0,0"/>
                 </StackPanel>
+                </DataTemplate></v:LazyContent>
 
                 <!-- ── Windows 설정 ─────────────────────── -->
-                <StackPanel Visibility="{Binding Selected.Key, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=windows}" m:Entrance.Stagger="Items">
+                <v:LazyContent Visibility="{Binding Selected.Key, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=windows}"><DataTemplate>
+                <StackPanel m:Entrance.Stagger="Items">
                     <TextBlock Text="바로 열기" Style="{StaticResource Section}" Margin="2,0,0,4"/>
                     <TextBlock Style="{StaticResource Caption}" Margin="2,0,0,10"
                                Text="여는 동안 스틱이 마우스로 바뀌고, 왼쪽 MSI 버튼을 누르면 ClawHub로 돌아와요."/>
@@ -458,9 +473,11 @@
                         <StackPanel Orientation="Horizontal"><TextBlock Text="{StaticResource Icon.Download}" Style="{StaticResource Icon}" Margin="0,0,16,0"/><TextBlock Text="Windows 업데이트"/></StackPanel>
                     </Button>
                 </StackPanel>
+                </DataTemplate></v:LazyContent>
 
                 <!-- ── 라이브러리 ────────────────────────── -->
-                <StackPanel Visibility="{Binding Selected.Key, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=library}" m:Entrance.Stagger="Items">
+                <v:LazyContent Visibility="{Binding Selected.Key, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=library}"><DataTemplate>
+                <StackPanel m:Entrance.Stagger="Items">
                     <TextBlock Text="추가" Style="{StaticResource Section}" Margin="2,0,0,8"/>
                     <Button Style="{StaticResource NavButton}" Command="{Binding OpenAppPickerCommand}">
                         <StackPanel Orientation="Horizontal"><TextBlock Text="{StaticResource Icon.Plus}" Style="{StaticResource Icon}" Margin="0,0,16,0"/><TextBlock Text="프로그램 추가 (설치된 프로그램 목록)"/></StackPanel>
@@ -478,9 +495,11 @@
                     <TextBlock Style="{StaticResource Caption}" Margin="2,8,0,0"
                                Text="자동 감지: Steam · Epic · GOG · 넥슨·엔씨·스마일게이트·블리자드·라이엇 등 설치된 게임. 라이브러리에 없는 게임도 실행 중에 빠른 설정에서 매핑 프로필을 지정하면 자동으로 등록돼요."/>
                 </StackPanel>
+                </DataTemplate></v:LazyContent>
 
                 <!-- ── 정보 ──────────────────────────────── -->
-                <StackPanel Visibility="{Binding Selected.Key, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=about}" m:Entrance.Stagger="Items">
+                <v:LazyContent Visibility="{Binding Selected.Key, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=about}"><DataTemplate>
+                <StackPanel m:Entrance.Stagger="Items">
                     <TextBlock Text="버전·상태" Style="{StaticResource Section}" Margin="2,0,0,8"/>
                     <Border Style="{StaticResource CardPanel}">
                         <Grid>
@@ -501,6 +520,7 @@
                         </Grid>
                     </Border>
                 </StackPanel>
+                </DataTemplate></v:LazyContent>
             </StackPanel>
             </Grid>
         </ScrollViewer>

@@ -9,9 +9,9 @@ namespace ClawApp.Motion;
 /// <summary>
 /// 부드러운 스크롤: 휠과 "보이게 하기"(패드로 포커스를 옮길 때 BringIntoView)가 순간 이동 대신 목표 위치로 미끄러진다.
 /// WPF 기본은 휠 한 칸·포커스 이동마다 화면이 툭 끊겨 넘어가서, 120Hz 화면에서 특히 덜컥거려 보인다.
-/// 터치로 끄는 동안은 손가락이 그대로 움직이게 애니메이션을 멈춘다. 기본 ScrollViewer 스타일에서 켠다.
+/// 터치 끌기·관성도 여기서 직접 한다 (SmoothScroll.Touch.cs). 기본 ScrollViewer 스타일에서 켠다.
 /// </summary>
-public static class SmoothScroll
+public static partial class SmoothScroll
 {
     public static readonly DependencyProperty IsEnabledProperty = DependencyProperty.RegisterAttached(
         "IsEnabled", typeof(bool), typeof(SmoothScroll), new PropertyMetadata(false, OnChanged));
@@ -42,7 +42,7 @@ public static class SmoothScroll
         if (d is not ScrollViewer sv || e.NewValue is not true) return;
         sv.SetValue(StateProperty, new State());
         sv.PreviewMouseWheel += OnWheel;
-        sv.ManipulationStarting += (_, _) => Stop(sv);
+        HookTouch(sv);
         sv.PreviewMouseDown += (_, _) => Stop(sv); // 마우스로 잡아 끄는 쪽(홈)이 직접 움직인다
         sv.Loaded += (_, _) => HookContent(sv);
         if (sv.IsLoaded) HookContent(sv);
@@ -143,6 +143,7 @@ public static class SmoothScroll
     public static void ScrollTo(ScrollViewer sv, double x, double y, bool wheel = false)
     {
         if (StateOf(sv) is not { } s) return;
+        StopTouchMotion(sv);
         s.X = Math.Clamp(x, 0, Math.Max(0, sv.ScrollableWidth));
         s.Y = Math.Clamp(y, 0, Math.Max(0, sv.ScrollableHeight));
         if (!MotionCore.Enabled)

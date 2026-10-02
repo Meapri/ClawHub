@@ -18,7 +18,7 @@
         <ResourceDictionary Source="Themes/Art.xaml"/>
     </ResourceDictionary.MergedDictionaries>
 
-    <!-- Pretendard 내장 (Fonts/*.otf, SIL OFL 1.1). 한글·영문이 한 폰트라 글꼴이 섞여 보이지 않는다 -->
+    <!-- Pretendard 내장 (Fonts/*.ttf — TrueType판: CFF(otf)보다 WPF가 글자를 훨씬 빨리 그린다, SIL OFL 1.1). 한글·영문이 한 폰트라 글꼴이 섞여 보이지 않는다 -->
     <FontFamily x:Key="UiFont">pack://application:,,,/Fonts/#Pretendard, Segoe UI, Malgun Gothic</FontFamily>
     <FontFamily x:Key="DisplayFont">pack://application:,,,/Fonts/#Pretendard, Segoe UI, Malgun Gothic</FontFamily>
 

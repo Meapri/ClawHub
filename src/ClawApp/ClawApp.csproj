@@ -11,9 +11,8 @@
 
   <ItemGroup>
     <Resource Include="Assets\ClawHub.ico" />
-    <!-- Pretendard (SIL OFL 1.1) — 한글·영문을 한 폰트로 (Segoe UI + 맑은 고딕 섞임 방지) -->
-    <Resource Include="Fonts\*.otf" />
-    <!-- Lucide 아이콘 글꼴 (ISC) · 패드 버튼 그림 (Kenney Input Prompts, CC0) -->
+    <!-- Pretendard TrueType판 (SIL OFL 1.1) — 한글·영문을 한 폰트로 (Segoe UI + 맑은 고딕 섞임 방지)
+         · Lucide 아이콘 글꼴 (ISC) · 패드 버튼 그림 (Kenney Input Prompts, CC0) -->
     <Resource Include="Fonts\*.ttf" />
     <Resource Include="Assets\Input\*.png" />
     <!-- Xbox 모드 홈 앱 등록(외부 위치 패키지)이 앱 폴더의 로고를 참조 -->
@@ -34,4 +33,10 @@
   <ItemGroup>
     <RuntimeHostConfigurationOption Include="Switch.System.Windows.Input.Stylus.EnablePointerSupport" Value="true" />
   </ItemGroup>
+  <!-- 설치본(publish)은 미리 컴파일(ReadyToRun): 페이지를 처음 열 때 JIT 컴파일로 수백 ms 멈추지 않게 -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>false</SelfContained>
+    <PublishReadyToRun>true</PublishReadyToRun>
+  </PropertyGroup>
 </Project>
