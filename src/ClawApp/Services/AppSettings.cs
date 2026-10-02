@@ -11,6 +11,9 @@ public enum DesktopRightButton { TouchKeyboard, GameBar }
 /// <summary>"데스크톱으로"·앱 실행 중 컨트롤러: 스틱이 마우스(Desktop 모드) 또는 게임패드 그대로.</summary>
 public enum DesktopController { Mouse, Gamepad }
 
+/// <summary>라이브러리 정렬.</summary>
+public enum LibrarySort { Recent, Name, Added }
+
 /// <summary>
 /// 전체 화면 배경: 고른 게임의 아트(포커스를 따라 바뀜) · 전체 화면 이미지 · 단색 ·
 /// 타일 그림(Windows 10 Mobile처럼 바탕은 단색, 사진은 타일 안에서만 보임).
@@ -71,6 +74,9 @@ public sealed class AppSettings
 
     /// <summary>SteamGridDB API 키 (아트 고르기에서 사용, 없으면 Steam 검색만).</summary>
     public string? SteamGridDbKey { get; set; }
+
+    /// <summary>라이브러리 정렬 (최근 플레이순·이름순·최근 추가순). 마지막으로 고른 것을 기억한다.</summary>
+    public LibrarySort LibrarySort { get; set; } = LibrarySort.Recent;
 
     /// <summary>홈 화면 꾸미기: 타일 크기·배경.</summary>
     public HomeSettings Home { get; set; } = new();

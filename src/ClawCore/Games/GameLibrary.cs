@@ -158,6 +158,7 @@ public sealed class GameLibrary
                 LaunchTarget = exePath ?? processName,
                 ProcessNames = [processName],
                 IconSource = exePath,
+                AddedAt = DateTime.Now,
             };
             _data.CustomGames.Add(game);
             JsonStore.Save(FilePath, _data);
@@ -189,11 +190,22 @@ public sealed class GameLibrary
             InstallDir = exe is null ? null : Path.GetDirectoryName(exe),
             IconSource = exe,
             IsApp = isApp,
+            AddedAt = DateTime.Now,
         };
         _data.CustomGames.Add(game);
         JsonStore.Save(FilePath, _data);
         Refresh();
         return game;
+    }
+
+    /// <summary>직접 추가한 항목을 라이브러리에서 뺀다 (프로그램 추가의 "되돌리기"). 감지된 게임은 지울 수 없다 — 숨기기를 쓴다.</summary>
+    public bool RemoveCustom(GameEntry game)
+    {
+        if (_data.CustomGames.RemoveAll(g => g.Id == game.Id) == 0) return false;
+        _data.Overrides.Remove(game.Id);
+        JsonStore.Save(FilePath, _data);
+        Refresh();
+        return true;
     }
 
     private void Update(GameEntry game, Action<Overrides> change)

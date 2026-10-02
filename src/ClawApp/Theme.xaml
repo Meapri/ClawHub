@@ -701,6 +701,65 @@
         <Setter Property="PanningMode" Value="Both"/>
     </Style>
 
+    <!-- ── 페이지 도구 모음·목록 행 보조 (라이브러리·프로필·프로그램 추가) ── -->
+    <!-- 도구 모음 버튼: 한 줄 높이 48, 여백 없이 (간격은 놓는 쪽이 Margin으로) -->
+    <Style x:Key="ToolButton" TargetType="Button" BasedOn="{StaticResource NavButton}">
+        <Setter Property="Height" Value="48"/>
+        <Setter Property="Padding" Value="16,0"/>
+        <Setter Property="Margin" Value="0"/>
+    </Style>
+    <!-- 아이콘만 있는 정사각 버튼 (손가락 크기 48) -->
+    <Style x:Key="IconButton" TargetType="Button" BasedOn="{StaticResource NavButton}">
+        <Setter Property="Width" Value="48"/>
+        <Setter Property="Height" Value="48"/>
+        <Setter Property="MinHeight" Value="48"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="Margin" Value="0"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+    </Style>
+    <!-- 행 오른쪽 동작 버튼: 아이콘 위, 짧은 이름 아래 (64×64) -->
+    <Style x:Key="RowActionButton" TargetType="Button" BasedOn="{StaticResource NavButton}">
+        <Setter Property="Width" Value="68"/>
+        <Setter Property="MinHeight" Value="64"/>
+        <Setter Property="Padding" Value="0,8"/>
+        <Setter Property="Margin" Value="4,0,0,0"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Setter Property="FontSize" Value="13"/>
+    </Style>
+    <!-- 작은 표시 (사용 중·기본 제공·실행 중). 강조색 바탕 -->
+    <Style x:Key="Badge" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource Accent}"/>
+        <Setter Property="Padding" Value="8,2"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource AccentText}"/>
+        <Setter Property="TextElement.FontSize" Value="13"/>
+        <Setter Property="TextElement.FontWeight" Value="SemiBold"/>
+    </Style>
+    <!-- 테두리만 있는 표시 (덜 중요한 상태) -->
+    <Style x:Key="BadgeOutline" TargetType="Border">
+        <Setter Property="BorderBrush" Value="{DynamicResource StrokeStrong}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="8,1"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource TextDim}"/>
+        <Setter Property="TextElement.FontSize" Value="13"/>
+        <Setter Property="TextElement.FontWeight" Value="SemiBold"/>
+    </Style>
+    <!-- 터치로 고르는 피벗 탭 머리글 (패드는 LB/RB, 포커스는 받지 않는다) -->
+    <Style x:Key="PivotTabButton" TargetType="Button">
+        <Setter Property="Focusable" Value="False"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border Background="Transparent" Padding="0,0,32,0" MinHeight="44">
+                        <ContentPresenter VerticalAlignment="Top"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- 하단 힌트 바의 버튼 글리프 (실제 패드 버튼 모양이라 둥글게 유지) -->
     <Style x:Key="HintGlyph" TargetType="Border">
         <Setter Property="MinWidth" Value="24"/>

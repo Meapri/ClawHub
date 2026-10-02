@@ -40,6 +40,9 @@ public sealed class GameEntry
     public int? FpsLimitOnBattery { get; set; }
     public bool Hidden { get; set; }
 
+    /// <summary>직접 추가한 시각 (라이브러리 "최근 추가순" 정렬). 감지된 게임·예전에 추가한 항목은 null.</summary>
+    public DateTime? AddedAt { get; set; }
+
     /// <summary>게임이 아닌 프로그램 (메신저·브라우저 등). 앱 분류로 따로 보이고, 실행해도 게임 세션(매핑·성능·실행 감지)이 없다.</summary>
     public bool IsApp { get; set; }
 

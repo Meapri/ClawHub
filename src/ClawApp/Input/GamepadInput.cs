@@ -9,6 +9,8 @@ public enum NavAction
     Accept, Back, Secondary, Options,
     TabPrev, TabNext,
     MainMenu, QuickAccess,
+    /// <summary>LT / RT. 셸은 페이지에 그대로 넘긴다 (라이브러리: 찾기·정렬 등 페이지별 보조 동작).</summary>
+    TriggerLeft, TriggerRight,
 }
 
 /// <summary>
@@ -57,6 +59,7 @@ public sealed class GamepadInput
         {
             _prevButtons = 0;
             _heldDir = null;
+            _ltDown = _rtDown = true; // 게임에서 누른 채로 돌아와도 바로 발동하지 않게 (한 번 놓아야 함)
             return;
         }
 
@@ -77,6 +80,10 @@ public sealed class GamepadInput
         Fire(0x0010, NavAction.MainMenu);  // Menu(Start)
         Fire(0x0020, NavAction.QuickAccess); // View — 전용 버튼을 못 받을 때의 대체
 
+        // 트리거는 아날로그 — 깊게 누를 때 한 번, 거의 다 놓아야 다시 (손가락을 얹어 두기만 해도 반복되지 않게)
+        Trigger(state.Gamepad.LeftTrigger, ref _ltDown, NavAction.TriggerLeft);
+        Trigger(state.Gamepad.RightTrigger, ref _rtDown, NavAction.TriggerRight);
+
         var dir = Direction(state.Gamepad);
         var now = DateTime.UtcNow;
         if (dir != _heldDir)
@@ -88,6 +95,21 @@ public sealed class GamepadInput
         {
             Action?.Invoke(d);
             _nextRepeat = now + RepeatRate;
+        }
+    }
+
+    private bool _ltDown, _rtDown;
+
+    private void Trigger(byte value, ref bool down, NavAction action)
+    {
+        if (!down && value > 160)
+        {
+            down = true;
+            Action?.Invoke(action);
+        }
+        else if (down && value < 60)
+        {
+            down = false;
         }
     }
 
