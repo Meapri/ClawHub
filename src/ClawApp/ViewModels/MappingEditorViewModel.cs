@@ -130,7 +130,7 @@ public sealed partial class MappingEditorViewModel : ObservableObject, INavPage
         ? [new("B", "테스트 끝내기")]
         : IsListening
             ? [] // 어떤 버튼이든 "찾을 버튼"으로 쓰이므로 힌트를 비운다 (가운데 안내 참고)
-            : IsOptionsOpen
+            : IsOptionsOpen || IsTuningOpen
                 ? [new("A", "선택"), new("B", "닫기")]
             : IsPickerOpen
                 ? [new("A", MultiKey ? "넣기/빼기" : "지정"), new("B", MultiKey ? "완료" : "취소"), new("X", "게임패드 그대로"),
@@ -214,6 +214,7 @@ public sealed partial class MappingEditorViewModel : ObservableObject, INavPage
     {
         StopListening();
         IsOptionsOpen = false;
+        IsTuningOpen = false;
         EditingRow = row;
         FocusedButton = row.Button;
         var current = Current(row.Button);
@@ -438,9 +439,9 @@ public sealed partial class MappingEditorViewModel : ObservableObject, INavPage
             if (action == NavAction.Back) StopTest();
             return true; // 테스트 중에는 화면이 움직이지 않게
         }
-        if (IsOptionsOpen)
+        if (IsOptionsOpen || IsTuningOpen)
         {
-            if (action == NavAction.Back) { IsOptionsOpen = false; return true; }
+            if (action == NavAction.Back) { IsOptionsOpen = IsTuningOpen = false; return true; }
             return action is NavAction.TabPrev or NavAction.TabNext or NavAction.Secondary or NavAction.Options; // 패널 안에서는 이동·선택만
         }
 

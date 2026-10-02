@@ -964,7 +964,7 @@ public sealed partial class ShellViewModel : ObservableObject
             {
                 var resp = profile is null
                     ? await Service.SendAsync(new Request { Op = Ops.RestoreMapping })
-                    : await Service.SendAsync(new Request { Op = Ops.ApplyMapping, Bindings = profile.ToCodes().ToDictionary(), Macros = profile.ToMacros() });
+                    : await Service.SendAsync(new Request { Op = Ops.ApplyMapping, Bindings = profile.ToCodes().ToDictionary(), Macros = profile.ToMacros(), Tuning = profile.Tuning });
                 if (!resp.Ok) { ShowToast($"매핑 적용 실패: {resp.Error}"); return; }
                 _appliedProfileId = profile?.Id;
                 if (resp.Status is { } st) Status = st;
@@ -1032,7 +1032,7 @@ public sealed partial class ShellViewModel : ObservableObject
     /// <summary>매핑을 잠깐 실제로 적용한다. 취소하거나 시간이 지나면 원래대로 동기화.</summary>
     public async Task TestMappingAsync(MappingProfile profile, TimeSpan duration, CancellationToken cancel = default)
     {
-        if (!await SendAsync(new Request { Op = Ops.ApplyMapping, Bindings = profile.ToCodes().ToDictionary(), Macros = profile.ToMacros() })) return;
+        if (!await SendAsync(new Request { Op = Ops.ApplyMapping, Bindings = profile.ToCodes().ToDictionary(), Macros = profile.ToMacros(), Tuning = profile.Tuning })) return;
         _appliedProfileId = "__test__"; // 다음 동기화 때 반드시 복원되도록
         try { await Task.Delay(duration, cancel); }
         catch (OperationCanceledException) { /* 사용자가 끝냄 */ }

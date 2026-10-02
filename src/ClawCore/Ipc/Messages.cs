@@ -15,6 +15,8 @@ public sealed class Request
     public Dictionary<ClawButton, byte[]>? Bindings { get; set; }
     /// <summary>ApplyMapping: M1/M2 매크로.</summary>
     public Dictionary<ClawButton, MacroStep[]>? Macros { get; set; }
+    /// <summary>ApplyMapping: 프로필별 펌웨어 조정 (자이로·데드존·스틱 바꾸기). null = 전역 설정 그대로.</summary>
+    public ControllerTuning? Tuning { get; set; }
     public GamepadMode? ControllerMode { get; set; }
     public ControllerSettings? ControllerSettings { get; set; }
     /// <summary>SetMsiCenter: true = 켜기, false = 끄기.</summary>

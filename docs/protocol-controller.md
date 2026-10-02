@@ -127,6 +127,23 @@ MSI `StickKeyProfile` 직렬화 순서 (API_ControlMode·GamePadFwVersion 디컴
 - 따라서 ClawHub는 마우스 속도 설정을 넣지 않았다. 실기에서 Desktop 모드 + `TargetValue`/Linear 값을
   RAM에만 바꿔 커서 속도 변화를 측정해야 확정 가능 (쓰기 실험은 별도 승인 후).
 
+### 자이로 블록 (`0x29`, 10바이트 — MSI `SensorModule`, MSI Center M이 실제로 쓰는 값)
+
+`[0]플래그 [1]늘 켜짐 [2]켜는 버튼 [3]감도 방식 [4]안티 데드존 [5]데드존 [6]감도 [7]원본2 [8]목표2 [9]스틱 선택`
+
+- 플래그(LSB부터): bit0 사용, bit1 누르는 동안 켜짐, bit2 마우스로 출력, bit3/4 X/Y 반전, bit5/6 X/Y 끔, bit7 누를 때마다 토글.
+  bit1+bit7 = 누르는 동안 꺼짐. (bit3–6은 MSI가 쓰지 않음 ⚠)
+- [1] = 1이면 버튼 없이 늘 켜짐, 0이면 [2]의 게임패드 코드(LT 19, RT 20, LB 5 …)로 켬.
+- [3] = 4(데드존·감도 % 방식), [5] = 데드존 % × 254/100, [6] = 감도 % × 254/100, [7]/[8] = 255.
+- [9] = 0 왼쪽 스틱, 1 오른쪽 스틱 (마우스 출력이면 0). MSI 기본: 끔, 데드존 10, 감도 20.
+- ClawHub: 매핑 프로필의 "스틱·자이로"(`ControllerTuning` → `TuningLayout`). 예: 오른쪽 스틱 · LT 누르는 동안 · 10/20 % →
+  `03 00 13 04 00 19 32 FF FF 01`.
+
+### 버튼 플래그의 연사(터보)
+
+KeyBasicFlag bit0 = KeyTurboEn, [Turbo] = 속도. 하지만 MSI `KeyBasicFlag.Serialize`는 bit0을 **항상 0**으로 쓴다 —
+MSI Center M에서 연사를 켜도 펌웨어에 도달하지 않는다. 펌웨어가 지원하는지 미확인 ⚠ (실기 실험 필요).
+
 ### 키 코드에 없는 키
 
 MSI `KeyMapDefine` 표에 PrintScreen·ScrollLock·Pause·Win 오른쪽·메뉴 키는 없다 → 펌웨어 매핑으로

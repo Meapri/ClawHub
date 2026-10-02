@@ -162,6 +162,17 @@
                             </StackPanel>
                         </Grid>
                     </Button>
+                    <!-- 스틱·트리거·자이로 (펌웨어 조정): 지금 상태 요약을 함께 보여 준다 -->
+                    <Button x:Name="TuningButton" Style="{StaticResource SmallAction}" Command="{Binding ToggleTuningCommand}" Margin="0,0,8,0"
+                            Visibility="{Binding IsTesting, Converter={StaticResource NotVis}}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{StaticResource Icon.Gamepad2}" Style="{StaticResource Icon}" FontSize="16" Margin="0,0,8,0"/>
+                            <StackPanel>
+                                <TextBlock Text="스틱·자이로" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding TuningSummary}" Style="{StaticResource Caption}" FontSize="11" MaxWidth="180" TextTrimming="CharacterEllipsis"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Button>
                     <Button x:Name="OptionsButton" Style="{StaticResource SmallAction}" Command="{Binding ToggleOptionsCommand}" Margin="0"
                             Visibility="{Binding IsTesting, Converter={StaticResource NotVis}}">
                         <StackPanel Orientation="Horizontal">
@@ -228,6 +239,143 @@
 
             <!-- 안내선 (코드가 그린다: MappingEditorView.DrawLeaders) -->
             <Canvas x:Name="Leaders" Grid.Row="1" Grid.ColumnSpan="3" IsHitTestVisible="False"/>
+
+            <!-- ══ 스틱·트리거·자이로 (펌웨어 조정 — 드라이버·소프트웨어 입력 없음, Xbox Ally의 Armoury Crate와 같은 방식) ══ -->
+            <Border x:Name="TuningPanel" Grid.RowSpan="2" Grid.ColumnSpan="3" HorizontalAlignment="Right" Width="460" Margin="0,-4,0,0"
+                    Background="{DynamicResource Bg0}" BorderBrush="{DynamicResource Accent}" BorderThickness="3,0,0,0"
+                    KeyboardNavigation.DirectionalNavigation="Contained" DataContext="{Binding Tuning}"
+                    m:Reveal.IsShown="{Binding DataContext.IsTuningOpen, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                    m:Reveal.ExitX="48" m:Entrance.Stagger="Self" m:Entrance.Offset="48">
+                <Border.Resources>
+                    <ItemsPanelTemplate x:Key="ChipWrap"><WrapPanel/></ItemsPanelTemplate>
+                    <!-- 값 슬라이더 한 줄: 이름 · 막대 · 값 -->
+                    <Style x:Key="TuneLabel" TargetType="TextBlock">
+                        <Setter Property="Width" Value="96"/>
+                        <Setter Property="VerticalAlignment" Value="Center"/>
+                        <Setter Property="Foreground" Value="{DynamicResource TextDim}"/>
+                    </Style>
+                    <Style x:Key="TuneValue" TargetType="TextBlock">
+                        <Setter Property="DockPanel.Dock" Value="Right"/>
+                        <Setter Property="Width" Value="44"/>
+                        <Setter Property="TextAlignment" Value="Right"/>
+                        <Setter Property="VerticalAlignment" Value="Center"/>
+                        <Setter Property="FontWeight" Value="SemiBold"/>
+                    </Style>
+                </Border.Resources>
+                <ScrollViewer Padding="22,18,22,12">
+                    <StackPanel>
+                        <TextBlock Text="스틱·트리거·자이로" Style="{StaticResource H2}" Margin="0,0,0,4"/>
+                        <TextBlock Style="{StaticResource Caption}" Margin="0,0,0,14"
+                                   Text="컨트롤러 펌웨어가 처리해서 안티치트 걱정이 없고 지연도 없어요. 이 프로필이 적용될 때만 쓰여요."/>
+
+                        <!-- 자이로 -->
+                        <TextBlock Text="자이로 조준" Style="{StaticResource Section}" Margin="2,0,0,8"/>
+                        <ItemsControl ItemsSource="{Binding GyroOutputs}" Focusable="False" ItemsPanel="{StaticResource ChipWrap}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <v:ChoiceChip Style="{StaticResource Chip}" Content="{Binding Label}" IsChecked="{Binding IsSelected, Mode=OneWay}"
+                                                  Command="{Binding DataContext.PickGyroOutputCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                  CommandParameter="{Binding}"/>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <StackPanel m:Reveal.IsShown="{Binding GyroOn}" m:Reveal.Kind="Inline">
+                            <TextBlock Text="켜는 버튼" Style="{StaticResource Caption}" Margin="2,6,0,6"/>
+                            <ItemsControl ItemsSource="{Binding GyroButtons}" Focusable="False" ItemsPanel="{StaticResource ChipWrap}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <v:ChoiceChip Style="{StaticResource Chip}" Content="{Binding Label}" IsChecked="{Binding IsSelected, Mode=OneWay}"
+                                                      Command="{Binding DataContext.PickGyroButtonCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                      CommandParameter="{Binding}"/>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <ItemsControl ItemsSource="{Binding GyroActivations}" Focusable="False" ItemsPanel="{StaticResource ChipWrap}"
+                                          m:Reveal.IsShown="{Binding GyroHasButton}" m:Reveal.Kind="Inline">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <v:ChoiceChip Style="{StaticResource Chip}" Content="{Binding Label}" IsChecked="{Binding IsSelected, Mode=OneWay}"
+                                                      Command="{Binding DataContext.PickGyroActivationCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                      CommandParameter="{Binding}"/>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <DockPanel Margin="0,8,0,0">
+                                <TextBlock Text="감도" Style="{StaticResource TuneLabel}"/>
+                                <TextBlock Text="{Binding GyroSensitivity, StringFormat={}{0}%}" Style="{StaticResource TuneValue}"/>
+                                <Slider Minimum="1" Maximum="100" SmallChange="5" Value="{Binding GyroSensitivity}"/>
+                            </DockPanel>
+                            <DockPanel>
+                                <TextBlock Text="데드존" Style="{StaticResource TuneLabel}"/>
+                                <TextBlock Text="{Binding GyroDeadzone, StringFormat={}{0}%}" Style="{StaticResource TuneValue}"/>
+                                <Slider Minimum="0" Maximum="50" SmallChange="2" Value="{Binding GyroDeadzone}"/>
+                            </DockPanel>
+                            <TextBlock Style="{StaticResource Caption}" Margin="2,4,0,0"
+                                       Text="오른쪽 스틱으로 보내면 게임패드를 지원하는 게임 대부분에서 바로 조준에 쓸 수 있어요. 켜는 버튼의 원래 동작은 그대로예요."/>
+                        </StackPanel>
+
+                        <!-- 스틱 -->
+                        <DockPanel Margin="2,18,0,8">
+                            <Button DockPanel.Dock="Right" Style="{StaticResource SmallAction}" Command="{Binding ResetSticksCommand}" Margin="0" Padding="10,6"
+                                    Content="기본값으로"/>
+                            <TextBlock Text="스틱" Style="{StaticResource Section}" VerticalAlignment="Center"/>
+                        </DockPanel>
+                        <DockPanel>
+                            <TextBlock Text="왼쪽 안쪽" Style="{StaticResource TuneLabel}"/>
+                            <TextBlock Text="{Binding LeftInner}" Style="{StaticResource TuneValue}"/>
+                            <Slider Minimum="0" Maximum="30" SmallChange="1" Value="{Binding LeftInner}"/>
+                        </DockPanel>
+                        <DockPanel>
+                            <TextBlock Text="왼쪽 바깥" Style="{StaticResource TuneLabel}"/>
+                            <TextBlock Text="{Binding LeftOuter}" Style="{StaticResource TuneValue}"/>
+                            <Slider Minimum="70" Maximum="100" SmallChange="1" Value="{Binding LeftOuter}"/>
+                        </DockPanel>
+                        <DockPanel>
+                            <TextBlock Text="오른쪽 안쪽" Style="{StaticResource TuneLabel}"/>
+                            <TextBlock Text="{Binding RightInner}" Style="{StaticResource TuneValue}"/>
+                            <Slider Minimum="0" Maximum="30" SmallChange="1" Value="{Binding RightInner}"/>
+                        </DockPanel>
+                        <DockPanel>
+                            <TextBlock Text="오른쪽 바깥" Style="{StaticResource TuneLabel}"/>
+                            <TextBlock Text="{Binding RightOuter}" Style="{StaticResource TuneValue}"/>
+                            <Slider Minimum="70" Maximum="100" SmallChange="1" Value="{Binding RightOuter}"/>
+                        </DockPanel>
+                        <TextBlock Style="{StaticResource Caption}" Margin="2,2,0,8"
+                                   Text="안쪽 = 이만큼은 움직여도 무시 (쏠림 방지) · 바깥 = 이만큼 기울이면 끝까지 기울인 것으로 (100 = 끔)"/>
+                        <ToggleButton Style="{StaticResource Switch}" IsChecked="{Binding SwapSticks}">
+                            <StackPanel>
+                                <TextBlock Text="왼쪽·오른쪽 스틱 바꾸기"/>
+                                <TextBlock Text="이동과 시점을 반대 스틱으로" Style="{StaticResource Caption}"/>
+                            </StackPanel>
+                        </ToggleButton>
+
+                        <!-- 트리거 -->
+                        <TextBlock Text="트리거" Style="{StaticResource Section}" Margin="2,14,0,8"/>
+                        <DockPanel>
+                            <TextBlock Text="LT 안쪽" Style="{StaticResource TuneLabel}"/>
+                            <TextBlock Text="{Binding LtInner}" Style="{StaticResource TuneValue}"/>
+                            <Slider Minimum="0" Maximum="40" SmallChange="1" Value="{Binding LtInner}"/>
+                        </DockPanel>
+                        <DockPanel>
+                            <TextBlock Text="LT 바깥" Style="{StaticResource TuneLabel}"/>
+                            <TextBlock Text="{Binding LtOuter}" Style="{StaticResource TuneValue}"/>
+                            <Slider Minimum="60" Maximum="100" SmallChange="1" Value="{Binding LtOuter}"/>
+                        </DockPanel>
+                        <DockPanel>
+                            <TextBlock Text="RT 안쪽" Style="{StaticResource TuneLabel}"/>
+                            <TextBlock Text="{Binding RtInner}" Style="{StaticResource TuneValue}"/>
+                            <Slider Minimum="0" Maximum="40" SmallChange="1" Value="{Binding RtInner}"/>
+                        </DockPanel>
+                        <DockPanel>
+                            <TextBlock Text="RT 바깥" Style="{StaticResource TuneLabel}"/>
+                            <TextBlock Text="{Binding RtOuter}" Style="{StaticResource TuneValue}"/>
+                            <Slider Minimum="60" Maximum="100" SmallChange="1" Value="{Binding RtOuter}"/>
+                        </DockPanel>
+                        <TextBlock Style="{StaticResource Caption}" Margin="2,2,0,0"
+                                   Text="바깥 값을 낮추면 조금만 당겨도 끝까지 당긴 것이 돼요 (사격 게임에서 빠르게)."/>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
 
             <!-- ══ 프로필 옵션 (오른쪽에서 미끄러져 나오는 패널) ══ -->
             <Border x:Name="OptionsPanel" Grid.RowSpan="2" Grid.ColumnSpan="3" HorizontalAlignment="Right" Width="400" Margin="0,-4,0,0"

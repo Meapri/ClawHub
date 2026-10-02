@@ -151,7 +151,8 @@ public sealed class ControllerManager : IDisposable
         File.WriteAllBytes(BaselinePath, _baseline);
     }
 
-    public void ApplyMapping(IReadOnlyDictionary<ClawButton, byte[]> bindings, IReadOnlyDictionary<ClawButton, MacroStep[]>? macros = null)
+    public void ApplyMapping(IReadOnlyDictionary<ClawButton, byte[]> bindings, IReadOnlyDictionary<ClawButton, MacroStep[]>? macros = null,
+        ControllerTuning? tuning = null)
     {
         if (bindings.Count > Enum.GetValues<ClawButton>().Length || bindings.Keys.Any(b => !Enum.IsDefined(b)))
             throw new ArgumentException("알 수 없는 버튼");
@@ -160,14 +161,16 @@ public sealed class ControllerManager : IDisposable
         lock (_lock)
         {
             // 검증(이미지 생성)이 성공한 뒤에만 상태를 바꾼다
-            WriteTarget(bindings, macros, Settings);
+            WriteTarget(bindings, macros, Settings, tuning);
             _activeBindings = bindings;
             _activeMacros = macros;
+            _activeTuning = tuning;
         }
         StatusChanged?.Invoke();
     }
 
     private IReadOnlyDictionary<ClawButton, MacroStep[]>? _activeMacros;
+    private ControllerTuning? _activeTuning;
 
     public void RestoreBaseline()
     {
@@ -175,7 +178,8 @@ public sealed class ControllerManager : IDisposable
         {
             _activeBindings = null;
             _activeMacros = null;
-            WriteTarget(null, null, Settings);
+            _activeTuning = null;
+            WriteTarget(null, null, Settings, null);
         }
         StatusChanged?.Invoke();
     }
@@ -186,7 +190,7 @@ public sealed class ControllerManager : IDisposable
         if (!Enum.IsDefined(settings.Light)) throw new ArgumentException("알 수 없는 조명 모드");
         lock (_lock)
         {
-            WriteTarget(_activeBindings, _activeMacros, settings);
+            WriteTarget(_activeBindings, _activeMacros, settings, _activeTuning);
             Settings = settings;
             JsonStore.Save(SettingsPath, settings);
         }
@@ -214,7 +218,7 @@ public sealed class ControllerManager : IDisposable
         if (error is not null) System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw(error);
     }
 
-    private void WriteTarget() => WriteTarget(_activeBindings, _activeMacros, Settings);
+    private void WriteTarget() => WriteTarget(_activeBindings, _activeMacros, Settings, _activeTuning);
 
     /// <summary>
     /// baseline + 설정 + 매핑으로 목표 이미지를 만들어 RAM에 쓴다.
@@ -222,7 +226,7 @@ public sealed class ControllerManager : IDisposable
     /// 쓰기가 실패하면 실제 RAM 상태를 다시 읽어서 다음 복원이 헛돌지 않게 한다.
     /// </summary>
     private void WriteTarget(IReadOnlyDictionary<ClawButton, byte[]>? bindings, IReadOnlyDictionary<ClawButton, MacroStep[]>? macros,
-        ControllerSettings settings)
+        ControllerSettings settings, ControllerTuning? tuning)
     {
         if (_ctl is null || _baseline is null || _current is null) return;
 
@@ -230,6 +234,7 @@ public sealed class ControllerManager : IDisposable
         foreach (var (button, steps) in macros ?? new Dictionary<ClawButton, MacroStep[]>())
             MacroLayout.Apply(target, button, steps);
         SettingsLayout.Apply(target, settings);
+        if (tuning is not null) TuningLayout.Apply(target, tuning); // 프로필별 조정이 전역 설정보다 우선
 
         // 마지막으로 쓴 상태를 믿지 않고 실제 RAM을 다시 읽어 차이를 계산한다 (27회 읽기 ≈ 0.1~0.2초).
         // 절전 복귀로 RAM이 초기화됐거나 다른 프로그램이 바꿨으면 전체 차이를 다시 쓴다.

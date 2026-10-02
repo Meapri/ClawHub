@@ -75,7 +75,7 @@ public sealed class RequestHandler(ILogger<RequestHandler> log, ControllerManage
                     ec.SetChargeLimit(req.ChargeLimit ?? throw new ArgumentException("ChargeLimit 누락"));
                     break;
                 case Ops.ApplyMapping:
-                    controller.ApplyMapping(req.Bindings ?? throw new ArgumentException("Bindings 누락"), req.Macros);
+                    controller.ApplyMapping(req.Bindings ?? throw new ArgumentException("Bindings 누락"), req.Macros, req.Tuning);
                     break;
                 case Ops.RestoreMapping:
                     controller.RestoreBaseline();

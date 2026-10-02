@@ -69,7 +69,9 @@ public partial class MappingEditorView : UserControl
         if (e.PropertyName is nameof(MappingEditorViewModel.IsPickerOpen) or nameof(MappingEditorViewModel.CategoryIndex))
             Dispatcher.BeginInvoke(MoveFocus, DispatcherPriority.Loaded); // 보이기/숨기기가 레이아웃에 반영된 뒤
         else if (e.PropertyName == nameof(MappingEditorViewModel.IsOptionsOpen))
-            Dispatcher.BeginInvoke(FocusOptions, DispatcherPriority.Loaded);
+            Dispatcher.BeginInvoke(() => FocusPanel(_vm!.IsOptionsOpen, OptionsPanel, OptionsButton), DispatcherPriority.Loaded);
+        else if (e.PropertyName == nameof(MappingEditorViewModel.IsTuningOpen))
+            Dispatcher.BeginInvoke(() => FocusPanel(_vm!.IsTuningOpen, TuningPanel, TuningButton), DispatcherPriority.Loaded);
         else if (e.PropertyName == nameof(MappingEditorViewModel.FocusedButton))
             DrawLeaders(); // 선 모양만 바뀐다 (위치는 그대로)
     }
@@ -80,14 +82,14 @@ public partial class MappingEditorView : UserControl
         else if (e.PropertyName is nameof(ButtonRowViewModel.Conflict) or nameof(ButtonRowViewModel.KeyLabels)) ScheduleLeaders(80); // 카드 높이가 바뀔 수 있다
     }
 
-    /// <summary>옵션 패널을 열면 그 안 첫 버튼으로, 닫으면 옵션 버튼으로 포커스.</summary>
-    private void FocusOptions()
+    /// <summary>옆 패널(옵션·스틱/자이로)을 열면 그 안 첫 버튼으로, 닫으면 그 패널을 연 버튼으로 포커스.</summary>
+    private void FocusPanel(bool open, Border panel, Button opener)
     {
         if (_vm is null) return;
-        var target = _vm.IsOptionsOpen ? Find(OptionsPanel, e => e is Button) : OptionsButton;
+        var target = open ? Find(panel, e => e is System.Windows.Controls.Primitives.ButtonBase) : opener;
         if (target is not null) Keyboard.Focus(target);
         // 포커스를 따라 내려간 스크롤을 맨 위로 (패널 제목부터 보이게)
-        if (_vm.IsOptionsOpen && OptionsPanel.Child is ScrollViewer sv)
+        if (open && panel.Child is ScrollViewer sv)
             Dispatcher.BeginInvoke(() => Motion.SmoothScroll.ScrollTo(sv, 0, 0), DispatcherPriority.ContextIdle); // 부드러운 스크롤의 목표도 함께
     }
 

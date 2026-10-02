@@ -34,6 +34,42 @@ public sealed partial class MappingEditorViewModel : IPadButtonListener
         EditRow(row);
     }
 
+    // ── 스틱·트리거·자이로 패널 (펌웨어 조정) ──────────────────
+
+    private ControllerTuningViewModel? _tuning;
+
+    /// <summary>자이로 조준·데드존·스틱 바꾸기. 바꾸면 바로 저장되고 되돌리기에 들어간다.</summary>
+    public ControllerTuningViewModel Tuning => _tuning ??= new ControllerTuningViewModel(Profile, _shell.Status?.ControllerSettings,
+        RememberOnce, () => { Save(); OnPropertyChanged(nameof(TuningSummary)); });
+
+    public string TuningSummary => Tuning.Summary;
+
+    [ObservableProperty] private bool _isTuningOpen;
+
+    partial void OnIsTuningOpenChanged(bool value) => _shell.UpdateHints();
+
+    [RelayCommand]
+    private void ToggleTuning()
+    {
+        if (IsTesting) return;
+        StopListening();
+        IsOptionsOpen = false;
+        IsTuningOpen = !IsTuningOpen;
+    }
+
+    private string? _lastRememberKey;
+    private DateTime _lastRememberAt;
+
+    /// <summary>같은 조정(슬라이더)을 연달아 바꾸는 동안은 되돌리기 한 칸으로 묶는다.</summary>
+    private void RememberOnce(string key)
+    {
+        var now = DateTime.UtcNow;
+        if (key == _lastRememberKey && now - _lastRememberAt < TimeSpan.FromSeconds(1.5)) { _lastRememberAt = now; return; }
+        _lastRememberKey = key;
+        _lastRememberAt = now;
+        Remember();
+    }
+
     // ── 프로필 옵션 패널 ──────────────────────────────────
 
     /// <summary>빠른 채우기·프리셋·컨트롤러 모드·복제·삭제를 담은 옆 패널 (배치 화면을 가리지 않게 평소엔 접어 둔다).</summary>
@@ -46,6 +82,7 @@ public sealed partial class MappingEditorViewModel : IPadButtonListener
     {
         if (IsTesting) return;
         StopListening();
+        IsTuningOpen = false;
         IsOptionsOpen = !IsOptionsOpen;
     }
 
@@ -60,7 +97,7 @@ public sealed partial class MappingEditorViewModel : IPadButtonListener
     /// <summary>바꾸기 직전의 버튼 배치(바인딩·매크로·모드)를 기억한다. 바꾸는 모든 명령의 처음에서 부른다.</summary>
     private void Remember()
     {
-        var snapshot = JsonSerializer.Serialize(new Snapshot(Profile.Bindings, Profile.Macros, Profile.Mode), ClawCore.JsonStore.Options);
+        var snapshot = JsonSerializer.Serialize(new Snapshot(Profile.Bindings, Profile.Macros, Profile.Mode, Profile.Tuning), ClawCore.JsonStore.Options);
         if (_undo.TryPeek(out var last) && last == snapshot) return;
         _undo.Push(snapshot);
         if (_undo.Count > MaxUndo)
@@ -88,9 +125,11 @@ public sealed partial class MappingEditorViewModel : IPadButtonListener
         Profile.Bindings = s.Bindings ?? [];
         Profile.Macros = s.Macros ?? [];
         Profile.Mode = s.Mode;
+        Profile.Tuning = s.Tuning;
         Save();
         MarkKeys();
         OnPropertyChanged(nameof(ModeText));
+        Tuning.Reload();
         NotifyUndo();
         _shell.ShowToast(_undo.Count > 0 ? $"되돌렸어요 · {_undo.Count}번 더 되돌릴 수 있어요" : "되돌렸어요");
     }
@@ -98,7 +137,8 @@ public sealed partial class MappingEditorViewModel : IPadButtonListener
     private sealed record Snapshot(
         Dictionary<ClawButton, List<string>>? Bindings,
         Dictionary<ClawButton, List<MappingProfile.MacroStepDef>>? Macros,
-        GamepadMode Mode);
+        GamepadMode Mode,
+        ControllerTuning? Tuning);
 
     // ── 겹치는 키 ──────────────────────────────────────────
 

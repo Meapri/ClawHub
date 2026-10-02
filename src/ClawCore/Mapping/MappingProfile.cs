@@ -13,16 +13,21 @@ public sealed class MappingProfile
     public const string NoneId = "__none";
 
     /// <summary>기본·데스크톱 프로필 (늘 있고 지울 수 없다).</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
     public bool IsSystem => Id is DefaultId or DesktopId;
 
     /// <summary>지정한 버튼이 하나도 없음.</summary>
-    public bool IsEmpty => Bindings.All(kv => kv.Value.Count == 0) && Macros.All(kv => kv.Value.Count == 0);
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool IsEmpty => Bindings.All(kv => kv.Value.Count == 0) && Macros.All(kv => kv.Value.Count == 0) && Tuning is null or { IsEmpty: true };
 
     public string Id { get; set; } = Guid.NewGuid().ToString("N");
     public string Name { get; set; } = "새 프로필";
     /// <summary>게임 중 컨트롤러 모드. XInput에서 키 출력이 안 되는 펌웨어면 Desktop으로 바꾼다.</summary>
     public GamepadMode Mode { get; set; } = GamepadMode.XInput;
     public Dictionary<ClawButton, List<string>> Bindings { get; set; } = [];
+
+    /// <summary>펌웨어 조정: 자이로 조준·스틱/트리거 데드존·스틱 바꾸기 (null = 전역 컨트롤러 설정 그대로).</summary>
+    public ControllerTuning? Tuning { get; set; }
 
     /// <summary>M1/M2 매크로 (있으면 그 버튼의 일반 바인딩보다 우선).</summary>
     public Dictionary<ClawButton, List<MacroStepDef>> Macros { get; set; } = [];
@@ -54,6 +59,7 @@ public sealed class MappingProfile
         Mode = Mode,
         Bindings = Bindings.ToDictionary(kv => kv.Key, kv => kv.Value.ToList()),
         Macros = Macros.ToDictionary(kv => kv.Key, kv => kv.Value.Select(s => new MacroStepDef { Key = s.Key, HoldMs = s.HoldMs, GapMs = s.GapMs }).ToList()),
+        Tuning = Tuning?.Clone(),
     };
 
 }
