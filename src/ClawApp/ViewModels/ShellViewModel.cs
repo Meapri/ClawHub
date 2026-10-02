@@ -175,6 +175,12 @@ public sealed partial class ShellViewModel : ObservableObject
     {
         switch (command)
         {
+            case AppCommands.WidgetShown:
+                OnWidgetShown(true);
+                return;
+            case AppCommands.WidgetHidden:
+                OnWidgetShown(false);
+                return;
             case AppCommands.CycleProfile:
                 CycleTargetProfile();
                 break;
@@ -553,7 +559,7 @@ public sealed partial class ShellViewModel : ObservableObject
         }
 
         // 우리가 연 Game Bar가 앞에 떠 있으면 같은 버튼으로 닫기 (Win+G 토글)
-        if (_handoff == Handoff.GameBar && _handoffSeen && XboxIntegration.IsGameBar(XboxIntegration.ForegroundOwner()))
+        if (_handoff == Handoff.GameBar && _handoffSeen && (_widgetShown || XboxIntegration.IsGameBar(XboxIntegration.ForegroundOwner())))
         {
             XboxIntegration.PressWinG(); // 닫히면 OnHandoffTick이 매핑을 되돌린다
             return;
@@ -621,12 +627,34 @@ public sealed partial class ShellViewModel : ObservableObject
         _ = SyncControllerAsync();
     }
 
+    /// <summary>위젯이 알려 준 표시 상태 (Game Bar가 열려 위젯이 보이는지). 앞 창 판별보다 이것을 먼저 믿는다.</summary>
+    private bool _widgetShown;
+
+    /// <summary>
+    /// 위젯이 보이기 시작함/닫힘. Game Bar는 떠 있어도 앞 창으로 잡히지 않을 때가 많아서, 앞 창만 보던 예전에는
+    /// 1.5초 뒤 "안 떴다"며 Win+G를 다시 눌러 위젯을 닫거나, 5초 뒤 매핑을 되살려 패드로 위젯을 못 쓰게 했다.
+    /// 우리 버튼이 아니라 Win+G로 직접 연 경우에도 열린 동안은 매핑을 풀어 패드로 조작할 수 있게 한다.
+    /// </summary>
+    private void OnWidgetShown(bool shown)
+    {
+        _widgetShown = shown;
+        if (shown)
+        {
+            if (_handoff != Handoff.GameBar) BeginHandoff(Handoff.GameBar);
+            _handoffSeen = true;
+            _handoffRetry = false;
+        }
+        else if (_handoff == Handoff.GameBar) EndHandoff();
+    }
+
     private void OnHandoffTick()
     {
+        // 닫힘 신호를 못 받았는데 Game Bar가 아예 꺼졌으면 닫힌 것 (매핑이 풀린 채 남지 않게)
+        if (_widgetShown && !XboxIntegration.IsGameBarRunning()) _widgetShown = false;
         var front = XboxIntegration.ForegroundOwner();
         var holding = _handoff switch
         {
-            Handoff.GameBar => XboxIntegration.IsGameBar(front),
+            Handoff.GameBar => _widgetShown || XboxIntegration.IsGameBar(front),
             Handoff.XboxApp => XboxIntegration.IsXboxApp(front),
             _ => false,
         };
@@ -655,10 +683,18 @@ public sealed partial class ShellViewModel : ObservableObject
             EndHandoff();
     }
 
+    /// <summary>
+    /// 위젯이 안 뜬 것 같을 때 다시 연다. Game Bar가 이미 실행 중이면 Win+G는 누르지 않는다 —
+    /// 위젯이 떠 있어도 앞 창이 Game Bar로 잡히지 않는 일이 많아서, Win+G(토글)가 방금 연 위젯을 닫아 버렸다.
+    /// 위젯 열기 URI는 이미 열린 위젯을 닫지 않으므로 그것만 다시 보낸다.
+    /// </summary>
     private async Task RetryGameBarAsync()
     {
-        XboxIntegration.PressWinG();
-        await Task.Delay(600); // UI 스레드로 돌아옴
+        if (!XboxIntegration.IsGameBarRunning())
+        {
+            XboxIntegration.PressWinG();
+            await Task.Delay(600); // UI 스레드로 돌아옴
+        }
         if (_handoff == Handoff.GameBar && !_handoffSeen) XboxIntegration.TryOpenWidget();
     }
 

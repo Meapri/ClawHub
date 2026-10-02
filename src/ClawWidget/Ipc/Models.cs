@@ -53,6 +53,9 @@ namespace ClawWidget.Ipc
         public const string ToggleRecording = "ToggleRecording";
         /// <summary>최근 30초 저장 (Win+Alt+G, 백그라운드 녹화가 켜져 있어야 함).</summary>
         public const string SaveClip = "SaveClip";
+        /// <summary>Game Bar가 열려 이 위젯이 보인다 / 닫혀 안 보인다 (고정 HUD만 남은 것은 닫힘). 런처가 매핑을 풀고 되돌리는 기준.</summary>
+        public const string WidgetShown = "WidgetShown";
+        public const string WidgetHidden = "WidgetHidden";
     }
 
     public static class Limits

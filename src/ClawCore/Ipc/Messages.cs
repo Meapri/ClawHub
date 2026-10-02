@@ -63,6 +63,9 @@ public static class AppCommands
     public const string ToggleRecording = "ToggleRecording";
     /// <summary>Game Bar "방금 일어난 일 기록" — 최근 30초 저장 (Win+Alt+G, 백그라운드 녹화가 켜져 있어야 함).</summary>
     public const string SaveClip = "SaveClip";
+    /// <summary>Game Bar가 열려 위젯이 보인다 / 닫혔다. Game Bar는 앞 창으로 잡히지 않을 때가 많아서 런처는 이것으로 "넘겨준 동안"을 판단한다.</summary>
+    public const string WidgetShown = "WidgetShown";
+    public const string WidgetHidden = "WidgetHidden";
 }
 
 /// <summary>런처 앱이 서비스에 맡겨 두는 상태. 위젯은 GetStatus로 읽는다.</summary>

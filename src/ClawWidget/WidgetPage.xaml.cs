@@ -172,7 +172,28 @@ namespace ClawWidget
         {
             await UpdateViewModeAsync();
             UpdatePolling();
+            await ReportShownAsync();
             await PollAsync(true);
+        }
+
+        /// <summary>마지막으로 런처에 알린 표시 상태 (null = 아직 안 알림).</summary>
+        private bool? _reportedShown;
+
+        /// <summary>Game Bar가 열려 있고(고정 HUD만 남은 상태가 아님) 이 위젯 창이 보이는지.</summary>
+        private bool IsShown =>
+            _widget != null && _widget.Visible && _widget.WindowState != XboxGameBarWidgetWindowState.Minimized &&
+            _widget.GameBarDisplayMode == XboxGameBarDisplayMode.Foreground;
+
+        /// <summary>
+        /// 열림·닫힘을 런처(ClawApp)에 알린다. 런처는 Game Bar가 앞 창으로 잡히지 않아 열렸는지 알 수 없을 때가 많아서,
+        /// 이 신호로 "넘겨준 동안"(매핑 해제)을 시작하고 끝낸다. 런처가 꺼져 있으면 서비스가 거절하는데 조용히 무시한다.
+        /// </summary>
+        private async Task ReportShownAsync()
+        {
+            var shown = IsShown;
+            if (_disposed || _reportedShown == shown) return;
+            _reportedShown = shown;
+            await _client.SendAsync(Requests.AppCommand(shown ? AppCommands.WidgetShown : AppCommands.WidgetHidden), 3000);
         }
 
         private bool ShouldPoll =>
@@ -184,10 +205,15 @@ namespace ClawWidget
             else _timer.Stop();
         }
 
-        /// <summary>앱 일시 중단 — 폴링을 멈추고 파이프를 닫는다.</summary>
-        public void Suspend()
+        /// <summary>앱 일시 중단 — 보이던 중이었으면 런처에 닫힘을 알리고(매핑이 풀린 채 남지 않게), 폴링을 멈추고 파이프를 닫는다.</summary>
+        public async Task SuspendAsync()
         {
             _timer.Stop();
+            if (_reportedShown == true && !_disposed)
+            {
+                _reportedShown = false;
+                await _client.SendAsync(Requests.AppCommand(AppCommands.WidgetHidden), 1500);
+            }
             _client.Disconnect();
         }
 
@@ -195,6 +221,7 @@ namespace ClawWidget
         {
             if (_disposed) return;
             UpdatePolling();
+            await ReportShownAsync();
             await PollAsync(true);
         }
 
@@ -244,6 +271,7 @@ namespace ClawWidget
                 if (_disposed) return;
                 var wasRunning = _timer.IsEnabled;
                 UpdatePolling();
+                await ReportShownAsync();
                 if (!wasRunning && _timer.IsEnabled) await PollAsync(true);
             });
         }
@@ -255,6 +283,7 @@ namespace ClawWidget
                 if (_disposed) return;
                 await UpdateViewModeAsync();
                 UpdatePolling();
+                await ReportShownAsync();
                 await PollAsync(!_hud);
             });
         }
