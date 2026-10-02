@@ -55,15 +55,17 @@ public sealed class AdvancedInputEngine : IDisposable
         foreach (var a in profile?.Advanced?.Buttons.Values.AsEnumerable() ?? [])
             if (a.Radial is { Count: 8 } r && new[] { 1, 3, 5, 7 }.All(i => r[i].Keys.Count == 0))
                 a.Radial = [r[0], r[2], r[4], r[6]]; // 대각선 칸이 비었으면 상하좌우 4칸 메뉴 (고르기 쉽게)
-        var buttons = profile?.Advanced?.EngineButtons().ToList() ?? [];
-        if (profile?.Advanced is not { Enabled: true } adv || buttons.Count == 0)
+        // 고급 동작 버튼 + 시스템 동작(마이크 등) 버튼. 고급 입력이 꺼져 있으면 시스템 동작만 (누르면 실행)
+        var buttons = profile?.EngineButtons().ToList() ?? [];
+        if (profile is null || buttons.Count == 0)
         {
             if (_config is null) return;
             _config = null;
             _events.Add((default, false)); // 작업 스레드가 깨어나 정리하게
             return;
         }
-        _config = new Config(profile, buttons.ToDictionary(b => b, b => adv.Buttons[b]),
+        var adv = profile.Advanced is { Enabled: true } enabled ? enabled : null;
+        _config = new Config(profile, buttons.ToDictionary(b => b, b => adv?.Buttons.GetValueOrDefault(b) ?? new AdvancedButton()),
             buttons.ToDictionary(b => (int)AdvancedInput.CarrierLetter[b], b => b));
         EnsureThreads();
     }

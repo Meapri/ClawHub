@@ -116,6 +116,17 @@ public static class KeyboardLayout
     public static List<KeySlotViewModel> Media() =>
         [.. KeyCodes.All.Where(k => k.Category == KeyCategory.Media).Select(k => new KeySlotViewModel(k, 3, k.Label, icon: MediaIcons.GetValueOrDefault(k.Id)))];
 
+    private static readonly Dictionary<string, string> SystemIcons = new()
+    {
+        ["SYS_MIC"] = "MicOff", ["SYS_KEYBOARD"] = "Keyboard", ["SYS_HUB"] = "House", ["SYS_QUICK"] = "SlidersHorizontal",
+        ["SYS_SCREENSHOT"] = "Camera", ["SYS_RECORD"] = "CircleDot", ["SYS_CLIP"] = "History",
+        ["SYS_PROFILE"] = "Gamepad2", ["SYS_BRIGHT_UP"] = "Sun", ["SYS_BRIGHT_DOWN"] = "SunDim",
+    };
+
+    /// <summary>시스템 탭: 마이크 켜기/끄기 등 ClawHub가 처리하는 동작.</summary>
+    public static List<KeySlotViewModel> System() =>
+        [.. KeyCodes.All.Where(k => k.Category == KeyCategory.System).Select(k => new KeySlotViewModel(k, 3, k.Label, icon: SystemIcons.GetValueOrDefault(k.Id)))];
+
     private static KeySlotViewModel Tile(string id, string glyph, string? cap = null)
     {
         var key = KeyCodes.Find(id) ?? throw new InvalidOperationException(id);

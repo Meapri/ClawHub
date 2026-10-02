@@ -25,6 +25,9 @@
     <sys:String x:Key="Icon.Volume2">&#xE1AB;</sys:String>
     <sys:String x:Key="Icon.Lightbulb">&#xE1C2;</sys:String>
     <sys:String x:Key="Icon.Keyboard">&#xE284;</sys:String>
+    <sys:String x:Key="Icon.Mic">&#xE118;</sys:String>
+    <sys:String x:Key="Icon.MicOff">&#xE119;</sys:String>
+    <sys:String x:Key="Icon.SunDim">&#xE299;</sys:String>
     <sys:String x:Key="Icon.AppWindow">&#xE426;</sys:String>
     <sys:String x:Key="Icon.Info">&#xE0F9;</sys:String>
     <sys:String x:Key="Icon.Image">&#xE0F6;</sys:String>

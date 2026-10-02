@@ -24,8 +24,8 @@
                 </DockPanel>
             </Border>
 
-            <ScrollViewer Padding="24,24,24,8">
-                <StackPanel m:Entrance.Stagger="Items" m:Entrance.Offset="48">
+            <ScrollViewer x:Name="Scroller" Padding="18,18,18,2">
+                <StackPanel Margin="6" m:Entrance.Stagger="Items" m:Entrance.Offset="48">
                     <TextBlock Text="빠른 설정" Style="{StaticResource H1}" Margin="0,0,0,16"/>
                     <!-- 실시간 상태 (2초마다) -->
                     <!-- 2×2: 한 칸이 넓어야 "3시간 20분" 같은 값이 잘리지 않는다 -->
@@ -83,7 +83,8 @@
                     <TextBlock Text="{Binding PerfUnavailableText}" Style="{StaticResource Caption}" Foreground="{DynamicResource Warn}" Margin="0,0,0,8"
                                Visibility="{Binding PerfAvailable, Converter={StaticResource NotVis}}"/>
                     <WrapPanel IsEnabled="{Binding PerfAvailable}">
-                        <RadioButton Style="{StaticResource QuickTileRadio}" GroupName="perf" Tag="{StaticResource Icon.Leaf}" Content="절전" IsChecked="{Binding IsBattery}"/>
+                        <RadioButton Style="{StaticResource QuickTileRadio}" GroupName="perf" Tag="{StaticResource Icon.Leaf}" Content="절전" IsChecked="{Binding IsBattery}"
+                                     local:Nav.InitialFocus="True"/> <!-- 게임이 없을 때 첫 포커스 (예전엔 맨 아래 설정 버튼에 갔다) -->
                         <RadioButton Style="{StaticResource QuickTileRadio}" GroupName="perf" Tag="{StaticResource Icon.Scale}" Content="균형" IsChecked="{Binding IsBalanced}"/>
                         <RadioButton Style="{StaticResource QuickTileRadio}" GroupName="perf" Tag="{StaticResource Icon.Rocket}" Content="성능" IsChecked="{Binding IsPerformance}"/>
                         <RadioButton Style="{StaticResource QuickTileRadio}" GroupName="perf" Tag="{StaticResource Icon.SlidersHorizontal}" Content="수동 TDP" IsChecked="{Binding IsManualMode}"/>
@@ -142,6 +143,14 @@
                         <TextBlock DockPanel.Dock="Right" Text="{Binding Volume}" Width="40" TextAlignment="Right" VerticalAlignment="Center"/>
                         <Slider Minimum="0" Maximum="100" SmallChange="5" Value="{Binding Volume}"/>
                     </DockPanel>
+                    <!-- 마이크 켜기/끄기 (연결된 마이크 모두) — 버튼 매핑의 '시스템 → 마이크 켜기/끄기'와 같다 -->
+                    <Button Style="{StaticResource NavButton}" Command="{Binding ToggleMicCommand}" HorizontalContentAlignment="Stretch" Margin="0,8,0,0">
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Right" Text="A로 변경" Style="{StaticResource Caption}" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding MicIcon}" Style="{StaticResource Icon}" Width="30"/>
+                            <TextBlock Text="{Binding MicText}" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                        </DockPanel>
+                    </Button>
 
                     <!-- 충전 한도 -->
                     <TextBlock Text="충전 한도" Style="{StaticResource Section}" Margin="2,16,0,8"/>

@@ -87,7 +87,7 @@ public sealed partial class MappingEditorViewModel : ObservableObject, INavPage
     /// <summary>LB/RB로 넘기는 키 선택판 탭.</summary>
     public IReadOnlyList<PickerTabViewModel> Tabs { get; } =
     [
-        new("키보드", "Keyboard"), new("마우스", "MousePointer"), new("조합·미디어", "Layers"), new("게임패드", "Gamepad2"),
+        new("키보드", "Keyboard"), new("마우스", "MousePointer"), new("조합·미디어", "Layers"), new("게임패드", "Gamepad2"), new("시스템", "Command"),
     ];
 
     /// <summary>"함께 누를 키" 순서 = 바인딩에 들어가는 순서.</summary>
@@ -105,8 +105,9 @@ public sealed partial class MappingEditorViewModel : ObservableObject, INavPage
     public List<KeySlotViewModel> MouseKeys { get; } = KeyboardLayout.Mouse();
     public List<KeySlotViewModel> MediaKeys { get; } = KeyboardLayout.Media();
     public List<KeySlotViewModel> GamepadKeys { get; } = KeyboardLayout.Gamepad();
+    public List<KeySlotViewModel> SystemKeys { get; } = KeyboardLayout.System();
     private IEnumerable<KeySlotViewModel> AllSlots =>
-        KeyboardRows.SelectMany(r => r).Concat(MouseKeys).Concat(MediaKeys).Concat(GamepadKeys).Where(s => !s.IsSpacer);
+        KeyboardRows.SelectMany(r => r).Concat(MouseKeys).Concat(MediaKeys).Concat(GamepadKeys).Concat(SystemKeys).Where(s => !s.IsSpacer);
 
     [ObservableProperty] private bool _isPickerOpen;
     [ObservableProperty] private ButtonRowViewModel? _editingRow;
@@ -240,6 +241,7 @@ public sealed partial class MappingEditorViewModel : ObservableObject, INavPage
             KeyCategory.Mouse => 1,
             KeyCategory.Media => 2,
             KeyCategory.Gamepad => 3,
+            KeyCategory.System => 4,
             _ => 0,
         };
     }
@@ -310,7 +312,8 @@ public sealed partial class MappingEditorViewModel : ObservableObject, INavPage
     /// <summary>보조 키 토글 + 이 키로 바인딩을 바꾼다. close면 버튼 목록으로 돌아간다.</summary>
     private void Assign(ButtonRowViewModel row, string keyId, bool close)
     {
-        var list = Modifiers.Where(m => m.IsOn && m.Id != keyId).Select(m => m.Id).ToList();
+        // 시스템 동작은 단독 (Ctrl 같은 보조 키와 섞지 않는다)
+        var list = ClawCore.Controller.SystemKeys.Is(keyId) ? new List<string>() : Modifiers.Where(m => m.IsOn && m.Id != keyId).Select(m => m.Id).ToList();
         list.Add(keyId);
         if (RejectPad(row.Button, list)) return;
         if (!SlotKeys(row.Button).SequenceEqual(list) || Profile.Macros.ContainsKey(row.Button)) Remember();

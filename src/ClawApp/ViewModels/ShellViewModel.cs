@@ -1089,6 +1089,7 @@ public sealed partial class ShellViewModel : ObservableObject
         _ = PushAppStateAsync(); // 위젯 표시용 상태: 10초마다 확인해 바뀌었을 때만 보낸다 (프로필 이름 변경·게임 PID 등)
         Clock = DateTime.Now.ToString("tt h:mm");
         _ = RefreshStatusBarAsync();
+        _ = Task.Run(SystemControls.GetBatteryPower); // 배터리 방전 전력 계산용 표본 (빠른 설정을 열면 바로 보이게)
     }
 
     // 실수로 A를 눌러 꺼지지 않도록 확인 대화 상자를 거친다 (처음 포커스는 취소)

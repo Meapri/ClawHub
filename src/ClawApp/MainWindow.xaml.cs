@@ -552,6 +552,7 @@ public partial class MainWindow : Window
 
         var target = FindFocusable(root, initialOnly: true) ?? FindFocusable(root, initialOnly: false);
         if (target is not null) Keyboard.Focus(target);
+        if (ReferenceEquals(root, QuickPanel)) QuickPanel.ScrollToTopAfterOpen();
     }
 
     private void PageHost_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)

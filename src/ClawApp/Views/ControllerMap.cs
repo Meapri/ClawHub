@@ -48,6 +48,16 @@ public sealed class ControllerMap : Grid
     /// true면 고른 버튼 쪽으로 카메라가 다가간다 (키 선택판 머리). false면 늘 본체 전체를 보여 주고 고른 버튼은 고리로만
     /// (배치 화면 — 둘레의 카드에서 안내선이 버튼까지 이어진다).
     /// </summary>
+    /// <summary>확대 모드에서 아래 띠("A → Space")를 보일지. 옆에 같은 내용을 글로 보여 주는 곳(키 선택판 머리)은 끈다.</summary>
+    public static readonly DependencyProperty ShowCaptionProperty = DependencyProperty.Register(
+        nameof(ShowCaption), typeof(bool), typeof(ControllerMap), new PropertyMetadata(true, (d, _) => ((ControllerMap)d).RefreshCaption()));
+
+    public bool ShowCaption
+    {
+        get => (bool)GetValue(ShowCaptionProperty);
+        set => SetValue(ShowCaptionProperty, value);
+    }
+
     public static readonly DependencyProperty ZoomToFocusProperty = DependencyProperty.Register(
         nameof(ZoomToFocus), typeof(bool), typeof(ControllerMap), new PropertyMetadata(true));
 
@@ -282,7 +292,7 @@ public sealed class ControllerMap : Grid
     private void RefreshCaption()
     {
         // 전체 보기(배치 화면)에서는 둘레 카드가 이미 키를 보여 주므로 띠를 띄우지 않는다
-        if (ZoomToFocus && Focused is { } f && RowOf(f) is { } row)
+        if (ZoomToFocus && ShowCaption && Focused is { } f && RowOf(f) is { } row)
         {
             _captionName.Text = row.Name;
             _captionKeys.Text = KeysText(row);

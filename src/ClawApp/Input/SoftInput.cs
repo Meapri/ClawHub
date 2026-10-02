@@ -42,7 +42,7 @@ internal static class SoftInput
 
     /// <summary>소프트웨어로 낼 수 있는 키인지 (게임패드 키는 3단계 가상 패드가 켜져 있을 때만).</summary>
     public static bool CanSend(string id) => Keys.ContainsKey(id) || id.StartsWith("MS_", StringComparison.OrdinalIgnoreCase)
-        || (VirtualPad.Active is not null && VirtualPad.CanSend(id));
+        || ClawCore.Controller.SystemKeys.Is(id) || (VirtualPad.Active is not null && VirtualPad.CanSend(id));
 
     /// <summary>마우스를 상대 이동 (가상 패드의 스틱 → 마우스).</summary>
     public static void MoveMouse(int dx, int dy)
@@ -72,6 +72,12 @@ internal static class SoftInput
 
     private static void Send(string id, bool down)
     {
+        if (ClawCore.Controller.SystemKeys.Is(id))
+        {
+            // 시스템 동작 (마이크 켜기/끄기 등): 누를 때 한 번 — 허브(UI 스레드)가 실행한다
+            if (down) System.Windows.Application.Current?.Dispatcher.BeginInvoke(() => ViewModels.ShellViewModel.Instance?.RunSystemAction(id));
+            return;
+        }
         if (id.StartsWith("PAD_", StringComparison.Ordinal))
         {
             VirtualPad.Active?.Press(id, down); // 3단계: 가상 패드 버튼

@@ -48,7 +48,7 @@ public sealed partial class MappingEditorViewModel
     }
 
     /// <summary>엔진이 이 버튼을 맡는지 (그러면 키보드·마우스만 낼 수 있다).</summary>
-    private bool EngineHandles(ClawButton b) => Profile.Advanced?.EngineButtons().Contains(b) == true;
+    private bool EngineHandles(ClawButton b) => Profile.EngineButtons().Contains(b);
 
     private static int RadialIndex(string slot) => slot.Length > 1 && slot[0] == 'r' && int.TryParse(slot[1..], out var i) ? i : -1;
 

@@ -1,14 +1,24 @@
 namespace ClawCore.Controller;
 
-public enum KeyCategory { Gamepad, Keyboard, Mouse, Media }
+public enum KeyCategory { Gamepad, Keyboard, Mouse, Media, System }
 
 public sealed record KeyCode(byte Code, string Id, string Label, KeyCategory Category);
+
+/// <summary>
+/// 시스템 동작 (SYS_): 펌웨어 키가 아니라 ClawHub가 직접 처리한다 (마이크 켜기/끄기 등).
+/// 이런 키가 들어간 버튼은 고급 입력처럼 운반 키로 펌웨어에 쓰이고 ClawHub가 받아서 실행한다 — 게임 입력이 아니라 안티치트와 상관없다.
+/// </summary>
+public static class SystemKeys
+{
+    public const string Prefix = "SYS_";
+    public static bool Is(string id) => id.StartsWith(Prefix, StringComparison.Ordinal);
+}
 
 /// <summary>컨트롤러 펌웨어 키 코드 (벤더 인덱스, HID usage 아님).</summary>
 public static class KeyCodes
 {
     public static readonly IReadOnlyList<KeyCode> All = Build();
-    private static readonly Dictionary<byte, KeyCode> ByCode = All.ToDictionary(k => k.Code);
+    private static readonly Dictionary<byte, KeyCode> ByCode = All.Where(k => k.Category != KeyCategory.System).ToDictionary(k => k.Code);
     private static readonly Dictionary<string, KeyCode> ById = All.ToDictionary(k => k.Id, StringComparer.OrdinalIgnoreCase);
 
     public static KeyCode? Find(byte code) => ByCode.GetValueOrDefault(code);
@@ -67,6 +77,12 @@ public static class KeyCodes
         Add(202, "MS_RIGHT", "마우스 오른쪽", KeyCategory.Mouse); Add(203, "MS_B4", "마우스 뒤로", KeyCategory.Mouse);
         Add(204, "MS_B5", "마우스 앞으로", KeyCategory.Mouse); Add(205, "MS_WHEELUP", "휠 위", KeyCategory.Mouse);
         Add(206, "MS_WHEELDOWN", "휠 아래", KeyCategory.Mouse);
+
+        // 시스템 동작: 펌웨어 코드 없음 (0) — ClawHub가 처리
+        void Sys(string id, string label) => Add(0, SystemKeys.Prefix + id, label, KeyCategory.System);
+        Sys("MIC", "마이크 켜기/끄기"); Sys("KEYBOARD", "터치 키보드"); Sys("HUB", "ClawHub 열기"); Sys("QUICK", "빠른 설정");
+        Sys("SCREENSHOT", "스크린샷"); Sys("RECORD", "녹화 시작/중지"); Sys("CLIP", "방금 장면 저장");
+        Sys("PROFILE", "다음 매핑 프로필"); Sys("BRIGHT_UP", "밝기 +"); Sys("BRIGHT_DOWN", "밝기 −");
         return list;
     }
 }

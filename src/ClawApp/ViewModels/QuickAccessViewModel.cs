@@ -20,6 +20,8 @@ public sealed partial class QuickAccessViewModel : ObservableObject
     [ObservableProperty] private bool _coolerBoost;
     [ObservableProperty] private int _brightness = 50;
     [ObservableProperty] private int _volume = 50;
+    /// <summary>마이크 켜짐 (null = 마이크 없음).</summary>
+    [ObservableProperty] private bool? _micOn;
     [ObservableProperty] private ChargeLimit? _chargeLimit;
     [ObservableProperty] private string _batteryText = "";
 
@@ -66,8 +68,10 @@ public sealed partial class QuickAccessViewModel : ObservableObject
 
     private async Task RefreshTelemetryAsync()
     {
-        var (watts, remaining) = await Task.Run(SystemControls.GetBatteryPower);
-        RemainingText = remaining is { } r ? (r.TotalHours >= 1 ? $"{(int)r.TotalHours}시간 {r.Minutes}분" : $"{r.Minutes}분") : "충전 중";
+        var (watts, remaining, charging) = await Task.Run(() => { var p = SystemControls.GetBatteryPower(); return (p.Watts, p.Remaining, SystemControls.GetBattery().Charging); });
+        // 값이 없을 때: 충전 중이면 "충전 중", 배터리인데 아직 모르면(뽑은 직후 Windows가 계산 중) "계산 중"
+        var unknown = charging ? "충전 중" : "계산 중";
+        RemainingText = remaining is { } r ? (r.TotalHours >= 1 ? $"{(int)r.TotalHours}시간 {r.Minutes}분" : $"{r.Minutes}분") : unknown;
 
         if (!_shell.ServiceConnected) return;
         try
@@ -77,7 +81,7 @@ public sealed partial class QuickAccessViewModel : ObservableObject
             CpuTempText = t?.CpuTemp is { } c ? $"{c}°" : "–";
             // 이 칩(내장 GPU)은 EC가 GPU 온도를 따로 주지 않음 → CPU 패키지 전력 표시 (실기 확인)
             GpuTempText = t?.CpuWatts is { } cw ? $"{cw}W" : "–";
-            PowerText = watts is { } w ? $"{w:0.0}W" : "충전 중";
+            PowerText = watts is { } w ? $"{w:0.0}W" : charging ? "–" : "계산 중";
         }
         catch (Exception) { /* 서비스 응답 없음 — 다음 틱에 */ }
     }
@@ -162,6 +166,22 @@ public sealed partial class QuickAccessViewModel : ObservableObject
         ? _shell.Profiles.LabelForGame(g.MappingProfileId)
         : "사용 안 함 — A로 프로필 지정";
 
+    /// <summary>마이크 켜기/끄기 (연결된 마이크 모두).</summary>
+    [CommunityToolkit.Mvvm.Input.RelayCommand]
+    private async Task ToggleMic()
+    {
+        MicOn = await Task.Run(SystemControls.ToggleMicrophone);
+        if (MicOn is null) _shell.ShowToast("마이크를 찾지 못했어요");
+    }
+
+    public string MicText => MicOn switch { true => "마이크 켜짐", false => "마이크 꺼짐", null => "마이크 없음" };
+    public string MicIcon => System.Windows.Application.Current?.TryFindResource(MicOn == true ? "Icon.Mic" : "Icon.MicOff") as string ?? "";
+    partial void OnMicOnChanged(bool? value)
+    {
+        OnPropertyChanged(nameof(MicText));
+        OnPropertyChanged(nameof(MicIcon));
+    }
+
     [CommunityToolkit.Mvvm.Input.RelayCommand]
     private void CycleProfile() => _shell.CycleTargetProfile();
 
@@ -202,12 +222,13 @@ public sealed partial class QuickAccessViewModel : ObservableObject
     /// <summary>밝기(WMI)·볼륨 조회는 수백 ms가 걸려서 패널을 먼저 열고 뒤에서 채운다.</summary>
     private async Task LoadSystemValuesAsync()
     {
-        var (brightness, volume) = await Task.Run(() => (SystemControls.GetBrightness(), SystemControls.GetVolume()));
+        var (brightness, volume, mic) = await Task.Run(() => (SystemControls.GetBrightness(), SystemControls.GetVolume(), SystemControls.IsMicrophoneOn()));
         _loading = true;
         try
         {
             if (brightness is { } br) Brightness = br;
             if (volume is { } v) Volume = v;
+            MicOn = mic;
         }
         finally
         {

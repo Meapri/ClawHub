@@ -102,8 +102,7 @@ public sealed class AdvancedInput
     public static Dictionary<ClawButton, List<string>> FirmwareBindings(MappingProfile profile)
     {
         var result = profile.Bindings.Where(kv => kv.Value.Count > 0).ToDictionary(kv => kv.Key, kv => kv.Value.ToList());
-        if (profile.Advanced is not { } adv) return result;
-        foreach (var b in adv.EngineButtons())
+        foreach (var b in profile.EngineButtons())
             if (CarrierLetter.TryGetValue(b, out var letter)) result[b] = [CarrierPrefix, "KB_" + letter];
         return result;
     }

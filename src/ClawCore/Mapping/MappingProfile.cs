@@ -44,11 +44,18 @@ public sealed class MappingProfile
     }
 
     public Dictionary<ClawButton, MacroStep[]> ToMacros() =>
-        Macros.Where(kv => kv.Value.Count > 0 && kv.Key is ClawButton.M1 or ClawButton.M2 && Advanced?.EngineButtons().Contains(kv.Key) != true).ToDictionary(
+        Macros.Where(kv => kv.Value.Count > 0 && kv.Key is ClawButton.M1 or ClawButton.M2 && !EngineButtons().Contains(kv.Key)).ToDictionary(
             kv => kv.Key,
             kv => kv.Value.Select(s => new MacroStep(
                 KeyCodes.Find(s.Key)?.Code ?? throw new InvalidOperationException($"알 수 없는 키 {s.Key}"),
                 (ushort)Math.Clamp(s.HoldMs, 10, 10000), (ushort)Math.Clamp(s.GapMs, 0, 10000))).ToArray());
+
+    /// <summary>
+    /// ClawHub(소프트웨어)가 맡는 버튼: 고급 동작이 있는 버튼 + 시스템 동작(마이크 켜기/끄기 등)이 들어간 버튼.
+    /// 펌웨어에는 운반 키로 쓰인다 (<see cref="AdvancedInput.FirmwareBindings"/>).
+    /// </summary>
+    public IEnumerable<ClawButton> EngineButtons() =>
+        (Advanced?.EngineButtons() ?? []).Union(Bindings.Where(kv => kv.Value.Any(SystemKeys.Is)).Select(kv => kv.Key));
 
     public IReadOnlyDictionary<ClawButton, byte[]> ToCodes() =>
         AdvancedInput.FirmwareBindings(this).ToDictionary( // 고급 입력이 맡는 버튼은 운반 키

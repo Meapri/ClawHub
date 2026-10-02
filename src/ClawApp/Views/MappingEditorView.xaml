@@ -267,8 +267,8 @@
                         <Setter Property="FontWeight" Value="SemiBold"/>
                     </Style>
                 </Border.Resources>
-                <ScrollViewer Padding="22,18,22,12">
-                    <StackPanel>
+                <ScrollViewer Padding="16,12,16,6">
+                    <StackPanel Margin="6"> <!-- 포커스 테두리(바깥 4px)가 스크롤 가장자리에서 잘리지 않게 -->
                         <TextBlock Text="스틱·트리거·자이로" Style="{StaticResource H2}" Margin="0,0,0,4"/>
                         <TextBlock Style="{StaticResource Caption}" Margin="0,0,0,14"
                                    Text="컨트롤러 펌웨어가 처리해서 안티치트 걱정이 없고 지연도 없어요. 이 프로필이 적용될 때만 쓰여요."/>
@@ -321,7 +321,7 @@
 
                         <!-- 스틱 -->
                         <DockPanel Margin="2,18,0,8">
-                            <Button DockPanel.Dock="Right" Style="{StaticResource SmallAction}" Command="{Binding ResetSticksCommand}" Margin="0" Padding="10,6"
+                            <Button DockPanel.Dock="Right" Style="{StaticResource SmallAction}" Command="{Binding ResetSticksCommand}" Margin="0" Padding="12,4" MinHeight="34" FontSize="14"
                                     Content="기본값으로"/>
                             <TextBlock Text="스틱" Style="{StaticResource Section}" VerticalAlignment="Center"/>
                         </DockPanel>
@@ -387,8 +387,8 @@
                     Background="{DynamicResource Bg0}" BorderBrush="{DynamicResource Accent}" BorderThickness="3,0,0,0"
                     KeyboardNavigation.DirectionalNavigation="Contained"
                     m:Reveal.IsShown="{Binding IsOptionsOpen}" m:Reveal.ExitX="48" m:Entrance.Stagger="Self" m:Entrance.Offset="48">
-                <ScrollViewer Padding="22,18,22,12">
-                    <StackPanel>
+                <ScrollViewer Padding="16,12,16,6">
+                    <StackPanel Margin="6">
                         <TextBlock Text="프로필 옵션" Style="{StaticResource H2}" Margin="0,0,0,14"/>
 
                         <TextBlock Text="{Binding ModeTitle}" Style="{StaticResource Section}" Margin="2,0,0,8"/>
@@ -401,28 +401,24 @@
 
                         <!-- 고급 입력 (2단계 · 소프트웨어): 켜야 선택판에 '언제' 칩이 생긴다 -->
                         <TextBlock Text="고급 입력" Style="{StaticResource Section}" Margin="2,14,0,8"/>
-                        <Button Style="{StaticResource NavButton}" Command="{Binding ToggleAdvancedCommand}" HorizontalContentAlignment="Stretch">
-                            <DockPanel>
-                                <TextBlock DockPanel.Dock="Right" Text="A로 변경" Style="{StaticResource Caption}" VerticalAlignment="Center"/>
-                                <StackPanel>
-                                    <TextBlock Text="{Binding AdvancedText}" FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap"/>
-                                    <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,2,0,0"
-                                               Text="Steam Input처럼 버튼 하나에 여러 동작. 소프트웨어 입력이라 일부 온라인 게임 안티치트와 맞지 않을 수 있어요."/>
-                                </StackPanel>
-                            </DockPanel>
-                        </Button>
+                        <v:ChoiceChip Style="{StaticResource Switch}" IsChecked="{Binding AdvancedEnabled, Mode=OneWay}" Command="{Binding ToggleAdvancedCommand}">
+                            <StackPanel>
+                                <TextBlock Text="길게·두 번·연사·토글·레이어·원형 메뉴" TextWrapping="Wrap"/>
+                                <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,2,0,0"
+                                           Text="Steam Input처럼 버튼 하나에 여러 동작. 소프트웨어 입력이라 일부 온라인 게임 안티치트와 맞지 않을 수 있어요."/>
+                            </StackPanel>
+                        </v:ChoiceChip>
 
                         <!-- 3단계 가상 패드 (ViGEmBus·HidHide) -->
-                        <Button Style="{StaticResource NavButton}" Command="{Binding ToggleVirtualPadCommand}" HorizontalContentAlignment="Stretch" Margin="0,6,0,0">
-                            <DockPanel>
-                                <TextBlock DockPanel.Dock="Right" Text="A로 변경" Style="{StaticResource Caption}" VerticalAlignment="Center"/>
-                                <StackPanel>
-                                    <TextBlock FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap"><Run Text="가상 패드 · "/><Run Text="{Binding VirtualPadText, Mode=OneWay}"/></TextBlock>
-                                    <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,2,0,0"
-                                               Text="게임에는 ClawHub가 만든 Xbox 패드를 보여 줘요. 고급 동작에서 게임패드 버튼을 내고, 스틱을 키·마우스로 바꿀 수 있어요."/>
-                                </StackPanel>
-                            </DockPanel>
-                        </Button>
+                        <v:ChoiceChip Style="{StaticResource Switch}" IsChecked="{Binding VirtualPadOn, Mode=OneWay}" Command="{Binding ToggleVirtualPadCommand}" Margin="0,2,0,4">
+                            <StackPanel>
+                                <TextBlock Text="가상 패드" TextWrapping="Wrap"/>
+                                <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,2,0,0"
+                                           Text="게임에는 ClawHub가 만든 Xbox 패드를 보여 줘요. 고급 동작에서 게임패드 버튼을 내고, 스틱을 키·마우스로 바꿀 수 있어요."/>
+                                <TextBlock Style="{StaticResource Caption}" Foreground="{DynamicResource Warn}" Margin="0,2,0,0" Text="드라이버(ViGEmBus·HidHide)가 설치돼 있지 않아요"
+                                           Visibility="{Binding VirtualPadDrivers, Converter={StaticResource NotVis}}"/>
+                            </StackPanel>
+                        </v:ChoiceChip>
                         <StackPanel m:Reveal.IsShown="{Binding VirtualPadOn}" m:Reveal.Kind="Inline" Margin="0,8,0,0">
                             <TextBlock Text="왼쪽 스틱" Style="{StaticResource Caption}" Margin="2,0,0,6"/>
                             <ItemsControl ItemsSource="{Binding LeftStickChoices}" Focusable="False">
@@ -515,7 +511,7 @@
                         </Button>
                     </StackPanel>
                     <!-- 본체 사진이 전체에서 이 버튼으로 다가간다 (선택판을 열 때마다) -->
-                    <v:ControllerMap DockPanel.Dock="Left" Width="300" Height="128" Margin="-6,-4,20,-4" VerticalAlignment="Center"
+                    <v:ControllerMap DockPanel.Dock="Left" Width="300" Height="120" Margin="0,0,24,0" VerticalAlignment="Center" ShowCaption="False"
                                      Rows="{Binding Rows}" Focused="{Binding EditingRow.Button}" ZoomToFocus="True"/>
                     <StackPanel VerticalAlignment="Center">
                         <TextBlock Style="{StaticResource Caption}" Text="{Binding EditingSlotCaption}"/>
@@ -610,8 +606,8 @@
                         <TextBlock Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="12,0,0,0"
                                    Text="켜 두고 아래에서 키를 고르면 Ctrl + Q처럼 조합돼요. 작은 글자는 이미 그 키를 쓰는 버튼이에요."/>
                     </DockPanel>
-                    <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
-                        <ItemsControl ItemsSource="{Binding KeyboardRows}" Focusable="False" m:Entrance.Stagger="Items" m:Entrance.Offset="24">
+                    <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Margin="-6">
+                        <ItemsControl ItemsSource="{Binding KeyboardRows}" Focusable="False" Margin="6" m:Entrance.Stagger="Items" m:Entrance.Offset="24">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <ItemsControl ItemsSource="{Binding}" Focusable="False" ItemsPanel="{StaticResource Row}" ItemTemplate="{StaticResource KeySlot}"/>
@@ -630,8 +626,8 @@
                 </StackPanel>
 
                 <!-- 조합·미디어 -->
-                <ScrollViewer Visibility="{Binding CategoryIndex, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=2}">
-                    <StackPanel>
+                <ScrollViewer Margin="-6" Visibility="{Binding CategoryIndex, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=2}">
+                    <StackPanel Margin="6">
                         <TextBlock Text="자주 쓰는 조합" Style="{StaticResource Section}" Margin="2,0,0,10"/>
                         <ItemsControl ItemsSource="{Binding ComboPresets}" Focusable="False" ItemsPanel="{StaticResource Wrap}">
                             <ItemsControl.ItemTemplate>
@@ -654,6 +650,14 @@
                     <TextBlock Style="{StaticResource Caption}" Margin="2,0,0,10"
                                Text="다른 패드 버튼처럼 동작하게 해요. 예: 뒷면 M1 = A (엄지를 떼지 않고 점프)."/>
                     <ItemsControl ItemsSource="{Binding GamepadKeys}" Focusable="False" ItemsPanel="{StaticResource Wrap}" ItemTemplate="{StaticResource KeyTile}"
+                                  m:Entrance.Stagger="Items" m:Entrance.Offset="24"/>
+                </StackPanel>
+
+                <!-- 시스템 동작 (ClawHub가 처리 — 게임 입력이 아니라 안티치트와 상관없음) -->
+                <StackPanel Visibility="{Binding CategoryIndex, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=4}">
+                    <TextBlock Style="{StaticResource Caption}" Margin="2,0,0,10" TextWrapping="Wrap"
+                               Text="게임 중에도 버튼 하나로 마이크를 끄거나 스크린샷을 찍어요. 누르면 화면 위에 결과가 잠깐 떠요."/>
+                    <ItemsControl ItemsSource="{Binding SystemKeys}" Focusable="False" ItemsPanel="{StaticResource Wrap}" ItemTemplate="{StaticResource KeyTile}"
                                   m:Entrance.Stagger="Items" m:Entrance.Offset="24"/>
                 </StackPanel>
             </Grid>
