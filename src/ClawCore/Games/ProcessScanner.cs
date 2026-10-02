@@ -40,6 +40,28 @@ public static class ProcessScanner
         return list;
     }
 
+    /// <summary>
+    /// 프로세스 하나만 (없으면 빈 목록). 전체 목록(<see cref="List"/>, 프로세스 수백 개 + 스레드 정보 ≈ 3ms·0.5MB)을 만들지 않는다.
+    /// 앞에 떠 있는 창의 프로세스만 볼 때 (2초마다 불림).
+    /// </summary>
+    public static List<Proc> Single(int pid)
+    {
+        try
+        {
+            using var p = Process.GetProcessById(pid);
+            var proc = new Proc(p.Id, p.ProcessName);
+            lock (Lock)
+            {
+                if (PathCache.Count > 512) PathCache.Clear(); // List()를 부르지 않는 동안에도 끝없이 늘지 않게
+            }
+            return [proc];
+        }
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+        {
+            return []; // 이미 종료
+        }
+    }
+
     /// <summary>실행 파일 전체 경로 (권한 없음/종료됨이면 null). pid 재사용은 이름이 바뀌었는지로 구분한다.</summary>
     public static string? PathOf(Proc p)
     {
@@ -145,6 +167,31 @@ public static class ProcessScanner
         if (dir.EndsWith(@"\steamapps\common\", StringComparison.OrdinalIgnoreCase)
             || dir.EndsWith(@"\steamapps\", StringComparison.OrdinalIgnoreCase)) return null;
         return dir;
+    }
+
+    /// <summary>
+    /// 프로세스가 끝났는지 핸들로 지켜본다 (SYNCHRONIZE). 핸들을 들고 있는 동안은 pid가 다른 프로세스에 재사용되지 않으므로
+    /// 목록을 다시 훑지 않고도 "그 프로세스가 아직 살아 있는지"를 정확히 알 수 있다.
+    /// 열 수 없거나(보호된 프로세스) 이름이 다르면(그새 pid 재사용) null.
+    /// </summary>
+    public static WaitHandle? Watch(Proc p)
+    {
+        var h = OpenProcess(0x00100000 /* SYNCHRONIZE */ | 0x1000 /* QUERY_LIMITED_INFORMATION */, false, p.Id);
+        if (h == IntPtr.Zero) return null;
+        var handle = new ProcessWaitHandle(h);
+        var sb = new StringBuilder(1024);
+        var size = sb.Capacity;
+        var name = QueryFullProcessImageName(h, 0, sb, ref size) ? Path.GetFileName(sb.ToString()) : null;
+        if (name is not null && (string.Equals(name, p.Name, StringComparison.OrdinalIgnoreCase)
+                                 || string.Equals(Path.GetFileNameWithoutExtension(name), p.Name, StringComparison.OrdinalIgnoreCase)))
+            return handle;
+        handle.Dispose();
+        return null;
+    }
+
+    private sealed class ProcessWaitHandle : WaitHandle
+    {
+        public ProcessWaitHandle(IntPtr handle) => SafeWaitHandle = new Microsoft.Win32.SafeHandles.SafeWaitHandle(handle, ownsHandle: true);
     }
 
     [DllImport("kernel32.dll", SetLastError = true)]

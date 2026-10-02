@@ -40,6 +40,8 @@ public partial class MainWindow : Window
         _vm.PropertyChanged += OnVmChanged;
 
         _pad.Action += a => { if (IsActive) Route(a); };
+        // 창이 활성일 때만 폴링한다 (Activated에서 켜짐). 숨은 채로 시작하는 Xbox 모드에서도 타이머가 돌지 않게
+        _pad.Enabled = false;
         _pad.Start();
 
         PreviewKeyDown += OnKey;
@@ -354,10 +356,23 @@ public partial class MainWindow : Window
     private void PageHost_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
     {
         if (_vm.CurrentPage is not { } page || e.NewFocus is not UIElement el) return;
-        var all = new List<UIElement>();
-        CollectFocusable(PageHost, all);
-        var i = all.IndexOf(el);
-        if (i >= 0) _focusMemory[page] = i;
+        // 포커스가 움직일 때마다 불리므로 페이지 전체를 모으지 않고 그 요소를 찾을 때까지만 센다 (같은 순서·같은 번호)
+        var count = 0;
+        if (CountFocusableUntil(PageHost, el, ref count)) _focusMemory[page] = count;
+    }
+
+    /// <summary><see cref="CollectFocusable"/>와 같은 순서로 세다가 <paramref name="target"/>을 만나면 true (count = 그 번호).</summary>
+    private static bool CountFocusableUntil(DependencyObject node, UIElement target, ref int count)
+    {
+        if (node is UIElement { IsVisible: false }) return false;
+        if (node is ButtonBase or Slider or TextBox && node is UIElement { Focusable: true, IsEnabled: true } el)
+        {
+            if (ReferenceEquals(el, target)) return true;
+            count++;
+        }
+        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(node); i++)
+            if (CountFocusableUntil(VisualTreeHelper.GetChild(node, i), target, ref count)) return true;
+        return false;
     }
 
     private static void CollectFocusable(DependencyObject node, List<UIElement> into)

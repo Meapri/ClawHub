@@ -29,20 +29,41 @@ public static class SystemControls
         catch (Exception) { /* 외부 모니터 등 미지원 */ }
     }
 
-    private static MMDevice? Speaker()
+    /// <summary>
+    /// 기본 출력 장치로 <paramref name="use"/>를 실행한다 (장치가 없으면 <paramref name="none"/>).
+    /// 상태 표시줄이 10초마다 부르므로 COM 개체(열거기·장치·볼륨)는 쓰고 바로 놓는다
+    /// (예전에는 GC·종료자가 돌 때까지 쌓였다).
+    /// </summary>
+    private static T? WithSpeaker<T>(Func<MMDevice, T> use, T? none)
     {
-        try { return new MMDeviceEnumerator().GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia); }
-        catch (Exception) { return null; }
+        MMDeviceEnumerator? enumerator = null;
+        MMDevice? device = null;
+        try
+        {
+            try
+            {
+                enumerator = new MMDeviceEnumerator();
+                device = enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
+            }
+            catch (Exception) { return none; } // 출력 장치 없음
+            return use(device);
+        }
+        finally
+        {
+            device?.Dispose();
+            enumerator?.Dispose();
+        }
     }
 
-    public static int? GetVolume() => Speaker() is { } d ? (int)Math.Round(d.AudioEndpointVolume.MasterVolumeLevelScalar * 100) : null;
+    public static int? GetVolume() =>
+        WithSpeaker<int?>(d => (int)Math.Round(d.AudioEndpointVolume.MasterVolumeLevelScalar * 100), null);
 
-    public static void SetVolume(int percent)
+    public static void SetVolume(int percent) => WithSpeaker(d =>
     {
-        if (Speaker() is not { } d) return;
         d.AudioEndpointVolume.Mute = percent == 0;
         d.AudioEndpointVolume.MasterVolumeLevelScalar = Math.Clamp(percent, 0, 100) / 100f;
-    }
+        return true;
+    }, false);
 
     public readonly record struct BatteryInfo(int? Percent, bool Charging);
 
@@ -58,9 +79,12 @@ public static class SystemControls
         double? watts = null;
         try
         {
+            // 빠른 설정이 열려 있는 동안 2초마다 — WMI 결과(COM 개체)는 바로 놓는다
             using var s = new ManagementObjectSearcher(@"root\WMI", "SELECT DischargeRate FROM BatteryStatus");
-            foreach (ManagementObject o in s.Get())
-                if (Convert.ToInt32(o["DischargeRate"]) is > 0 and var mw) watts = mw / 1000.0;
+            using var results = s.Get();
+            foreach (ManagementObject o in results)
+                using (o)
+                    if (Convert.ToInt32(o["DischargeRate"]) is > 0 and var mw) watts = mw / 1000.0;
         }
         catch (Exception) { /* 미지원 */ }
         TimeSpan? remaining = GetSystemPowerStatus(out var st) && st.BatteryLifeTime > 0 ? TimeSpan.FromSeconds(st.BatteryLifeTime) : null;

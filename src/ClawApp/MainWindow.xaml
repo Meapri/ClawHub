@@ -18,6 +18,20 @@
 
     <Grid>
         <!-- ── 셸 화면 ─────────────────────────────────────── -->
+        <!-- 패널이 열려 있는 동안 흐린 셸을 비트맵 한 장으로 캐시한다: 패널이 미끄러져 들어오거나 값이 갱신될 때
+             화면 전체(2880×1800) 흐림을 프레임마다 다시 계산하지 않는다. 흐림은 아래 Shell의 Effect가 그대로 그린다 -->
+        <Grid>
+            <Grid.Style>
+                <Style TargetType="Grid">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsAnyPanelOpen}" Value="True">
+                            <Setter Property="CacheMode">
+                                <Setter.Value><BitmapCache RenderAtScale="1" SnapsToDevicePixels="True"/></Setter.Value>
+                            </Setter>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Grid.Style>
         <Grid x:Name="Shell" Visibility="{Binding IsShellVisible, Converter={StaticResource Vis}}">
             <!-- 패널이 열리면 뒤 화면을 흐리게 (앱 안의 Acrylic) -->
             <Grid.Style>
@@ -166,6 +180,7 @@
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
+        </Grid>
         </Grid>
 
         <!-- ── 패널 뒤 어둡게 ─────────────────────────────── -->

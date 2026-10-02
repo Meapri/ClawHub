@@ -55,6 +55,7 @@ public sealed partial class ShellViewModel
         OnPropertyChanged(nameof(PerfText));
         OnPropertyChanged(nameof(ControllerConnected));
         OnPropertyChanged(nameof(ControllerStatusText));
+        CheckServiceAppState(value);
     }
 
     private void UpdateBattery()

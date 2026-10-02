@@ -69,25 +69,50 @@ public sealed partial class ShellViewModel
         Motion.Backdrop.Sharp = home.BackdropBlur < 24; // 흐림이 약하면 그림을 화면 해상도로
         Motion.TilePicture.SetSource(tilePicture ? CustomBackdrop() : null);
 
+        // 앱 리소스를 쓰거나 지울 때마다 WPF는 열린 창의 요소 트리 전체를 훑어 DynamicResource를 다시 찾는다.
+        // 설정 슬라이더를 움직일 때마다 여기로 오므로 값이 실제로 바뀐 것만 쓴다 (보이는 결과는 같다)
         var res = Application.Current.Resources;
-        res["TileBackgroundOpacity"] = 1 - Math.Clamp(home.TileTransparency, 0, 100) / 100.0;
+        SetIfChanged(res, "TileBackgroundOpacity", 1 - Math.Clamp(home.TileTransparency, 0, 100) / 100.0);
         // 타일 그림 위에서는 유리 타일 글자도 흰색 (W10M처럼)
-        if (tilePicture) res["TileText"] = Frozen(Colors.White);
-        else res.Remove("TileText");
+        if (tilePicture) SetBrushIfChanged(res, "TileText", Colors.White);
+        else RemoveIfPresent(res, "TileText");
 
         var palette = home.AccentFromImage && home.BackdropMode is BackdropMode.Image or BackdropMode.TilePicture
             ? AccentFromImage.FromFile(home.BackdropImage, SystemTheme.IsLight)
             : null;
         if (palette is { } p)
         {
-            res["Accent"] = Frozen(p.Accent);
-            res["AccentHover"] = Frozen(p.AccentHover);
-            res["TileAccent"] = Frozen(p.TileAccent);
+            SetBrushIfChanged(res, "Accent", p.Accent);
+            SetBrushIfChanged(res, "AccentHover", p.AccentHover);
+            SetBrushIfChanged(res, "TileAccent", p.TileAccent);
         }
         else
         {
-            foreach (var k in AccentKeys) res.Remove(k);
+            foreach (var k in AccentKeys) RemoveIfPresent(res, k);
         }
+    }
+
+    /// <summary>여기서 앱 리소스 최상위에 덮어쓴 키 (병합된 테마 사전의 기본값과 구분 — Contains/인덱서는 병합 사전까지 찾는다).</summary>
+    private static readonly HashSet<string> Overridden = [];
+
+    private static void SetIfChanged(ResourceDictionary res, string key, double value)
+    {
+        if (res[key] is double old && old.Equals(value)) return; // 지금 보이는 값과 같음
+        res[key] = value;
+        Overridden.Add(key);
+    }
+
+    private static void SetBrushIfChanged(ResourceDictionary res, string key, Color color)
+    {
+        if (res[key] is SolidColorBrush old && old.Color == color) return;
+        res[key] = Frozen(color);
+        Overridden.Add(key);
+    }
+
+    /// <summary>덮어쓴 적이 있을 때만 지운다 → 테마 사전의 기본값으로 돌아간다.</summary>
+    private static void RemoveIfPresent(ResourceDictionary res, string key)
+    {
+        if (Overridden.Remove(key)) res.Remove(key);
     }
 
     private static SolidColorBrush Frozen(Color c)

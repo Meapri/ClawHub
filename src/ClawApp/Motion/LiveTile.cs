@@ -65,7 +65,12 @@ public static class LiveTile
         }
         if (!MotionCore.Enabled || Tiles.Any(t => t.Busy)) return;
         // 창이 가려졌거나 메뉴·빠른 설정이 열려 있으면 쉰다 (패널 뒤는 흐림 효과라 다시 그리면 비싸다)
-        if (Application.Current?.MainWindow is not { IsVisible: true, IsActive: true }) return;
+        if (Application.Current?.MainWindow is not { } win) return;
+        if (win is not { IsVisible: true, IsActive: true })
+        {
+            SleepUntilActivated(win); // 게임 중(창 숨김)에는 0.5초 타이머도 멈춘다
+            return;
+        }
         if (ViewModels.ShellViewModel.Instance is { IsAnyPanelOpen: true }) return;
 
         var now = Environment.TickCount64;
@@ -78,6 +83,24 @@ public static class LiveTile
         Flip(next);
         _lastFlip = now;
         next.Due = now + Rng.Next(6000, 8000);
+    }
+
+    private static Window? _sleepingOn;
+
+    /// <summary>창이 다시 활성화될 때까지 타이머를 멈춘다. 그동안 지난 넘김 시각은 깨어난 뒤 순서대로 처리된다 (예전과 같음).</summary>
+    private static void SleepUntilActivated(Window win)
+    {
+        _timer?.Stop();
+        if (_sleepingOn is not null) return;
+        _sleepingOn = win;
+        win.Activated += OnWindowActivated;
+    }
+
+    private static void OnWindowActivated(object? sender, EventArgs e)
+    {
+        if (_sleepingOn is { } w) w.Activated -= OnWindowActivated;
+        _sleepingOn = null;
+        if (Tiles.Count > 0) _timer?.Start();
     }
 
     private static void Flip(Entry e)
