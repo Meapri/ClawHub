@@ -18,17 +18,26 @@
             <Setter Property="Width" Value="40"/>
             <Setter Property="Height" Value="40"/>
             <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontSize" Value="17"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Grid>
                             <Ellipse Fill="{DynamicResource Text}" Stroke="{DynamicResource Bg0}" StrokeThickness="2"/>
-                            <TextBlock Text="{TemplateBinding Content}" FontFamily="{StaticResource LucideFont}" FontSize="17"
+                            <TextBlock Text="{TemplateBinding Content}" FontFamily="{StaticResource LucideFont}" FontSize="{TemplateBinding FontSize}"
                                        Foreground="{DynamicResource Bg0}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Grid>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
+            <Style.Triggers>
+                <!-- 작은 타일(80px)엔 작게 -->
+                <DataTrigger Binding="{Binding IsSmall}" Value="True">
+                    <Setter Property="Width" Value="30"/>
+                    <Setter Property="Height" Value="30"/>
+                    <Setter Property="FontSize" Value="13"/>
+                </DataTrigger>
+            </Style.Triggers>
         </Style>
 
         <ScaleTransform x:Key="DimScale" ScaleX="0.9" ScaleY="0.9"/>
@@ -83,7 +92,7 @@
                                             <Border Visibility="{Binding Art, Converter={StaticResource NullVis}}">
                                                 <Border.Background><ImageBrush ImageSource="{Binding Art}" Stretch="UniformToFill"/></Border.Background>
                                             </Border>
-                                            <Image Source="{Binding Icon}" Margin="22%" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"
+                                            <Image Source="{Binding Icon}" Margin="8" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"
                                                    Visibility="{Binding Icon, Converter={StaticResource NullVis}}"/>
                                             <Viewbox x:Name="GlyphBox" Margin="10" Visibility="Collapsed">
                                                 <TextBlock Text="{Binding Glyph}" FontFamily="{StaticResource LucideFont}"/>
@@ -370,7 +379,7 @@
     <!-- ── 폴더 창: 바깥을 누르거나 B로 닫힘 ─────────────────── -->
     <Grid x:Name="FolderLayer" Visibility="{Binding OpenFolder, Converter={StaticResource NullVis}}">
         <Border x:Name="FolderScrim" Background="{DynamicResource Scrim}"/>
-        <Border x:Name="FolderCard" Background="{DynamicResource Bg1}" BorderBrush="{DynamicResource Stroke}" BorderThickness="1"
+        <Border x:Name="FolderCard" Background="{DynamicResource FolderCardFill}" BorderBrush="{DynamicResource Stroke}" BorderThickness="1"
                 HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="1200" Padding="28,22,28,26"
                 KeyboardNavigation.DirectionalNavigation="Contained" m:Entrance.Stagger="Self" m:Entrance.Offset="24">
             <DockPanel>
@@ -396,7 +405,7 @@
                 </DockPanel>
                 <ScrollViewer x:Name="FolderScroller" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" PanningMode="HorizontalOnly">
                     <ItemsControl x:Name="FolderBoard" ItemsSource="{Binding FolderTiles}" ItemTemplate="{StaticResource StartTile}" Focusable="False"
-                                  ItemContainerStyle="{StaticResource StartTileContainer}" Height="344" Margin="4">
+                                  ItemContainerStyle="{StaticResource StartTileContainer}" Height="{Binding FolderBoardHeight}" Margin="4">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate><v:StartPanel/></ItemsPanelTemplate>
                         </ItemsControl.ItemsPanel>

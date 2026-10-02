@@ -36,7 +36,7 @@ public sealed class StartPanel : Panel
     protected override Size MeasureOverride(Size available)
     {
         var height = double.IsInfinity(available.Height) ? 6 * Unit : available.Height + Gap;
-        var rows = Math.Max(4, (int)(height / Unit));
+        var rows = Math.Max(2, (int)(height / Unit));
         Rows = rows - rows % 2;
 
         var cols = Pack();

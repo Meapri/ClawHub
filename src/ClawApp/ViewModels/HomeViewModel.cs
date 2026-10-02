@@ -29,6 +29,18 @@ public sealed partial class HomeViewModel : ObservableObject, INavPage
     [ObservableProperty] private StartTileViewModel? _openFolder;
     public ObservableCollection<StartTileViewModel> FolderTiles { get; } = [];
 
+    /// <summary>폴더 창 판 높이: 안의 타일이 대략 정사각형으로 퍼지게 (2~4칸 = 168~344px).</summary>
+    public double FolderBoardHeight
+    {
+        get
+        {
+            var cells = FolderTiles.Sum(t => t.Span * t.Span);
+            var side = Math.Clamp((int)Math.Ceiling(Math.Sqrt(Math.Max(cells, 1))), FolderTiles.Any(t => t.IsLarge) ? 4 : 2, 4);
+            side += side % 2; // 보통 타일은 2칸 격자에 맞춘다
+            return side * Views.StartPanel.Unit - Views.StartPanel.Gap;
+        }
+    }
+
     [ObservableProperty] private bool _isEditing;
     [ObservableProperty] private StartTileViewModel? _selected;
     [ObservableProperty] private StartTileViewModel? _grabbed;
@@ -49,6 +61,7 @@ public sealed partial class HomeViewModel : ObservableObject, INavPage
     public HomeViewModel(ShellViewModel shell)
     {
         _shell = shell;
+        FolderTiles.CollectionChanged += (_, _) => OnPropertyChanged(nameof(FolderBoardHeight));
         _shell.Start.EnsureDefault(_shell.Library);
         _shell.Start.Changed += Rebuild;
         Reload();
@@ -113,6 +126,7 @@ public sealed partial class HomeViewModel : ObservableObject, INavPage
 
         foreach (var t in AllShown) t.IsEditing = IsEditing;
         if (Selected is not null && !AllShown.Contains(Selected)) Selected = null;
+        OnPropertyChanged(nameof(FolderBoardHeight)); // 폴더 안 타일 크기가 바뀌었을 수도
         _shell.UpdateHints();
     }
 
@@ -255,7 +269,7 @@ public sealed partial class HomeViewModel : ObservableObject, INavPage
 
     public void Select(StartTileViewModel? tile)
     {
-        if (Selected is not null) Selected.IsSelected = false;
+        foreach (var t in AllShown) if (t != tile) t.IsSelected = false; // 고른 타일은 늘 하나
         Selected = tile;
         if (tile is null) return;
         tile.IsSelected = true;

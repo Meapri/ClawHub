@@ -13,7 +13,10 @@ public static class JsonStore
     };
 
     /// <summary>사용자 데이터 (프로필, 라이브러리, 설정) — 앱이 소유.</summary>
-    public static string UserDir => Ensure(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ClawHub"));
+    /// <remarks>CLAWHUB_USERDIR 환경 변수로 바꿀 수 있다 (화면 점검용 실행이 실제 설정·배치를 건드리지 않게).</remarks>
+    public static string UserDir => Ensure(Environment.GetEnvironmentVariable("CLAWHUB_USERDIR") is { Length: > 0 } dir
+        ? dir
+        : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ClawHub"));
 
     /// <summary>서비스 데이터 (컨트롤러 baseline 등) — 서비스가 소유.</summary>
     public static string ServiceDir => Ensure(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "ClawHub"));

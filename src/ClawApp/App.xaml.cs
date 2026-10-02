@@ -36,6 +36,7 @@ public partial class App : Application
         DispatcherUnhandledException += (_, ev) =>
         {
             ev.Handled = true;
+            LogError(ev.Exception);
             ViewModels.ShellViewModel.Instance?.ShowToast($"오류: {ev.Exception.Message}");
         };
         TaskScheduler.UnobservedTaskException += (_, ev) => ev.SetObserved();
@@ -50,6 +51,18 @@ public partial class App : Application
 
         base.OnStartup(e);
         _window = new MainWindow(); // 표시 여부는 창이 직접 결정 (Xbox 모드면 숨은 채로 시작)
+    }
+
+    /// <summary>처리 못 한 UI 예외 기록 (%LocalAppData%\ClawHub\app-errors.log, 1MB 넘으면 새로).</summary>
+    private static void LogError(Exception ex)
+    {
+        try
+        {
+            var path = Path.Combine(ClawCore.JsonStore.UserDir, "app-errors.log");
+            if (File.Exists(path) && new FileInfo(path).Length > 1_000_000) File.Delete(path);
+            File.AppendAllText(path, $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {ex}{Environment.NewLine}{Environment.NewLine}");
+        }
+        catch (Exception) { /* 기록 실패는 무시 */ }
     }
 
     private MainWindow? _window;
