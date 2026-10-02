@@ -17,6 +17,23 @@ public sealed partial class SettingsCategory(string key, string icon, string lab
     public string Icon { get; } = icon;
     public string Label { get; } = label;
     [ObservableProperty] private bool _isSelected;
+
+    /// <summary>분류 페이지 맨 위에 보이는 한 줄 설명.</summary>
+    public string Description => Descriptions.TryGetValue(Key, out var d) ? d : "";
+
+    private static readonly Dictionary<string, string> Descriptions = new()
+    {
+        ["general"] = "켤 때 어떻게 시작할지, 런처의 기본 동작과 데스크톱 모드를 정해요",
+        ["home"] = "시작 화면의 배경·타일 모양과 기능 타일을 꾸며요",
+        ["controller"] = "키 매핑 프로필, 버튼 배치, 진동·스틱·트리거 감도를 바꿔요",
+        ["light"] = "스틱 주변 RGB 조명과 ABXY 버튼 밝기를 바꿔요",
+        ["performance"] = "기본 성능 모드(TDP)·쿨러·자동 TDP를 정해요. 게임마다 다른 값은 게임 페이지에서 골라요",
+        ["display"] = "밝기·볼륨, 주사율·해상도, Intel 화면 품질 옵션",
+        ["battery"] = "충전 한도, 배터리일 때 쓸 기본값, 화면 꺼짐·절전 시간과 배터리 수명",
+        ["windows"] = "Wi-Fi·Bluetooth·업데이트 같은 Windows 설정 화면을 바로 열어요",
+        ["library"] = "프로그램 추가, 설치된 게임 다시 찾기, 숨긴 게임 되살리기",
+        ["about"] = "ClawHub 버전과 서비스·컨트롤러·EC 상태를 확인해요",
+    };
 }
 
 public sealed partial class ChoiceItem(string label, object value) : ObservableObject
