@@ -68,7 +68,8 @@ public sealed class AdvancedInput
     };
 
     /// <summary>레이어 버튼이 하나라도 있으면 "레이어 중" 키가 있는 버튼도 소프트웨어로 처리해야 한다.</summary>
-    public bool HasLayerShift => Buttons.Values.Any(b => b.LayerShift);
+    [JsonIgnore]
+    public bool HasLayerShift =>Buttons.Values.Any(b => b.LayerShift);
 
     /// <summary>엔진이 맡는 버튼 (고급 입력이 꺼져 있으면 없음).</summary>
     public IEnumerable<ClawButton> EngineButtons() => !Enabled ? []
