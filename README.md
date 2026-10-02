@@ -87,6 +87,13 @@ scripts\msi-center.ps1 -Disable   # (레거시) MSI Center M 끄기
 
 실행 옵션: `ClawApp.exe --shell` (전체 화면 강제) / `--companion` (Xbox 동반 강제)
 
+### 매핑 편집의 본체 사진 (선택)
+
+`%LocalAppData%\ClawHub\art\claw8ex-front.png`가 있으면 매핑 편집 가운데에 실제 본체 사진을 쓰고, 고른 버튼 쪽으로
+확대된다. MSI 공식 제품 렌더(MSI US 스토어의 `CLAW8EX-1.png`, 1024×820 투명 PNG)로 MSI 저작물이라
+저장소·설치 파일에는 넣지 않는다 — 개인적으로 받아 그 위치에 두면 된다. 없으면 단순화한 그림을 쓴다.
+버튼 자리는 이 렌더 기준 좌표다 (`src/ClawApp/Views/ControllerMap.cs`).
+
 ## 조작
 
 | 패드 | 키보드 | 동작 |

@@ -30,12 +30,14 @@ public partial class MappingEditorView : UserControl
         foreach (var list in new[] { LeftList, RightList })
         {
             list.AddHandler(Keyboard.GotKeyboardFocusEvent, new KeyboardFocusChangedEventHandler((_, e) => Spotlight(e.NewFocus as DependencyObject)), true);
-            list.MouseMove += (_, e) => Spotlight(e.OriginalSource as DependencyObject);
+            list.MouseMove += (_, e) => Spotlight(e.OriginalSource as DependencyObject, clear: false); // 줄 사이 틈에서는 그대로
             list.MouseLeave += (_, _) => Spotlight(Keyboard.FocusedElement as DependencyObject);
         }
+        // 버튼 줄 밖(가운데 동작 등)으로 포커스가 가면 그림은 본체 전체로 물러난다
+        AddHandler(Keyboard.GotKeyboardFocusEvent, new KeyboardFocusChangedEventHandler((_, e) => Spotlight(e.NewFocus as DependencyObject)), true);
     }
 
-    private void Spotlight(DependencyObject? from)
+    private void Spotlight(DependencyObject? from, bool clear = true)
     {
         if (_vm is null) return;
         for (var d = from; d is not null; d = d is Visual ? VisualTreeHelper.GetParent(d) : LogicalTreeHelper.GetParent(d))
@@ -44,6 +46,7 @@ public partial class MappingEditorView : UserControl
                 _vm.Spotlight(row);
                 return;
             }
+        if (clear) _vm.Spotlight(null);
     }
 
     private void OnVmChanged(object? sender, PropertyChangedEventArgs e)
