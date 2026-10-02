@@ -223,7 +223,7 @@
                         <Border x:Name="Bd" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="Center"/>
                         </Border>
-                        <Border x:Name="Pill" Width="4" HorizontalAlignment="Left" Background="{DynamicResource Accent}" Visibility="Collapsed"/>
+                        <Border x:Name="Pill" Width="4" HorizontalAlignment="Left" Background="{DynamicResource Accent}" Visibility="Collapsed" m:Grow.OnShow="True"/>
                         <Border x:Name="Ring" Style="{StaticResource FocusRing}" Margin="-3"/>
                         <Border x:Name="Inner" Style="{StaticResource FocusRingInner}" Margin="0"/>
                     </Grid>
@@ -463,10 +463,11 @@
             <Setter.Value>
                 <ControlTemplate TargetType="ToggleButton">
                     <Grid>
-                        <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="1" Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1"/>
+                        <!-- 켜짐 = 강조색 층이 짧게 페이드 인 (Motion/StateMotion.cs) -->
+                        <Border x:Name="On" Background="{DynamicResource Accent}" Opacity="0"
+                                m:Fade.On="{Binding IsChecked, RelativeSource={RelativeSource TemplatedParent}}"/>
+                        <ContentPresenter Margin="{TemplateBinding Padding}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         <Border x:Name="Ring" Style="{StaticResource FocusRing}"/>
                         <Border x:Name="Inner" Style="{StaticResource FocusRingInner}"/>
                     </Grid>
@@ -475,8 +476,6 @@
                             <Setter TargetName="Bd" Property="Background" Value="{DynamicResource TileFillHover}"/>
                         </Trigger>
                         <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Accent}"/>
-                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource Accent}"/>
                             <Setter Property="Foreground" Value="{DynamicResource AccentText}"/>
                             <Setter Property="FontWeight" Value="SemiBold"/>
                         </Trigger>
@@ -504,7 +503,10 @@
             <Setter.Value>
                 <ControlTemplate TargetType="ToggleButton">
                     <Grid>
-                        <Border x:Name="Bd" Background="{TemplateBinding Background}" Padding="12,10">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}"/>
+                        <Border x:Name="On" Background="{DynamicResource Accent}" Opacity="0"
+                                m:Fade.On="{Binding IsChecked, RelativeSource={RelativeSource TemplatedParent}}"/>
+                        <Border Padding="12,10">
                             <Grid>
                                 <!-- Tag = Lucide 아이콘 글자 -->
                                 <TextBlock Text="{TemplateBinding Tag}" FontFamily="{StaticResource LucideFont}" FontSize="22"
@@ -520,7 +522,6 @@
                             <Setter TargetName="Bd" Property="Background" Value="{DynamicResource TileFillHover}"/>
                         </Trigger>
                         <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Accent}"/>
                             <Setter Property="Foreground" Value="{DynamicResource AccentText}"/>
                         </Trigger>
                         <Trigger Property="IsKeyboardFocused" Value="True">
@@ -559,8 +560,12 @@
                                                Foreground="{DynamicResource TextDim}"/>
                                     <Grid Width="48" Height="24">
                                         <Border x:Name="Track" BorderThickness="2" BorderBrush="{DynamicResource StrokeStrong}" Background="Transparent"/>
+                                        <!-- 켜지면 강조색이 차오르고 손잡이가 미끄러진다 (트랙 48 - 여백 6×2 - 손잡이 12 = 24) -->
+                                        <Border x:Name="TrackOn" Background="{DynamicResource Accent}" Opacity="0"
+                                                m:Fade.On="{Binding IsChecked, RelativeSource={RelativeSource TemplatedParent}}"/>
                                         <Border x:Name="Knob" Width="12" Height="12" Margin="6,0" HorizontalAlignment="Left" VerticalAlignment="Center"
-                                                Background="{DynamicResource TextDim}"/>
+                                                Background="{DynamicResource TextDim}"
+                                                m:Knob.On="{Binding IsChecked, RelativeSource={RelativeSource TemplatedParent}}" m:Knob.Travel="24"/>
                                     </Grid>
                                 </StackPanel>
                                 <ContentPresenter VerticalAlignment="Center"/>
@@ -574,8 +579,6 @@
                             <Setter TargetName="Bd" Property="Background" Value="{DynamicResource TileFillHover}"/>
                         </Trigger>
                         <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="Track" Property="Background" Value="{DynamicResource Accent}"/>
-                            <Setter TargetName="Track" Property="BorderBrush" Value="{DynamicResource Accent}"/>
                             <Setter TargetName="Knob" Property="Background" Value="{DynamicResource AccentText}"/>
                             <Setter TargetName="Knob" Property="HorizontalAlignment" Value="Right"/>
                             <Setter TargetName="State" Property="Text" Value="켬"/>

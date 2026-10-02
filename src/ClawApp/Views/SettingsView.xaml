@@ -122,7 +122,7 @@
                         </StackPanel>
                     </Border>
                     <!-- 사진 (전체 화면 이미지·타일 그림) -->
-                    <Border Style="{StaticResource CardPanel}" Visibility="{Binding UsesPicture, Converter={StaticResource Vis}}">
+                    <Border Style="{StaticResource CardPanel}" m:Reveal.IsShown="{Binding UsesPicture}" m:Reveal.Kind="Inline">
                         <DockPanel>
                             <Border DockPanel.Dock="Right" Width="200" Height="112" Margin="16,0,0,0" Background="{DynamicResource TileFill}" ClipToBounds="True">
                                 <Grid>
@@ -143,7 +143,7 @@
                             </StackPanel>
                         </DockPanel>
                     </Border>
-                    <ToggleButton Style="{StaticResource Switch}" IsChecked="{Binding AccentFromImage}" Visibility="{Binding UsesPicture, Converter={StaticResource Vis}}">
+                    <ToggleButton Style="{StaticResource Switch}" IsChecked="{Binding AccentFromImage}" m:Reveal.IsShown="{Binding UsesPicture}" m:Reveal.Kind="Inline">
                         <StackPanel>
                             <TextBlock Text="배경 사진에서 강조색 뽑기"/>
                             <TextBlock Text="사진에서 가장 눈에 띄는 색을 골라 타일·버튼 색으로 써요. 끄면 Windows 강조색으로 돌아와요." Style="{StaticResource Caption}"/>
@@ -155,7 +155,7 @@
                             <DockPanel><TextBlock DockPanel.Dock="Right" Text="{Binding TileTransparency, StringFormat={}{0}%}" Style="{StaticResource Value}"/><TextBlock Text="타일 투명도" Style="{StaticResource SliderTitle}"/></DockPanel>
                             <Slider Minimum="0" Maximum="100" SmallChange="5" TickFrequency="5" Value="{Binding TileTransparency}"/>
                             <TextBlock Text="높일수록 타일 색이 옅어지고 배경(타일 그림이면 사진)이 비쳐요." Style="{StaticResource Caption}"/>
-                            <StackPanel Visibility="{Binding UsesFullScreenArt, Converter={StaticResource Vis}}">
+                            <StackPanel m:Reveal.IsShown="{Binding UsesFullScreenArt}" m:Reveal.Kind="Inline">
                                 <DockPanel Margin="0,12,0,0"><TextBlock DockPanel.Dock="Right" Text="{Binding BackdropBlur}" Style="{StaticResource Value}"/><TextBlock Text="배경 흐림" Style="{StaticResource SliderTitle}"/></DockPanel>
                                 <Slider Minimum="0" Maximum="80" SmallChange="8" TickFrequency="8" Value="{Binding BackdropBlur}"/>
                                 <DockPanel Margin="0,8,0,0"><TextBlock DockPanel.Dock="Right" Text="{Binding BackdropDim, StringFormat={}{0}%}" Style="{StaticResource Value}"/><TextBlock Text="덮개 진하기 (높을수록 글자가 또렷)" Style="{StaticResource SliderTitle}"/></DockPanel>
@@ -292,7 +292,7 @@
                                 <RadioButton Style="{StaticResource ChipRadio}" GroupName="light" Content="웨이브" IsChecked="{Binding LightWave}"/>
                                 <RadioButton Style="{StaticResource ChipRadio}" GroupName="light" Content="끄기" IsChecked="{Binding LightOff}"/>
                             </WrapPanel>
-                            <StackPanel Visibility="{Binding HasSpeed, Converter={StaticResource Vis}}" Margin="0,6,0,0">
+                            <StackPanel m:Reveal.IsShown="{Binding HasSpeed}" m:Reveal.Kind="Inline" Margin="0,6,0,0">
                                 <TextBlock Text="속도" Margin="0,0,0,8"/>
                                 <WrapPanel>
                                     <RadioButton Style="{StaticResource ChipRadio}" GroupName="lspeed" Content="느리게" IsChecked="{Binding SpeedSlow}"/>
@@ -350,7 +350,7 @@
                                 <RadioButton Style="{StaticResource ChipRadio}" GroupName="sperf" Content="수동" IsChecked="{Binding IsManualMode}"/>
                             </WrapPanel>
                             <TextBlock Style="{StaticResource Caption}"><Run Text="TDP "/><Run Text="{Binding TdpText, Mode=OneWay}"/></TextBlock>
-                            <StackPanel Visibility="{Binding IsManual, Converter={StaticResource Vis}}" Margin="0,8,0,0">
+                            <StackPanel m:Reveal.IsShown="{Binding IsManual}" m:Reveal.Kind="Inline" Margin="0,8,0,0">
                                 <DockPanel><TextBlock DockPanel.Dock="Right" Text="{Binding Pl1, StringFormat={}{0}W}" Style="{StaticResource Value}"/><TextBlock Text="지속 전력 (PL1)" Style="{StaticResource SliderTitle}"/></DockPanel>
                                 <Slider Minimum="8" Maximum="45" SmallChange="1" Value="{Binding Pl1}"/>
                                 <DockPanel Margin="0,8,0,0"><TextBlock DockPanel.Dock="Right" Text="{Binding Pl2, StringFormat={}{0}W}" Style="{StaticResource Value}"/><TextBlock Text="최대 전력 (PL2)" Style="{StaticResource SliderTitle}"/></DockPanel>

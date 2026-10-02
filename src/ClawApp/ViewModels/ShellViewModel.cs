@@ -540,8 +540,8 @@ public sealed partial class ShellViewModel : ObservableObject
     }
 
     /// <summary>
-    /// 오른쪽 버튼 = Game Bar의 ClawHub 빠른 설정 위젯.
-    /// 위젯이 없으면 런처가 보일 때만 앱 안 패널로, 런처가 숨어 있으면 Game Bar 자체(OEM 위젯 등)를 연다.
+    /// 오른쪽 버튼 = 빠른 설정. 런처가 보이면 앱 안 패널, 게임·데스크톱 중이면 Game Bar의 ClawHub 위젯
+    /// (위젯이 없으면 Game Bar 자체 — OEM 위젯 등).
     /// </summary>
     private void OnQuickSettingsButton()
     {
@@ -562,16 +562,17 @@ public sealed partial class ShellViewModel : ObservableObject
         // "데스크톱으로" 중(스틱 = 마우스): 기본은 터치 키보드 토글 (설정에서 Game Bar로 바꿀 수 있음)
         if (TryDesktopRightButton()) return;
 
-        if (XboxIntegration.IsWidgetInstalled() && XboxIntegration.TryOpenWidget())
-        {
-            BeginHandoff(Handoff.GameBar, retryWinG: true);
-            _panelFallback = IsWindowVisible; // Game Bar가 꺼져 있어 끝내 안 뜨면 런처 위 패널로
-            return;
-        }
-
+        // 런처가 보이면 앱 안 패널을 바로 연다. 예전에는 여기서도 위젯을 먼저 열고, Game Bar가 앞에 뜬 걸 못 보면
+        // 5초 뒤 패널을 대신 띄웠는데 — 위젯이 떠도 앞 창은 ClawHub로 남는 일이 많아 둘이 함께 뜨고 패널은 늦었다.
         if (IsWindowVisible)
         {
             OpenQuickPanel();
+            return;
+        }
+
+        if (XboxIntegration.IsWidgetInstalled() && XboxIntegration.TryOpenWidget())
+        {
+            BeginHandoff(Handoff.GameBar, retryWinG: true);
             return;
         }
 
@@ -591,9 +592,6 @@ public sealed partial class ShellViewModel : ObservableObject
 
     private enum Handoff { None, GameBar, XboxApp }
 
-    /// <summary>위젯을 런처 위에서 열었는지 — Game Bar가 끝내 안 뜨면 앱 안 패널로 대신한다.</summary>
-    private bool _panelFallback;
-
     private readonly DispatcherTimer _handoffTimer;
     private Handoff _handoff;
     private DateTime _handoffAt;
@@ -611,7 +609,6 @@ public sealed partial class ShellViewModel : ObservableObject
         _handoffAt = DateTime.UtcNow;
         _handoffSeen = false;
         _handoffRetry = retryWinG;
-        _panelFallback = false;
         _handoffTimer.Start();
         _ = SyncControllerAsync();
     }
@@ -655,11 +652,7 @@ public sealed partial class ShellViewModel : ObservableObject
         }
         // 끝내 안 뜸 → 원래 상태로 (Xbox 앱은 첫 실행이 느려서 더 기다린다)
         if (elapsed > (_handoff == Handoff.XboxApp ? TimeSpan.FromSeconds(15) : TimeSpan.FromSeconds(5)))
-        {
-            var fallback = _handoff == Handoff.GameBar && _panelFallback && IsWindowVisible && !IsQuickAccessOpen;
             EndHandoff();
-            if (fallback) OpenQuickPanel(); // Game Bar가 꺼져 있음 — 런처가 보이는 동안만 앱 안 패널
-        }
     }
 
     private async Task RetryGameBarAsync()

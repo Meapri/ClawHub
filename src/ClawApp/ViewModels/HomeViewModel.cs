@@ -48,9 +48,13 @@ public sealed partial class HomeViewModel : ObservableObject, INavPage
     /// <summary>이름 바꾸기 창: 폴더 또는 구역 (null = 닫힘).</summary>
     [ObservableProperty] private object? _renaming;
     [ObservableProperty] private string _renameText = "";
-    public string RenameTitle => Renaming is StartGroupViewModel ? "구역 이름" : "폴더 이름";
+    /// <summary>창 제목. 닫혀서 사라지는 동안(Reveal)에도 바뀌지 않게 열릴 때만 정한다.</summary>
+    [ObservableProperty] private string _renameTitle = "폴더 이름";
 
-    partial void OnRenamingChanged(object? value) => OnPropertyChanged(nameof(RenameTitle));
+    partial void OnRenamingChanged(object? value)
+    {
+        if (value is not null) RenameTitle = value is StartGroupViewModel ? "구역 이름" : "폴더 이름";
+    }
 
     /// <summary>뷰에게: 이 타일에 포커스를 줘라 (순서가 바뀐 뒤 등).</summary>
     public event Action<StartTileViewModel>? FocusTile;

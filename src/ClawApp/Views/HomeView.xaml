@@ -380,7 +380,7 @@
             <!-- 편집 중: 여기에 끌어 놓으면 새 구역 -->
             <Border x:Name="NewGroupZone" Width="168" Margin="0,38,0,0" VerticalAlignment="Stretch" BorderThickness="2"
                     BorderBrush="{DynamicResource StrokeStrong}" Background="{DynamicResource TileFill}" Opacity="0.7"
-                    Visibility="{Binding IsEditing, Converter={StaticResource Vis}}">
+                    m:Reveal.IsShown="{Binding IsEditing}" m:Reveal.Kind="Inline">
                 <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                     <TextBlock Text="{StaticResource Icon.Plus}" FontFamily="{StaticResource LucideFont}" FontSize="28" HorizontalAlignment="Center"/>
                     <TextBlock Text="새 구역" FontSize="15" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,8,0,0"/>
@@ -392,14 +392,15 @@
 
     <!-- 편집 중 안내 띠 -->
     <Border VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="48,0,0,8" Padding="14,8" Background="{DynamicResource TileFill}"
-            Visibility="{Binding IsEditing, Converter={StaticResource Vis}}" IsHitTestVisible="False">
+            m:Reveal.IsShown="{Binding IsEditing}" m:Reveal.EnterY="16" m:Reveal.ExitY="8" IsHitTestVisible="False">
         <TextBlock Style="{StaticResource Caption}" FontSize="13"
                    Text="끌어서 옮기기 · 다른 타일 가운데에 잠시 대면 폴더 · 구역 제목을 눌러 이름 바꾸기 · 빈 곳을 누르거나 B로 끝"/>
     </Border>
 
     <!-- ── 폴더 창: 바깥을 누르거나 B로 닫힘 ─────────────────── -->
     <Grid x:Name="FolderLayer" Visibility="{Binding OpenFolder, Converter={StaticResource NullVis}}">
-        <Border x:Name="FolderScrim" Background="{DynamicResource Scrim}"/>
+        <!-- 덮개는 제자리에서 페이드 인 (Offset 0), 카드는 미끄러져 들어온다 -->
+        <Border x:Name="FolderScrim" Background="{DynamicResource Scrim}" m:Entrance.Stagger="Self" m:Entrance.Offset="0"/>
         <Border x:Name="FolderCard" Background="{DynamicResource FolderCardFill}" BorderBrush="{DynamicResource Stroke}" BorderThickness="1"
                 HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="1200" Padding="28,22,28,26"
                 KeyboardNavigation.DirectionalNavigation="Contained" m:Entrance.Stagger="Self" m:Entrance.Offset="24">
@@ -437,8 +438,9 @@
     </Grid>
 
     <!-- 폴더·구역 이름 바꾸기 -->
-    <Border Visibility="{Binding Renaming, Converter={StaticResource NullVis}}" Background="{DynamicResource Scrim}">
-        <Border Style="{StaticResource CardPanel}" Width="460" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="22,18">
+    <Border m:Reveal.IsShown="{Binding Renaming, Converter={x:Static local:HasValue.Instance}}" Background="{DynamicResource Scrim}">
+        <Border Style="{StaticResource CardPanel}" Width="460" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="22,18"
+                m:Entrance.Stagger="Self" m:Entrance.Offset="24">
             <StackPanel>
                 <TextBlock Text="{Binding RenameTitle}" Style="{StaticResource H2}" Margin="0,0,0,12"/>
                 <v:InlineEdit x:Name="RenameBox" Text="{Binding RenameText}" FontSize="17" Margin="0,0,0,10" Placeholder="이름 없음"/>

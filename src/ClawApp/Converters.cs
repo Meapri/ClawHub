@@ -33,6 +33,15 @@ public sealed class EqualsToVisibility : IValueConverter
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotSupportedException();
 }
 
+/// <summary>null·빈 문자열이 아니면 true (NullToVisibility의 bool 판: Reveal.IsShown 등).</summary>
+public sealed class HasValue : IValueConverter
+{
+    public static readonly HasValue Instance = new();
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        value is not null && value is not string { Length: 0 };
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotSupportedException();
+}
+
 public sealed class InvertBool : IValueConverter
 {
     public static readonly InvertBool Instance = new();
