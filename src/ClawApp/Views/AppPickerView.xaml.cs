@@ -17,11 +17,22 @@ public partial class AppPickerView : UserControl
         InitializeComponent();
         DataContextChanged += (_, _) =>
         {
-            if (_vm is not null) _vm.PropertyChanged -= OnVmChanged;
+            if (_vm is not null)
+            {
+                _vm.PropertyChanged -= OnVmChanged;
+                _vm.SearchRequested -= OnSearchRequested;
+            }
             _vm = DataContext as AppPickerViewModel;
-            if (_vm is not null) _vm.PropertyChanged += OnVmChanged;
+            if (_vm is not null)
+            {
+                _vm.PropertyChanged += OnVmChanged;
+                _vm.SearchRequested += OnSearchRequested;
+            }
         };
     }
+
+    /// <summary>LT: 검색 입력을 바로 연다 (터치 키보드 포함).</summary>
+    private void OnSearchRequested() => SearchBox.BeginEdit();
 
     /// <summary>목록은 뒤에서 읽어 오므로, 다 읽으면 첫 프로그램에 포커스 (검색 결과가 바뀌어도 같은 규칙).</summary>
     private void OnVmChanged(object? sender, PropertyChangedEventArgs e)
