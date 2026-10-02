@@ -44,6 +44,31 @@ public sealed class ControllerMap : Grid
         set => SetValue(FocusedProperty, value);
     }
 
+    /// <summary>
+    /// true면 고른 버튼 쪽으로 카메라가 다가간다 (키 선택판 머리). false면 늘 본체 전체를 보여 주고 고른 버튼은 고리로만
+    /// (배치 화면 — 둘레의 카드에서 안내선이 버튼까지 이어진다).
+    /// </summary>
+    public static readonly DependencyProperty ZoomToFocusProperty = DependencyProperty.Register(
+        nameof(ZoomToFocus), typeof(bool), typeof(ControllerMap), new PropertyMetadata(true));
+
+    public bool ZoomToFocus
+    {
+        get => (bool)GetValue(ZoomToFocusProperty);
+        set => SetValue(ZoomToFocusProperty, value);
+    }
+
+    /// <summary>카메라가 자리를 잡았다 (크기가 바뀌어 다시 맞춤) — 안내선을 다시 그릴 때.</summary>
+    public event Action? Arranged;
+
+    /// <summary>그 버튼의 가운데가 지금 이 컨트롤 안 어디에 보이는지 (안내선 끝점).</summary>
+    public Point? ButtonPoint(ClawButton button)
+    {
+        if (!_photo) return _schematic?.ButtonPoint(button, this);
+        if (!_spots.TryGetValue(button, out var s)) return null;
+        try { return s.TranslatePoint(new Point(s.Width / 2, s.Height / 2), this); }
+        catch (InvalidOperationException) { return null; }
+    }
+
     public static readonly DependencyProperty EditCommandProperty = DependencyProperty.Register(
         nameof(EditCommand), typeof(ICommand), typeof(ControllerMap));
 
@@ -135,6 +160,17 @@ public sealed class ControllerMap : Grid
         Children.Add(_caption);
 
         SizeChanged += (_, _) => AimCamera(animate: false);
+        // 확대 모드(키 선택판)는 보일 때마다 본체 전체에서 그 버튼으로 다가간다
+        IsVisibleChanged += (_, e) =>
+        {
+            if (e.NewValue is not true || !ZoomToFocus || !_photo) return;
+            _cameraReady = false;
+            Dispatcher.BeginInvoke(() =>
+            {
+                AimCamera(animate: false, overview: true);
+                AimCamera(animate: true);
+            }, System.Windows.Threading.DispatcherPriority.Loaded);
+        };
     }
 
     private static BitmapImage? TryLoadArt()
@@ -215,7 +251,7 @@ public sealed class ControllerMap : Grid
         if (!_photo) return;
         RefreshSpots();
         RefreshCaption();
-        AimCamera(animate: true);
+        if (ZoomToFocus) AimCamera(animate: true);
     }
 
     private ButtonRowViewModel? RowOf(ClawButton b) => Rows?.FirstOrDefault(r => r.Button == b);
@@ -245,7 +281,8 @@ public sealed class ControllerMap : Grid
 
     private void RefreshCaption()
     {
-        if (Focused is { } f && RowOf(f) is { } row)
+        // 전체 보기(배치 화면)에서는 둘레 카드가 이미 키를 보여 주므로 띠를 띄우지 않는다
+        if (ZoomToFocus && Focused is { } f && RowOf(f) is { } row)
         {
             _captionName.Text = row.Name;
             _captionKeys.Text = KeysText(row);
@@ -263,13 +300,13 @@ public sealed class ControllerMap : Grid
     // ── 카메라 ─────────────────────────────────────────────
 
     /// <summary>고른 버튼이 가운데 오게 다가가고, 없으면 본체 전체가 꽉 차게 물러난다.</summary>
-    private void AimCamera(bool animate)
+    private void AimCamera(bool animate, bool overview = false)
     {
         double w = ActualWidth, h = ActualHeight;
         if (w < 1 || h < 1) return;
         var fit = Math.Min(w / Body.Width, h / Body.Height);
         double scale, cx, cy;
-        if (Focused is { } f && Places.TryGetValue(f, out var p))
+        if (!overview && ZoomToFocus && Focused is { } f && Places.TryGetValue(f, out var p))
         {
             scale = fit * p.Zoom;
             cx = p.X;
@@ -296,6 +333,7 @@ public sealed class ControllerMap : Grid
             _scale.ScaleX = _scale.ScaleY = scale;
             _move.X = tx;
             _move.Y = ty;
+            Arranged?.Invoke();
             return;
         }
         var d = MotionCore.Ms(480);

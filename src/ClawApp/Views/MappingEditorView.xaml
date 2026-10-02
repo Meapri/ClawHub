@@ -6,7 +6,7 @@
              xmlns:v="clr-namespace:ClawApp.Views"
              KeyboardNavigation.DirectionalNavigation="Contained">
     <!--
-        매핑 편집: 본체처럼 왼손 버튼 | 컨트롤러 그림·프로필 | 오른손 버튼.
+        매핑 편집: 위 = 프로필 줄, 가운데 = 본체 사진, 둘레 = 버튼 카드 (안내선으로 사진 속 버튼과 이어짐), 옵션은 오른쪽 패널.
         버튼을 고르면 실제 키보드 모양 선택판이 열리고, 키를 한 번 누르면 지정된 뒤 돌아온다.
     -->
     <UserControl.Resources>
@@ -52,7 +52,8 @@
         <!-- 오른손 줄: [그림] 이름/키 -->
         <DataTemplate x:Key="RightRow">
             <Grid x:Name="Root">
-                <Button Style="{StaticResource NavButton}" Padding="0" MinHeight="60" Margin="0,0,0,4" HorizontalContentAlignment="Stretch"
+                <Button Style="{StaticResource NavButton}" Padding="0" MinHeight="56" Margin="0,0,0,4" HorizontalContentAlignment="Stretch"
+                        local:Nav.InitialFocus="{Binding IsFirst}"
                         Command="{Binding DataContext.EditRowCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                         CommandParameter="{Binding}">
                     <Border x:Name="Live" Padding="14,6" Background="Transparent" BorderBrush="{DynamicResource Accent}">
@@ -69,7 +70,7 @@
                     <Setter TargetName="Live" Property="BorderThickness" Value="4,0,0,0"/>
                     <Setter TargetName="Live" Property="Padding" Value="10,6,14,6"/>
                 </DataTrigger>
-                <DataTrigger Binding="{Binding GroupStart}" Value="True"><Setter TargetName="Root" Property="Margin" Value="0,10,0,0"/></DataTrigger>
+                <DataTrigger Binding="{Binding GroupStart}" Value="True"><Setter TargetName="Root" Property="Margin" Value="0,8,0,0"/></DataTrigger>
                 <DataTrigger Binding="{Binding IsLive}" Value="True">
                     <Setter TargetName="Live" Property="Background" Value="{DynamicResource Accent}"/>
                     <Setter TargetName="Live" Property="TextElement.Foreground" Value="{DynamicResource AccentText}"/>
@@ -81,7 +82,8 @@
         <!-- 왼손 줄: 이름/키 [그림] — 컨트롤러 쪽으로 그림이 오게 오른쪽 정렬 -->
         <DataTemplate x:Key="LeftRow">
             <Grid x:Name="Root">
-                <Button Style="{StaticResource NavButton}" Padding="0" MinHeight="60" Margin="0,0,0,4" HorizontalContentAlignment="Stretch"
+                <Button Style="{StaticResource NavButton}" Padding="0" MinHeight="56" Margin="0,0,0,4" HorizontalContentAlignment="Stretch"
+                        local:Nav.InitialFocus="{Binding IsFirst}"
                         Command="{Binding DataContext.EditRowCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                         CommandParameter="{Binding}">
                     <Border x:Name="Live" Padding="14,6" Background="Transparent" BorderBrush="{DynamicResource Accent}">
@@ -97,7 +99,7 @@
                     <Setter TargetName="Live" Property="BorderThickness" Value="0,0,4,0"/>
                     <Setter TargetName="Live" Property="Padding" Value="14,6,10,6"/>
                 </DataTrigger>
-                <DataTrigger Binding="{Binding GroupStart}" Value="True"><Setter TargetName="Root" Property="Margin" Value="0,10,0,0"/></DataTrigger>
+                <DataTrigger Binding="{Binding GroupStart}" Value="True"><Setter TargetName="Root" Property="Margin" Value="0,8,0,0"/></DataTrigger>
                 <DataTrigger Binding="{Binding IsLive}" Value="True">
                     <Setter TargetName="Live" Property="Background" Value="{DynamicResource Accent}"/>
                     <Setter TargetName="Live" Property="TextElement.Foreground" Value="{DynamicResource AccentText}"/>
@@ -116,107 +118,135 @@
 
     <Grid Margin="42,-6,40,12">
 
-        <!-- ══ 버튼 배치 화면 ═══════════════════════════════════ -->
+        <!-- ══ 버튼 배치 화면 ══════════════════════════════════════════════
+             위 = 프로필·동작 줄, 가운데 = 본체 사진(전체), 둘레 = 버튼 카드. 카드에서 사진 속 실제 버튼까지 안내선이 이어지고
+             고른 카드의 선·버튼은 강조색으로 밝다 (Steam Input·Armoury Crate식). 카드 순서는 본체 위→아래라 선이 엇갈리지 않는다. -->
         <Grid x:Name="Board" Visibility="{Binding IsPickerOpen, Converter={StaticResource NotVis}}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="290"/>
                 <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="440"/>
-                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="290"/>
             </Grid.ColumnDefinitions>
 
-            <!-- 왼손 -->
-            <DockPanel Margin="6,0,6,0">
-                <TextBlock DockPanel.Dock="Top" Text="왼손" Style="{StaticResource Section}" Margin="0,4,2,8" HorizontalAlignment="Right"/>
-                <ItemsControl x:Name="LeftList" ItemsSource="{Binding LeftRows}" ItemTemplate="{StaticResource LeftRow}" Focusable="False"
-                              m:Entrance.Stagger="Items" m:Entrance.Offset="-32"/>
-            </DockPanel>
-
-            <!-- 가운데: 그림 · 프로필 · 테스트 · 빠른 채우기 -->
-            <ScrollViewer Grid.Column="1" Margin="16,0">
-                <StackPanel Margin="4,4,4,8" m:Entrance.Stagger="Items">
-                    <!-- Claw 본체 그림: 지정된 버튼 = 강조색 테두리, 고른 줄·눌린 버튼 = 채움. 그림의 버튼을 눌러도 편집 -->
-                    <Grid Height="196" Margin="0,0,0,8">
-                        <v:ControllerMap Rows="{Binding Rows}" Focused="{Binding FocusedButton}" EditCommand="{Binding EditButtonCommand}"/>
-                        <!-- 눌러서 찾기: 다음에 누른 버튼을 연다 -->
-                        <Border Background="{DynamicResource Bg1}" Padding="16,10" HorizontalAlignment="Center" VerticalAlignment="Center"
-                                BorderBrush="{DynamicResource Accent}" BorderThickness="0,0,0,3"
-                                m:Reveal.IsShown="{Binding IsListening}" m:Reveal.EnterY="8" m:Reveal.ExitY="6">
-                            <StackPanel>
-                                <TextBlock Text="바꿀 버튼을 누르세요" FontSize="17" FontWeight="SemiBold" HorizontalAlignment="Center"/>
-                                <TextBlock Text="6초 안에 · M1·M2는 목록에서 골라요" Style="{StaticResource Caption}" HorizontalAlignment="Center" Margin="0,2,0,0"/>
-                            </StackPanel>
-                        </Border>
-                        <!-- 테스트 중: 그림 위 남은 초 -->
-                        <Border Background="{DynamicResource Accent}" Padding="10,2" HorizontalAlignment="Center" VerticalAlignment="Bottom"
-                                Visibility="{Binding IsTesting, Converter={StaticResource Vis}}">
-                            <TextBlock Foreground="{DynamicResource AccentText}" FontWeight="Bold" FontSize="14">
-                                <Run Text="테스트 중 · "/><Run Text="{Binding TestSecondsLeft, Mode=OneWay}"/><Run Text="초"/>
-                            </TextBlock>
-                        </Border>
-                    </Grid>
-
-                    <!-- 이름: 평소엔 버튼(지나가도 터치 키보드가 뜨지 않게), A를 누르면 입력칸 -->
-                    <v:InlineEdit Text="{Binding ProfileName}" FontSize="18" FontWeight="SemiBold" TextAlignment="Center" InnerPadding="14,9" Margin="0,0,0,4"
-                                  IsEnabled="{Binding IsTesting, Converter={x:Static local:InvertBool.Instance}}"/>
-                    <TextBlock Text="{Binding SummaryText}" Style="{StaticResource Caption}" TextAlignment="Center" Margin="0,0,0,12"/>
-
-                    <!-- 찾기 · 되돌리기 (패드는 RB · LB) -->
-                    <UniformGrid Columns="2" Margin="0,0,0,4" Visibility="{Binding IsTesting, Converter={StaticResource NotVis}}">
-                        <Button Style="{StaticResource SmallAction}" Command="{Binding ToggleListenCommand}">
-                            <StackPanel Orientation="Horizontal">
-                                <v:ButtonGlyph Key="RB" Width="24" Height="24" Margin="0,0,8,0"/>
-                                <TextBlock Text="눌러서 찾기" VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </Button>
-                        <Button Style="{StaticResource SmallAction}" Command="{Binding UndoCommand}" Margin="0,0,0,8">
-                            <StackPanel Orientation="Horizontal">
-                                <v:ButtonGlyph Key="LB" Width="24" Height="24" Margin="0,0,8,0"/>
-                                <TextBlock Text="되돌리기" VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </Button>
-                    </UniformGrid>
-
+            <!-- 프로필 줄: 이름·요약 | 눌러서 찾기 · 되돌리기 · 테스트 · 옵션 -->
+            <DockPanel Grid.ColumnSpan="3" Margin="6,0,6,10">
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Style="{StaticResource SmallAction}" Command="{Binding ToggleListenCommand}" Margin="0,0,8,0"
+                            Visibility="{Binding IsTesting, Converter={StaticResource NotVis}}">
+                        <StackPanel Orientation="Horizontal">
+                            <v:ButtonGlyph Key="RB" Width="24" Height="24" Margin="0,0,8,0"/>
+                            <TextBlock Text="눌러서 찾기" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource SmallAction}" Command="{Binding UndoCommand}" Margin="0,0,8,0"
+                            Visibility="{Binding IsTesting, Converter={StaticResource NotVis}}">
+                        <StackPanel Orientation="Horizontal">
+                            <v:ButtonGlyph Key="LB" Width="24" Height="24" Margin="0,0,8,0"/>
+                            <TextBlock Text="되돌리기" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
                     <!-- 테스트 (테스트 중에도 터치로 끌 수 있게 입력 가로채기에서 뺀다) -->
-                    <Button Uid="CaptureBypass" Style="{StaticResource PrimaryButton}" Command="{Binding StartOrStopTestCommand}" Margin="0,0,0,8">
+                    <Button Uid="CaptureBypass" Style="{StaticResource PrimaryButton}" Command="{Binding StartOrStopTestCommand}" Margin="0,0,8,0" Padding="20,10">
                         <Grid>
                             <StackPanel Orientation="Horizontal" Visibility="{Binding IsTesting, Converter={StaticResource NotVis}}">
-                                <TextBlock Text="{StaticResource Icon.Play}" Style="{StaticResource Icon}" Margin="0,0,10,0"/>
-                                <TextBlock Text="15초 동안 실제로 써 보기"/>
+                                <v:ButtonGlyph Key="Y" Width="24" Height="24" Margin="0,0,10,0"/>
+                                <TextBlock Text="15초 동안 써 보기" VerticalAlignment="Center"/>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Visibility="{Binding IsTesting, Converter={StaticResource Vis}}">
                                 <TextBlock Text="{StaticResource Icon.Square}" Style="{StaticResource Icon}" Margin="0,0,10,0"/>
-                                <TextBlock Text="테스트 끝내기"/>
+                                <TextBlock VerticalAlignment="Center"><Run Text="테스트 끝내기 · "/><Run Text="{Binding TestSecondsLeft, Mode=OneWay}"/><Run Text="초"/></TextBlock>
                             </StackPanel>
                         </Grid>
                     </Button>
-
-                    <!-- 테스트 중: 나온 키 기록 -->
-                    <Border Style="{StaticResource CardPanel}" Visibility="{Binding IsTesting, Converter={StaticResource Vis}}">
-                        <StackPanel>
-                            <TextBlock Style="{StaticResource Caption}" Margin="0,0,0,8"
-                                       Text="컨트롤러 버튼을 눌러 보세요. 실제로 나온 키가 여기에 쌓이고, 해당 버튼 줄이 켜져요."/>
-                            <TextBlock Text="아직 입력 없음" Foreground="{DynamicResource TextDim}"
-                                       Visibility="{Binding HasTestLog, Converter={StaticResource NotVis}}"/>
-                            <ItemsControl ItemsSource="{Binding TestLog}" Focusable="False">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <DockPanel Margin="0,0,0,6" m:Entrance.Stagger="Self" m:Entrance.Offset="-16">
-                                            <Border DockPanel.Dock="Left" BorderBrush="{DynamicResource Accent}" BorderThickness="1,1,1,3" Padding="8,1,8,0" MinWidth="28"
-                                                    Background="{DynamicResource TileFill}">
-                                                <TextBlock Text="{Binding Label}" FontWeight="SemiBold"/>
-                                            </Border>
-                                            <TextBlock Margin="10,0,0,0" VerticalAlignment="Center" Foreground="{DynamicResource TextDim}" FontSize="14">
-                                                <Run Text="← "/><Run Text="{Binding Button, Mode=OneWay, TargetNullValue=지정 안 된 키}"/>
-                                            </TextBlock>
-                                        </DockPanel>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
+                    <Button x:Name="OptionsButton" Style="{StaticResource SmallAction}" Command="{Binding ToggleOptionsCommand}" Margin="0"
+                            Visibility="{Binding IsTesting, Converter={StaticResource NotVis}}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{StaticResource Icon.SlidersHorizontal}" Style="{StaticResource Icon}" FontSize="16" Margin="0,0,8,0"/>
+                            <TextBlock Text="옵션" VerticalAlignment="Center"/>
                         </StackPanel>
-                    </Border>
+                    </Button>
+                </StackPanel>
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,16,0">
+                    <!-- 이름: 평소엔 버튼(지나가도 터치 키보드가 뜨지 않게), A를 누르면 입력칸 -->
+                    <v:InlineEdit Text="{Binding ProfileName}" FontSize="18" FontWeight="SemiBold" InnerPadding="14,8" MinWidth="320"
+                                  IsEnabled="{Binding IsTesting, Converter={x:Static local:InvertBool.Instance}}"/>
+                    <TextBlock Text="{Binding SummaryText}" Style="{StaticResource Caption}" Margin="2,4,0,0"/>
+                </StackPanel>
+            </DockPanel>
 
-                    <StackPanel Visibility="{Binding IsTesting, Converter={StaticResource NotVis}}">
-                        <TextBlock Text="빠른 채우기" Style="{StaticResource Section}" Margin="2,10,0,8"/>
+            <!-- 왼손 카드 -->
+            <ItemsControl x:Name="LeftList" Grid.Row="1" ItemsSource="{Binding LeftRows}" ItemTemplate="{StaticResource LeftRow}" Focusable="False"
+                          VerticalAlignment="Center" Margin="6,0,0,0" m:Entrance.Stagger="Items" m:Entrance.Offset="-32"/>
+
+            <!-- 가운데: 본체 사진 (전체). 사진의 버튼을 눌러도 편집 -->
+            <Grid Grid.Row="1" Grid.Column="1" Margin="28,0">
+                <v:ControllerMap x:Name="Map" Height="320" VerticalAlignment="Center" ZoomToFocus="False"
+                                 Rows="{Binding Rows}" Focused="{Binding FocusedButton}" EditCommand="{Binding EditButtonCommand}"
+                                 m:Entrance.Stagger="Self" m:Entrance.Offset="0"/>
+                <!-- 눌러서 찾기: 다음에 누른 버튼을 연다 -->
+                <Border Background="{DynamicResource Bg1}" Padding="20,12" HorizontalAlignment="Center" VerticalAlignment="Center"
+                        BorderBrush="{DynamicResource Accent}" BorderThickness="0,0,0,3"
+                        m:Reveal.IsShown="{Binding IsListening}" m:Reveal.EnterY="8" m:Reveal.ExitY="6">
+                    <StackPanel>
+                        <TextBlock Text="바꿀 버튼을 누르세요" FontSize="20" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                        <TextBlock Text="6초 안에 · M1·M2는 카드에서 골라요" Style="{StaticResource Caption}" HorizontalAlignment="Center" Margin="0,3,0,0"/>
+                    </StackPanel>
+                </Border>
+                <!-- 테스트 중: 실제로 나온 키 (최근 것이 위). 버튼 카드와 사진의 그 버튼이 함께 켜진다 -->
+                <Border Style="{StaticResource CardPanel}" VerticalAlignment="Bottom" HorizontalAlignment="Center" MinWidth="320" Margin="0,0,0,4"
+                        m:Reveal.IsShown="{Binding IsTesting}" m:Reveal.EnterY="16" m:Reveal.ExitY="8">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource Caption}" Margin="0,0,0,8" Text="컨트롤러 버튼을 눌러 보세요 · 나온 키가 여기에 쌓여요"/>
+                        <TextBlock Text="아직 입력 없음" Foreground="{DynamicResource TextDim}"
+                                   Visibility="{Binding HasTestLog, Converter={StaticResource NotVis}}"/>
+                        <ItemsControl ItemsSource="{Binding TestLog}" Focusable="False" MaxHeight="120">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <DockPanel Margin="0,0,0,6" m:Entrance.Stagger="Self" m:Entrance.Offset="-16">
+                                        <Border DockPanel.Dock="Left" BorderBrush="{DynamicResource Accent}" BorderThickness="1,1,1,3" Padding="8,1,8,0" MinWidth="28"
+                                                Background="{DynamicResource TileFill}">
+                                            <TextBlock Text="{Binding Label}" FontWeight="SemiBold"/>
+                                        </Border>
+                                        <TextBlock Margin="10,0,0,0" VerticalAlignment="Center" Foreground="{DynamicResource TextDim}" FontSize="14">
+                                            <Run Text="← "/><Run Text="{Binding Button, Mode=OneWay, TargetNullValue=지정 안 된 키}"/>
+                                        </TextBlock>
+                                    </DockPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- 오른손 카드 -->
+            <ItemsControl x:Name="RightList" Grid.Row="1" Grid.Column="2" ItemsSource="{Binding RightRows}" ItemTemplate="{StaticResource RightRow}" Focusable="False"
+                          VerticalAlignment="Center" Margin="0,0,6,0" m:Entrance.Stagger="Items" m:Entrance.Offset="32"/>
+
+            <!-- 안내선 (코드가 그린다: MappingEditorView.DrawLeaders) -->
+            <Canvas x:Name="Leaders" Grid.Row="1" Grid.ColumnSpan="3" IsHitTestVisible="False"/>
+
+            <!-- ══ 프로필 옵션 (오른쪽에서 미끄러져 나오는 패널) ══ -->
+            <Border x:Name="OptionsPanel" Grid.RowSpan="2" Grid.ColumnSpan="3" HorizontalAlignment="Right" Width="400" Margin="0,-4,0,0"
+                    Background="{DynamicResource Bg0}" BorderBrush="{DynamicResource Accent}" BorderThickness="3,0,0,0"
+                    KeyboardNavigation.DirectionalNavigation="Contained"
+                    m:Reveal.IsShown="{Binding IsOptionsOpen}" m:Reveal.ExitX="48" m:Entrance.Stagger="Self" m:Entrance.Offset="48">
+                <ScrollViewer Padding="22,18,22,12">
+                    <StackPanel>
+                        <TextBlock Text="프로필 옵션" Style="{StaticResource H2}" Margin="0,0,0,14"/>
+
+                        <TextBlock Text="게임 중 컨트롤러 모드" Style="{StaticResource Section}" Margin="2,0,0,8"/>
+                        <Button Style="{StaticResource NavButton}" Command="{Binding ToggleModeCommand}" HorizontalContentAlignment="Stretch">
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Right" Text="A로 변경" Style="{StaticResource Caption}" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding ModeText}" FontSize="18" FontWeight="SemiBold"/>
+                            </DockPanel>
+                        </Button>
+
+                        <TextBlock Text="빠른 채우기" Style="{StaticResource Section}" Margin="2,14,0,8"/>
                         <WrapPanel>
                             <Button Style="{StaticResource SmallAction}" Command="{Binding FillDpadCommand}" CommandParameter="arrows">
                                 <StackPanel Orientation="Horizontal"><TextBlock Text="{StaticResource Icon.Move}" Style="{StaticResource Icon}" FontSize="16" Margin="0,0,8,0"/><TextBlock Text="방향 = 방향키"/></StackPanel>
@@ -227,27 +257,18 @@
                         </WrapPanel>
 
                         <TextBlock Text="프리셋으로 덮어쓰기" Style="{StaticResource Section}" Margin="2,10,0,8"/>
-                        <ItemsControl ItemsSource="{Binding Presets}" Focusable="False" ItemsPanel="{StaticResource Wrap}">
+                        <ItemsControl ItemsSource="{Binding Presets}" Focusable="False">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Button Style="{StaticResource SmallAction}" Content="{Binding Name}"
+                                    <Button Style="{StaticResource NavButton}" Content="{Binding Name}"
                                             Command="{Binding DataContext.ApplyPresetCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                             CommandParameter="{Binding}"/>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
 
-                        <TextBlock Text="게임 중" Style="{StaticResource Section}" Margin="2,10,0,8"/>
-                        <Button Style="{StaticResource NavButton}" Command="{Binding ToggleModeCommand}" HorizontalContentAlignment="Stretch">
-                            <DockPanel>
-                                <TextBlock DockPanel.Dock="Right" Text="A로 변경" Style="{StaticResource Caption}" VerticalAlignment="Center"/>
-                                <StackPanel>
-                                    <TextBlock Text="컨트롤러 모드" Style="{StaticResource Caption}"/>
-                                    <TextBlock Text="{Binding ModeText}" FontSize="20" FontWeight="SemiBold" Margin="0,2,0,0"/>
-                                </StackPanel>
-                            </DockPanel>
-                        </Button>
-                        <UniformGrid Columns="2" Margin="0,6,0,0">
+                        <TextBlock Text="프로필" Style="{StaticResource Section}" Margin="2,14,0,8"/>
+                        <UniformGrid Columns="2">
                             <Button Style="{StaticResource SmallAction}" Command="{Binding DuplicateCommand}">
                                 <StackPanel Orientation="Horizontal"><TextBlock Text="{StaticResource Icon.Copy}" Style="{StaticResource Icon}" FontSize="16" Margin="0,0,8,0"/><TextBlock Text="복제"/></StackPanel>
                             </Button>
@@ -258,15 +279,8 @@
                         <TextBlock Style="{StaticResource Caption}" Margin="2,8,0,0"
                                    Text="스틱은 펌웨어에서 키로 바꿀 수 없어요 — 이동은 방향 버튼을 쓰세요. 매핑은 컨트롤러 펌웨어가 처리해서 게임에는 진짜 키보드 입력으로 보여요."/>
                     </StackPanel>
-                </StackPanel>
-            </ScrollViewer>
-
-            <!-- 오른손 -->
-            <DockPanel Grid.Column="2" Margin="6,0,6,0">
-                <TextBlock DockPanel.Dock="Top" Text="오른손" Style="{StaticResource Section}" Margin="2,4,0,8"/>
-                <ItemsControl x:Name="RightList" ItemsSource="{Binding RightRows}" ItemTemplate="{StaticResource RightRow}" Focusable="False"
-                              m:Entrance.Stagger="Items" m:Entrance.Offset="32"/>
-            </DockPanel>
+                </ScrollViewer>
+            </Border>
         </Grid>
 
         <!-- ══ 키 선택판 ══════════════════════════════════════ -->
@@ -292,7 +306,9 @@
                             </StackPanel>
                         </Button>
                     </StackPanel>
-                    <v:ButtonGlyph DockPanel.Dock="Left" Key="{Binding EditingRow.Button}" Width="44" Height="44" Margin="0,0,16,0" VerticalAlignment="Center"/>
+                    <!-- 본체 사진이 전체에서 이 버튼으로 다가간다 (선택판을 열 때마다) -->
+                    <v:ControllerMap DockPanel.Dock="Left" Width="300" Height="128" Margin="-6,-4,20,-4" VerticalAlignment="Center"
+                                     Rows="{Binding Rows}" Focused="{Binding EditingRow.Button}" ZoomToFocus="True"/>
                     <StackPanel VerticalAlignment="Center">
                         <TextBlock Style="{StaticResource Caption}"><Run Text="{Binding EditingRow.Name, Mode=OneWay}"/><Run Text=" 버튼을 누르면"/></TextBlock>
                         <Grid Margin="0,4,0,0">

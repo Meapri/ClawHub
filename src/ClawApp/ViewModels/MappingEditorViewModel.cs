@@ -36,6 +36,8 @@ public sealed partial class ButtonRowViewModel(ClawButton button, string name, b
     [ObservableProperty] private int _version;
     /// <summary>테스트 중 이 버튼의 키가 눌려 있음.</summary>
     [ObservableProperty] private bool _isLive;
+    /// <summary>화면의 첫 카드 — 이 페이지에 처음 오면 여기에 포커스.</summary>
+    public bool IsFirst { get; set; }
     /// <summary>같은 키를 내는 다른 버튼이 있으면 "A와 같은 키" (없으면 null).</summary>
     [ObservableProperty] private string? _conflict;
 }
@@ -64,11 +66,13 @@ public sealed partial class PickerTabViewModel(string label, string icon) : Obse
 /// </summary>
 public sealed partial class MappingEditorViewModel : ObservableObject, INavPage
 {
+    // 순서 = 본체에서 위 → 아래 (사진 둘레 카드의 안내선이 서로 엇갈리지 않게): 왼쪽은 스틱이 방향 버튼보다 위
     private static readonly ButtonRowViewModel[] LeftLayout =
     [
         new(ClawButton.LT, "LT"), new(ClawButton.LB, "LB"),
+        new(ClawButton.L3, "왼쪽 스틱 누름", true),
         new(ClawButton.DpadUp, "방향 ↑", true), new(ClawButton.DpadLeft, "방향 ←"), new(ClawButton.DpadRight, "방향 →"), new(ClawButton.DpadDown, "방향 ↓"),
-        new(ClawButton.L3, "왼쪽 스틱 누름", true), new(ClawButton.M1, "M1 · 뒷면", true),
+        new(ClawButton.M1, "M1 · 뒷면", true),
     ];
 
     private static readonly ButtonRowViewModel[] RightLayout =
@@ -116,6 +120,7 @@ public sealed partial class MappingEditorViewModel : ObservableObject, INavPage
         // 줄 객체는 화면마다 새로 (정적 배열은 배치 정의로만 쓴다)
         LeftRows = [.. LeftLayout.Select(r => new ButtonRowViewModel(r.Button, r.Name, r.GroupStart))];
         RightRows = [.. RightLayout.Select(r => new ButtonRowViewModel(r.Button, r.Name, r.GroupStart))];
+        LeftRows[0].IsFirst = true;
         Tabs[0].IsSelected = true;
         RefreshRows();
     }
@@ -125,6 +130,8 @@ public sealed partial class MappingEditorViewModel : ObservableObject, INavPage
         ? [new("B", "테스트 끝내기")]
         : IsListening
             ? [] // 어떤 버튼이든 "찾을 버튼"으로 쓰이므로 힌트를 비운다 (가운데 안내 참고)
+            : IsOptionsOpen
+                ? [new("A", "선택"), new("B", "닫기")]
             : IsPickerOpen
                 ? [new("A", MultiKey ? "넣기/빼기" : "지정"), new("B", MultiKey ? "완료" : "취소"), new("X", "게임패드 그대로"),
                    new("Y", MultiKey ? "한 키씩" : "여러 키"), new("LB", "이전 탭"), new("RB", "다음 탭")]
@@ -201,6 +208,7 @@ public sealed partial class MappingEditorViewModel : ObservableObject, INavPage
     private void EditRow(ButtonRowViewModel row)
     {
         StopListening();
+        IsOptionsOpen = false;
         EditingRow = row;
         FocusedButton = row.Button;
         var current = Current(row.Button);
@@ -423,6 +431,11 @@ public sealed partial class MappingEditorViewModel : ObservableObject, INavPage
         {
             if (action == NavAction.Back) StopTest();
             return true; // 테스트 중에는 화면이 움직이지 않게
+        }
+        if (IsOptionsOpen)
+        {
+            if (action == NavAction.Back) { IsOptionsOpen = false; return true; }
+            return action is NavAction.TabPrev or NavAction.TabNext or NavAction.Secondary or NavAction.Options; // 패널 안에서는 이동·선택만
         }
 
         if (IsPickerOpen)

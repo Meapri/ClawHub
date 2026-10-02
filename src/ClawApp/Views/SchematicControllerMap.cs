@@ -95,6 +95,14 @@ public sealed class SchematicControllerMap : Viewbox
         Refresh(pop: false);
     }
 
+    /// <summary>그 버튼의 가운데가 <paramref name="relativeTo"/> 안 어디에 보이는지 (안내선 끝점).</summary>
+    public Point? ButtonPoint(ClawButton button, UIElement relativeTo)
+    {
+        if (!_spots.TryGetValue(button, out var s)) return null;
+        try { return s.TranslatePoint(new Point(s.Width / 2, s.Height / 2), relativeTo); }
+        catch (InvalidOperationException) { return null; }
+    }
+
     private void Place(UIElement el, double x, double y)
     {
         Canvas.SetLeft(el, x);

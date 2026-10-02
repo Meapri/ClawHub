@@ -34,6 +34,21 @@ public sealed partial class MappingEditorViewModel : IPadButtonListener
         EditRow(row);
     }
 
+    // ── 프로필 옵션 패널 ──────────────────────────────────
+
+    /// <summary>빠른 채우기·프리셋·컨트롤러 모드·복제·삭제를 담은 옆 패널 (배치 화면을 가리지 않게 평소엔 접어 둔다).</summary>
+    [ObservableProperty] private bool _isOptionsOpen;
+
+    partial void OnIsOptionsOpenChanged(bool value) => _shell.UpdateHints();
+
+    [RelayCommand]
+    private void ToggleOptions()
+    {
+        if (IsTesting) return;
+        StopListening();
+        IsOptionsOpen = !IsOptionsOpen;
+    }
+
     // ── 되돌리기 ────────────────────────────────────────────
 
     private const int MaxUndo = 40;
