@@ -6,7 +6,7 @@ namespace ClawService;
 
 public sealed class RequestHandler(ILogger<RequestHandler> log, ControllerManager controller, EcManager ec, MsiCenterManager msi,
     SystemManager system, EnduranceManager endurance, PowerManager power, DisplayQualityManager displayQuality,
-    PowerPlanManager powerPlan)
+    PowerPlanManager powerPlan, PadHider padHider)
 {
     /// <summary>위젯의 AppCommand를 런처 앱(구독자)에게 보내는 통로 — PipeServer가 연결한다.</summary>
     public Action<string>? RelayAppCommand { get; set; }
@@ -107,6 +107,10 @@ public sealed class RequestHandler(ILogger<RequestHandler> log, ControllerManage
                     if (RelayAppCommand is null || system.AppState is null) throw new InvalidOperationException("ClawHub 앱이 실행 중이 아니에요");
                     RelayAppCommand(cmd);
                     break;
+                case Ops.SetPadHidden:
+                    if (req.Enabled == true) padHider.Hide(req.ClientPath ?? throw new InvalidOperationException("요청한 앱을 확인할 수 없어요"));
+                    else padHider.Unhide();
+                    break;
                 case Ops.SetMsiCenter:
                     msi.Set(req.Enabled ?? throw new ArgumentException("Enabled 누락"));
                     break;
@@ -139,6 +143,8 @@ public sealed class RequestHandler(ILogger<RequestHandler> log, ControllerManage
             TemporaryPerformance = ec.Temporary,
             ChargeLimit = ec.ChargeLimit,
             MsiCenterEnabled = msi.IsEnabled,
+            VirtualPadDrivers = PadHider.DriversInstalled,
+            PadHidden = padHider.Hidden,
             BiosVersion = Bios,
             Graphics = system.Graphics,
             DisplayQuality = displayQuality.State,

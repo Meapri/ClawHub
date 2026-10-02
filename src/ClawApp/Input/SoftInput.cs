@@ -40,8 +40,16 @@ internal static class SoftInput
         return d;
     }
 
-    /// <summary>소프트웨어로 낼 수 있는 키인지 (게임패드 코드는 3단계 가상 패드가 있어야 한다).</summary>
-    public static bool CanSend(string id) => Keys.ContainsKey(id) || id.StartsWith("MS_", StringComparison.OrdinalIgnoreCase);
+    /// <summary>소프트웨어로 낼 수 있는 키인지 (게임패드 키는 3단계 가상 패드가 켜져 있을 때만).</summary>
+    public static bool CanSend(string id) => Keys.ContainsKey(id) || id.StartsWith("MS_", StringComparison.OrdinalIgnoreCase)
+        || (VirtualPad.Active is not null && VirtualPad.CanSend(id));
+
+    /// <summary>마우스를 상대 이동 (가상 패드의 스틱 → 마우스).</summary>
+    public static void MoveMouse(int dx, int dy)
+    {
+        var m = new Input { Type = 0, U = new InputUnion { Mi = new MouseInput { Dx = dx, Dy = dy, Flags = 0x0001 /* MOVE */ } } };
+        SendInput(1, [m], Marshal.SizeOf<Input>());
+    }
 
     /// <summary>키들을 차례로 누른다 (조합키: Ctrl → Q 순서).</summary>
     public static void Down(IReadOnlyList<string> ids)
@@ -64,6 +72,11 @@ internal static class SoftInput
 
     private static void Send(string id, bool down)
     {
+        if (id.StartsWith("PAD_", StringComparison.Ordinal))
+        {
+            VirtualPad.Active?.Press(id, down); // 3단계: 가상 패드 버튼
+            return;
+        }
         if (Keys.TryGetValue(id, out var k))
         {
             var scan = (ushort)MapVirtualKey(k.Vk, 0);

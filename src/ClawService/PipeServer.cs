@@ -159,6 +159,8 @@ public sealed class PipeServer(ILogger<PipeServer> log, RequestHandler handler)
                 }
                 else
                 {
+                    // 가상 패드: 실제 패드를 볼 수 있게 등록할 앱 = 요청을 보낸 프로세스 자신 (요청 내용을 믿지 않는다)
+                    if (req.Op == Ops.SetPadHidden) req.ClientPath = PipeAccess.ClientImagePath(pipe);
                     resp = await Task.Run(() => handler.Handle(req), ct);
                 }
                 resp.Id = req.Id;

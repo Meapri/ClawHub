@@ -99,7 +99,14 @@ public sealed partial class MappingEditorViewModel
     {
         if (!ids.Any(id => id.StartsWith("PAD_", StringComparison.Ordinal))) return false;
         if (!AdvancedEnabled || (EditingSlot == "press" && !EngineHandles(b))) return false;
-        _shell.ShowToast("고급 동작이 있는 버튼은 키보드·마우스 키만 낼 수 있어요 (게임패드 출력은 가상 패드 단계에서)");
+        if (VirtualPadOn)
+        {
+            // 가상 패드에 없는 버튼 (M1·M2·Camera)
+            if (ids.All(id => !id.StartsWith("PAD_", StringComparison.Ordinal) || Input.VirtualPad.CanSend(id))) return false;
+            _shell.ShowToast("M1·M2·Camera는 Xbox 패드에 없는 버튼이라 고급 동작에서 낼 수 없어요");
+            return true;
+        }
+        _shell.ShowToast("고급 동작이 있는 버튼은 키보드·마우스 키만 낼 수 있어요 — 옵션에서 '가상 패드'를 켜면 게임패드 버튼도 돼요");
         return true;
     }
 
@@ -211,7 +218,7 @@ public sealed partial class MappingEditorViewModel
     /// <summary>"누를 때"가 게임패드 버튼인데 엔진이 맡게 됐으면 알려 준다.</summary>
     private void WarnPadPress(ClawButton b)
     {
-        if (EngineHandles(b) && Current(b).Any(id => id.StartsWith("PAD_", StringComparison.Ordinal)))
+        if (EngineHandles(b) && !VirtualPadOn && Current(b).Any(id => id.StartsWith("PAD_", StringComparison.Ordinal)))
             _shell.ShowToast("'누를 때'가 게임패드 버튼이라 나오지 않아요 — 키보드·마우스 키로 바꿔 주세요");
     }
 
@@ -297,8 +304,90 @@ public sealed partial class MappingEditorViewModel
         _shell.ShowToast(AdvancedEnabled ? "고급 입력을 켰어요 — 버튼을 고르면 위에 '언제' 칩이 생겨요" : "고급 입력을 껐어요 (설정은 남아 있어요)");
     }
 
+    // ── 3단계 가상 패드 ────────────────────────────────────
+
+    public bool VirtualPadOn => Profile.Advanced?.UsesVirtualPad == true;
+    public bool VirtualPadDrivers => _shell.Status?.VirtualPadDrivers == true;
+    public string VirtualPadText => !VirtualPadDrivers ? "드라이버가 설치돼 있지 않아요" : VirtualPadOn ? "켜짐 · 게임에는 ClawHub 가상 패드" : "꺼짐";
+
+    public IReadOnlyList<TuningChoice<StickOutput>> LeftStickChoices { get; } = StickChoices();
+    public IReadOnlyList<TuningChoice<StickOutput>> RightStickChoices { get; } = StickChoices();
+
+    private static IReadOnlyList<TuningChoice<StickOutput>> StickChoices() =>
+        [new("스틱 그대로", StickOutput.Stick), new("WASD", StickOutput.Wasd), new("방향키", StickOutput.Arrows), new("마우스", StickOutput.Mouse)];
+
+    public int MouseSpeed
+    {
+        get => Profile.Advanced?.MouseSpeed ?? 40;
+        set
+        {
+            if (Profile.Advanced is not { } a || a.MouseSpeed == value) return;
+            RememberOnce("mouse-speed");
+            a.MouseSpeed = Math.Clamp(value, 1, 100);
+            Save();
+            OnPropertyChanged();
+        }
+    }
+
+    public bool UsesStickMouse => Profile.Advanced is { UsesVirtualPad: true } a && (a.LeftStick == StickOutput.Mouse || a.RightStick == StickOutput.Mouse);
+
+    [RelayCommand(AllowConcurrentExecutions = true)]
+    private async Task ToggleVirtualPad()
+    {
+        if (!VirtualPadOn)
+        {
+            if (!VirtualPadDrivers)
+            {
+                _shell.ShowToast("ViGEmBus·HidHide 드라이버를 먼저 설치해 주세요");
+                return;
+            }
+            if (!await _shell.ConfirmAsync("가상 패드를 쓸까요?",
+                    "이 프로필로 게임을 하는 동안 실제 패드를 게임에서 숨기고 ClawHub가 만든 가상 Xbox 패드를 대신 보여 줘요. " +
+                    "고급 동작에서 게임패드 버튼을 낼 수 있고 스틱을 키·마우스로 바꿀 수 있어요. " +
+                    "게임을 시작할 때 패드가 1–2초 다시 연결되고, 일부 온라인 게임 안티치트는 가상 패드를 막을 수 있어요.",
+                    "켜기"))
+                return;
+        }
+        Remember();
+        Profile.Advanced ??= new AdvancedInput();
+        if (!VirtualPadOn) { Profile.Advanced.Enabled = true; Profile.Advanced.VirtualPad = true; }
+        else Profile.Advanced.VirtualPad = false;
+        Save();
+        RefreshAdvanced();
+        _shell.ShowToast(VirtualPadOn ? "가상 패드를 켰어요 — 다음에 이 프로필로 게임을 시작할 때부터 적용돼요" : "가상 패드를 껐어요");
+        if (_shell.RunningGame is not null) await _shell.SyncControllerAsync();
+    }
+
+    [RelayCommand]
+    private void PickLeftStick(TuningChoice<StickOutput> c) => PickStick(c, left: true);
+
+    [RelayCommand]
+    private void PickRightStick(TuningChoice<StickOutput> c) => PickStick(c, left: false);
+
+    private void PickStick(TuningChoice<StickOutput> c, bool left)
+    {
+        if (Profile.Advanced is not { } a) return;
+        Remember();
+        if (left) a.LeftStick = c.Value;
+        else a.RightStick = c.Value;
+        Save();
+        RefreshAdvanced();
+    }
+
+    private void MarkSticks()
+    {
+        var a = Profile.Advanced;
+        foreach (var c in LeftStickChoices) c.IsSelected = c.Value == (a?.LeftStick ?? StickOutput.Stick);
+        foreach (var c in RightStickChoices) c.IsSelected = c.Value == (a?.RightStick ?? StickOutput.Stick);
+        OnPropertyChanged(nameof(UsesStickMouse));
+        OnPropertyChanged(nameof(MouseSpeed));
+    }
+
     private void RefreshAdvanced()
     {
+        OnPropertyChanged(nameof(VirtualPadOn));
+        OnPropertyChanged(nameof(VirtualPadText));
+        MarkSticks();
         OnPropertyChanged(nameof(AdvancedEnabled));
         OnPropertyChanged(nameof(AdvancedText));
         if (!AdvancedEnabled) EditingSlot = "press";
@@ -332,7 +421,7 @@ public sealed partial class MappingEditorViewModel
             var press = Current(row.Button);
             if (!a.LayerShift && a.Radial is null && press.Count == 0)
                 row.Conflict = "짧게 누르면 아무것도 안 나와요 — '누를 때' 키를 정해 주세요";
-            else if (press.Any(id => id.StartsWith("PAD_", StringComparison.Ordinal)))
+            else if (!VirtualPadOn && press.Any(id => id.StartsWith("PAD_", StringComparison.Ordinal)))
                 row.Conflict = "'누를 때' 게임패드 버튼은 고급 동작 중 나오지 않아요";
         }
     }

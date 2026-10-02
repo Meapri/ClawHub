@@ -80,6 +80,27 @@ internal static class PipeAccess
         }
     }
 
+    /// <summary>클라이언트 프로세스의 실행 파일 경로 (가상 패드: HidHide에 "실제 패드를 볼 수 있는 앱"으로 등록).</summary>
+    public static string? ClientImagePath(NamedPipeServerStream pipe)
+    {
+        if (!GetNamedPipeClientProcessId(pipe.SafePipeHandle, out var pid)) return null;
+        var h = OpenProcess(0x1000 /* QUERY_LIMITED_INFORMATION */, false, pid);
+        if (h == IntPtr.Zero) return null;
+        try
+        {
+            var sb = new StringBuilder(1024);
+            var len = (uint)sb.Capacity;
+            return QueryFullProcessImageName(h, 0, sb, ref len) ? sb.ToString() : null;
+        }
+        finally
+        {
+            CloseHandle(h);
+        }
+    }
+
+    [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+    private static extern bool QueryFullProcessImageName(IntPtr process, uint flags, StringBuilder name, ref uint size);
+
     /// <summary>지금 화면(콘솔)을 가진 세션. 전환 중이면 0xFFFFFFFF.</summary>
     public static uint ActiveConsoleSession => WTSGetActiveConsoleSessionId();
 

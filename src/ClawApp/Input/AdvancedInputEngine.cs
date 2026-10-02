@@ -381,11 +381,11 @@ public sealed class AdvancedInputEngine : IDisposable
     private int RadialPick(int count)
     {
         XInputState st = default;
-        if (_padSlot < 0 || XInputGetState(_padSlot, ref st) != 0)
+        if (_padSlot < 0 || _padSlot == VirtualPad.VirtualSlot || XInputGetState(_padSlot, ref st) != 0)
         {
             _padSlot = -1;
             for (var i = 0; i < 4; i++)
-                if (XInputGetState(i, ref st) == 0) { _padSlot = i; break; }
+                if (i != VirtualPad.VirtualSlot && XInputGetState(i, ref st) == 0) { _padSlot = i; break; }
             if (_padSlot < 0) return -1;
         }
         double x = st.Gamepad.ThumbRX, y = st.Gamepad.ThumbRY;

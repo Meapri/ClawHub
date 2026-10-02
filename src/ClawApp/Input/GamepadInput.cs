@@ -112,12 +112,12 @@ public sealed class GamepadInput
     {
         XInputState state = default;
         // 빈 슬롯 조회는 느리므로, 연결된 슬롯만 매 틱 읽고 끊겼을 때만 1초 간격으로 재탐색
-        if (_slot is { } s && XInputGetState(s, ref state) != 0) _slot = null;
+        if (_slot is { } s && (s == VirtualPad.VirtualSlot || XInputGetState(s, ref state) != 0)) _slot = null; // 가상 패드(3단계)는 읽지 않는다
         if (_slot is null && DateTime.UtcNow >= _nextScan)
         {
             _nextScan = DateTime.UtcNow.AddSeconds(1);
             for (var i = 0; i < 4 && _slot is null; i++)
-                if (XInputGetState(i, ref state) == 0) _slot = i;
+                if (i != VirtualPad.VirtualSlot && XInputGetState(i, ref state) == 0) _slot = i;
         }
 
         Connected = _slot is not null;

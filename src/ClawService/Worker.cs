@@ -4,12 +4,13 @@ using ClawCore.Ipc;
 namespace ClawService;
 
 public sealed class Worker(ILogger<Worker> log, PipeServer pipe, RequestHandler handler, ControllerManager controller, EcManager ec,
-    SystemManager system) : BackgroundService
+    SystemManager system, PadHider padHider) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
         if (File.Exists(Path.Combine(ClawCore.JsonStore.ServiceDir, "ec-state.json"))) ec.Reapply("서비스 시작");
         system.Start();
+        padHider.RecoverAtStartup(); // 지난번 크래시로 실제 패드가 숨겨진 채 남았으면 되돌린다
 
         controller.StatusChanged += () => pipe.Broadcast(new Response { Event = Ops.EventStatus, Status = handler.BuildStatus() });
         // Game Bar 위젯의 명령(프로필 변경·게임 종료·ClawHub 열기)을 구독 중인 런처 앱에 전달
@@ -18,6 +19,7 @@ public sealed class Worker(ILogger<Worker> log, PipeServer pipe, RequestHandler 
         pipe.LastSubscriberGone += () =>
         {
             system.AppState = null; // 런처 앱이 없으면 위젯은 게임·매핑 정보를 숨긴다
+            padHider.Unhide(); // 가상 패드를 만든 앱이 없으면 실제 패드를 게임에 다시 보여 준다
             controller.RestoreBaseline();
             ec.RestoreDefault();
         };
@@ -57,6 +59,7 @@ public sealed class Worker(ILogger<Worker> log, PipeServer pipe, RequestHandler 
             }
         }
         buttons?.Dispose();
+        padHider.Unhide(); // 서비스가 멈출 때도 실제 패드를 되돌린다
     }
 
     /// <summary>

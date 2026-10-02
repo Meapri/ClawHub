@@ -13,6 +13,7 @@ builder.Services.AddSingleton<MsiCenterManager>();
 builder.Services.AddSingleton<FrameMonitor>();
 builder.Services.AddSingleton<SystemManager>();
 builder.Services.AddSingleton<DisplayQualityManager>();
+builder.Services.AddSingleton<PadHider>();
 builder.Services.AddSingleton<RequestHandler>();
 builder.Services.AddSingleton<PipeServer>();
 builder.Services.AddHostedService<Worker>();

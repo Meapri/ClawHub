@@ -971,6 +971,8 @@ public sealed partial class ShellViewModel : ObservableObject
                 if (resp.Status is { } st) Status = st;
             }
 
+            await SyncVirtualPadAsync(profile); // 3단계 가상 패드 (게임 프로필이 쓰면)
+
             if (mode is { } m && m != (_appliedMode ?? Status?.ControllerMode))
             {
                 var resp = await Service.SendAsync(new Request { Op = Ops.SetControllerMode, ControllerMode = m });
@@ -1017,6 +1019,7 @@ public sealed partial class ShellViewModel : ObservableObject
         if (_appliedMode is { } m && s.ControllerMode is { } actual && actual != m) { _appliedMode = null; stale = true; }
         if (_appliedProfileId is not null && !s.MappingActive) { _appliedProfileId = null; stale = true; }
         if (_appliedPerf is not null && s.TemporaryPerformance is null) { _appliedPerf = null; stale = true; }
+        if (_padHidden && !s.PadHidden) { _padHidden = false; stale = true; } // 서비스가 다시 시작돼 숨김이 풀림
         if (!stale || _resyncQueued) return;
         _resyncQueued = true;
         var wait = _lastAutoResync + TimeSpan.FromSeconds(3) - DateTime.UtcNow;
@@ -1113,6 +1116,7 @@ public sealed partial class ShellViewModel : ObservableObject
             catch (Exception) { /* 종료 중 */ }
         }
         Input.AdvancedInputEngine.Instance.Use(null);
+        await ShutdownVirtualPadAsync();
         Application.Current.Shutdown();
     }
 

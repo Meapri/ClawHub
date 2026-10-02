@@ -19,8 +19,11 @@ public sealed class Request
     public ControllerTuning? Tuning { get; set; }
     public GamepadMode? ControllerMode { get; set; }
     public ControllerSettings? ControllerSettings { get; set; }
-    /// <summary>SetMsiCenter: true = 켜기, false = 끄기.</summary>
+    /// <summary>SetMsiCenter: true = 켜기, false = 끄기. SetPadHidden: true = 실제 패드 숨기기.</summary>
     public bool? Enabled { get; set; }
+    /// <summary>서비스 내부용: 요청한 프로세스의 실행 파일 (파이프에서 알아낸다 — 보내도 무시).</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public string? ClientPath { get; set; }
 
     /// <summary>SetGraphics: FPS 제한 (0 = 끔). null이면 그대로.</summary>
     public int? FpsLimit { get; set; }
@@ -178,6 +181,10 @@ public sealed class ServiceStatus
     /// <summary>게임별 성능 모드가 임시로 적용 중이면 그 상태 (사용자 기본값은 Performance).</summary>
     public PerformanceState? TemporaryPerformance { get; set; }
     public bool? MsiCenterEnabled { get; set; }
+    /// <summary>3단계 가상 패드 드라이버(ViGEmBus·HidHide)가 설치돼 있는지.</summary>
+    public bool VirtualPadDrivers { get; set; }
+    /// <summary>실제 패드를 게임에서 숨기고 있는지.</summary>
+    public bool PadHidden { get; set; }
     public string? BiosVersion { get; set; }
 
     public bool EcAvailable { get; set; }
@@ -230,6 +237,8 @@ public static class Ops
     /// <summary>Windows 전원 설정 하나 바꾸기 (PowerSetting, PowerSource, Value). 활성 구성표에 쓰고 바로 적용.</summary>
     public const string SetPowerPlanSetting = "SetPowerPlanSetting";
     public const string AppCommand = "AppCommand";
+    /// <summary>3단계 가상 패드: 실제 패드를 게임에서 숨기기/되돌리기 (Enabled). 앱 연결이 끊기면 서비스가 되돌린다.</summary>
+    public const string SetPadHidden = "SetPadHidden";
     public const string Subscribe = "Subscribe";
 
     public const string EventButton = "Button";

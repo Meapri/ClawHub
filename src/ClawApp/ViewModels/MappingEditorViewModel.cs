@@ -125,6 +125,7 @@ public sealed partial class MappingEditorViewModel : ObservableObject, INavPage
         LeftRows[0].IsFirst = true;
         Tabs[0].IsSelected = true;
         RefreshRows();
+        MarkSticks();
     }
 
     public string Title => $"매핑 · {Profile.Name}";

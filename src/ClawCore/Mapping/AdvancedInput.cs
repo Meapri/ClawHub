@@ -50,10 +50,27 @@ public sealed class AdvancedButton
 /// 동작에 맞는 키보드·마우스 입력을 소프트웨어로 낸다 (SendInput — 일부 안티치트가 싫어할 수 있어 프로필마다 켠다).
 /// 고급 동작이 없는 버튼은 켜져 있어도 펌웨어 매핑 그대로 (지연·안티치트 영향 없음).
 /// </summary>
+/// <summary>가상 패드에서 스틱 하나를 무엇으로 낼지.</summary>
+public enum StickOutput { Stick, Wasd, Arrows, Mouse }
+
 public sealed class AdvancedInput
 {
     public bool Enabled { get; set; }
     public Dictionary<ClawButton, AdvancedButton> Buttons { get; set; } = [];
+
+    /// <summary>
+    /// 3단계 가상 패드: 실제 패드를 게임에서 숨기고(HidHide) ClawHub가 가공한 가상 Xbox 패드(ViGEm)를 대신 보여 준다.
+    /// 그러면 고급 동작에서도 게임패드 버튼을 낼 수 있고, 스틱을 키·마우스로 바꿀 수 있다. 드라이버가 있어야 한다.
+    /// </summary>
+    public bool VirtualPad { get; set; }
+    public StickOutput LeftStick { get; set; }
+    public StickOutput RightStick { get; set; }
+    /// <summary>스틱 → 마우스 속도 (1–100, 기본 40).</summary>
+    public int MouseSpeed { get; set; } = 40;
+
+    /// <summary>가상 패드를 실제로 쓰는지 (켜져 있고 고급 입력도 켜짐).</summary>
+    [JsonIgnore]
+    public bool UsesVirtualPad => Enabled && VirtualPad;
 
     /// <summary>운반 키의 머리 (펌웨어 코드 F23 = 156).</summary>
     public const string CarrierPrefix = "KB_F23";
@@ -91,5 +108,9 @@ public sealed class AdvancedInput
         return result;
     }
 
-    public AdvancedInput Clone() => new() { Enabled = Enabled, Buttons = Buttons.ToDictionary(kv => kv.Key, kv => kv.Value.Clone()) };
+    public AdvancedInput Clone() => new()
+    {
+        Enabled = Enabled, Buttons = Buttons.ToDictionary(kv => kv.Key, kv => kv.Value.Clone()),
+        VirtualPad = VirtualPad, LeftStick = LeftStick, RightStick = RightStick, MouseSpeed = MouseSpeed,
+    };
 }

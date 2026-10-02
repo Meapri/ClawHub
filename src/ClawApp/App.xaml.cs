@@ -80,6 +80,7 @@ public partial class App : Application
     {
         _single?.Dispose();
         Input.AdvancedInputEngine.Instance.Dispose(); // 누르고 있던 키를 떼고 훅을 푼다
+        Input.VirtualPad.Stop(); // 실제 패드 숨김은 서비스가 앱 연결이 끊기면 되돌린다
         base.OnExit(e);
     }
 }

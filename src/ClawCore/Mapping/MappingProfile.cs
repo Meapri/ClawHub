@@ -19,7 +19,7 @@ public sealed class MappingProfile
     /// <summary>지정한 버튼이 하나도 없음.</summary>
     [System.Text.Json.Serialization.JsonIgnore]
     public bool IsEmpty => Bindings.All(kv => kv.Value.Count == 0) && Macros.All(kv => kv.Value.Count == 0) && Tuning is null or { IsEmpty: true }
-        && Advanced is null or { Enabled: false } or { Buttons.Count: 0 };
+        && Advanced is null or { Enabled: false } or { Buttons.Count: 0, VirtualPad: false };
 
     public string Id { get; set; } = Guid.NewGuid().ToString("N");
     public string Name { get; set; } = "새 프로필";
