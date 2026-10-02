@@ -80,11 +80,17 @@ namespace ClawWidget
         }
 
         /// <summary>Game Bar가 위젯 연결을 유지하는 동안에는 일시 중단되지 않는다. 그래도 오면 폴링·파이프를 멈춘다.</summary>
-        private void OnSuspending(object sender, SuspendingEventArgs e)
+        private async void OnSuspending(object sender, SuspendingEventArgs e)
         {
             var deferral = e.SuspendingOperation.GetDeferral();
-            ((Window.Current?.Content as Frame)?.Content as WidgetPage)?.Suspend();
-            deferral.Complete();
+            try
+            {
+                if ((Window.Current?.Content as Frame)?.Content is WidgetPage page) await page.SuspendAsync();
+            }
+            finally
+            {
+                deferral.Complete();
+            }
         }
 
         private void OnResuming(object sender, object e)

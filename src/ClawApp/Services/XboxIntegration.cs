@@ -98,6 +98,14 @@ public static class XboxIntegration
 
     public static Owner? ForegroundOwner() => OwnerOf(GetForegroundWindow());
 
+    /// <summary>Game Bar 프로세스가 떠 있는지 (보이는지는 모른다 — 닫혀도 프로세스는 남는다).</summary>
+    public static bool IsGameBarRunning()
+    {
+        var ps = Process.GetProcessesByName("GameBar");
+        foreach (var p in ps) p.Dispose();
+        return ps.Length > 0;
+    }
+
     private static readonly HashSet<string> GameBarProcesses = new(StringComparer.OrdinalIgnoreCase)
     {
         "GameBar", "GameBarFTServer", "XboxGameBarWidgets",

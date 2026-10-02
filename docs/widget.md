@@ -32,6 +32,10 @@ ClawApp 자체 퀵 설정 오버레이를 대체한다. `src/ClawWidget` — 클
 - **IPC**: `\\.\pipe\ClawHub.Service`, 한 줄에 JSON 하나 (UTF-8). AppContainer에서는 `NamedPipeClientStream`이 안 되므로
   `CreateFile2`(실패 시 `CreateFileFromApp`)로 열고 `ReadFile`/`WriteFile` P/Invoke로 읽고 쓴다. JSON은 `Windows.Data.Json`.
   요청은 한 번에 하나씩(요청 줄 쓰기 → 같은 Id 응답 읽기).
+- **열림·닫힘 알림**: Game Bar가 열려 위젯이 보이면(`Visible`, 최소화 아님, `GameBarDisplayMode = Foreground` — 고정 HUD만 남은 것은 닫힘)
+  `AppCommand WidgetShown`, 닫히면(일시 중단 포함) `WidgetHidden`을 보낸다. Game Bar는 떠 있어도 앞 창으로 잡히지 않을 때가 많아,
+  ClawApp은 이 신호로 "Game Bar에 넘겨준 동안"(게임 매핑 해제 → 패드로 위젯 조작)을 시작·끝내고, 오른쪽 버튼을 다시 누르면 닫는다.
+  앞 창 판별만 쓰던 때는 1.5초 뒤 Win+G 재시도가 방금 연 위젯을 닫거나, 5초 뒤 매핑이 되살아났다. ClawApp이 꺼져 있으면 서비스가 거절하고 위젯은 무시한다.
 - **폴링만, 구독 안 함**: 2초마다 `GetTelemetry`, 전체 화면에선 4초마다 `GetStatus`. 연결이 없으면 매 주기 재접속.
   `Subscribe`는 쓰지 않는다 — 서비스는 마지막 구독자가 끊길 때 게임 매핑·게임별 성능을 복원하는데,
   위젯이 구독자로 남아 있으면 ClawApp이 꺼져도 복원이 안 된다.
