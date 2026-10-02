@@ -10,7 +10,7 @@
         <Button x:Name="Display" Style="{StaticResource NavButton}" Margin="0" HorizontalContentAlignment="Stretch" Click="Display_Click"
                 Padding="{Binding InnerPadding, ElementName=Root}">
             <DockPanel>
-                <TextBlock DockPanel.Dock="Right" Text="{StaticResource Icon.Pencil}" Style="{StaticResource Icon}" FontSize="15" Opacity="0.55"
+                <TextBlock DockPanel.Dock="Right" Text="{StaticResource Icon.Pencil}" Style="{StaticResource Icon}" FontSize="16" Opacity="0.55"
                            Margin="12,0,0,0"/>
                 <Grid>
                     <TextBlock x:Name="ValueText" Text="{Binding Text, ElementName=Root}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"
@@ -22,7 +22,9 @@
                 </Grid>
             </DockPanel>
         </Button>
+        <!-- 입력칸 글자가 버튼일 때와 같은 자리에 오게 같은 안쪽 여백 (검색 아이콘과 겹치지 않게) -->
         <TextBox x:Name="Editor" Margin="0" Visibility="Collapsed" VerticalContentAlignment="Center"
+                 Padding="{Binding InnerPadding, ElementName=Root}"
                  FontSize="{Binding FontSize, ElementName=Root}" FontWeight="{Binding FontWeight, ElementName=Root}"
                  LostKeyboardFocus="Editor_LostFocus"/>
     </Grid>

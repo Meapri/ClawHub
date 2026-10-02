@@ -10,7 +10,7 @@
                 <TextBlock DockPanel.Dock="Right" Text="A로 변경" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="12,0,0,0"/>
                 <StackPanel>
                     <TextBlock Text="배터리일 때 성능 모드" Style="{StaticResource Caption}"/>
-                    <TextBlock Text="{Binding PerformanceOnBatteryText}" FontSize="19" FontWeight="SemiBold" Margin="0,2,0,0"/>
+                    <TextBlock Text="{Binding PerformanceOnBatteryText}" FontSize="20" FontWeight="SemiBold" Margin="0,2,0,0"/>
                 </StackPanel>
             </DockPanel>
         </Button>
@@ -21,7 +21,7 @@
                 <TextBlock DockPanel.Dock="Right" Text="A로 변경" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="12,0,0,0"/>
                 <StackPanel>
                     <TextBlock Text="배터리일 때 FPS 제한" Style="{StaticResource Caption}"/>
-                    <TextBlock Text="{Binding FpsOnBatteryText}" FontSize="19" FontWeight="SemiBold" Margin="0,2,0,0"/>
+                    <TextBlock Text="{Binding FpsOnBatteryText}" FontSize="20" FontWeight="SemiBold" Margin="0,2,0,0"/>
                 </StackPanel>
             </DockPanel>
         </Button>

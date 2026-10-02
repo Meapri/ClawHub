@@ -27,6 +27,11 @@
     <CornerRadius x:Key="CardRadius">0</CornerRadius>
 
     <!-- ── 텍스트 ───────────────────────────────────────── -->
+    <!--
+      글자 크기 단계 (8인치 1280×800 논리 px, 팔 길이 거리에서 읽는 기준):
+        캡션 14 · 본문 16 (창 기본값) · 섹션 18 · H2 22 · 피벗 탭 26 · H1 32 · 피벗 제목 46.
+      화면에서 FontSize를 따로 주지 말고 이 스타일을 쓴다. 13 미만은 쓰지 않는다.
+    -->
     <!-- 상단 피벗 제목 (페이지 이름) -->
     <Style x:Key="PivotTitle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource DisplayFont}"/>
@@ -60,18 +65,18 @@
     </Style>
     <Style x:Key="H2" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource DisplayFont}"/>
-        <Setter Property="FontSize" Value="20"/>
+        <Setter Property="FontSize" Value="22"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Foreground" Value="{DynamicResource Text}"/>
     </Style>
     <Style x:Key="Section" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="15"/>
+        <Setter Property="FontSize" Value="18"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Foreground" Value="{DynamicResource TextDim}"/>
-        <Setter Property="Margin" Value="2,24,0,10"/>
+        <Setter Property="Margin" Value="2,24,0,8"/>
     </Style>
     <Style x:Key="Caption" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="FontSize" Value="14"/>
         <Setter Property="Foreground" Value="{DynamicResource TextDim}"/>
         <Setter Property="TextWrapping" Value="Wrap"/>
     </Style>
@@ -93,7 +98,9 @@
     <Style x:Key="StatusButton" TargetType="Button">
         <Setter Property="Focusable" Value="False"/>
         <Setter Property="Cursor" Value="Hand"/>
-        <Setter Property="Height" Value="36"/>
+        <!-- 손가락 크기: 44×44 이상 -->
+        <Setter Property="Height" Value="44"/>
+        <Setter Property="MinWidth" Value="44"/>
         <Setter Property="Padding" Value="10,0"/>
         <Setter Property="Margin" Value="2,0"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
@@ -105,7 +112,7 @@
                     <Grid>
                         <Border Background="{TemplateBinding Background}"/>
                         <Border x:Name="Hover" Background="{DynamicResource TileFillHover}" Opacity="0"/>
-                        <ContentPresenter Margin="{TemplateBinding Padding}" VerticalAlignment="Center"/>
+                        <ContentPresenter Margin="{TemplateBinding Padding}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Hover" Property="Opacity" Value="1"/></Trigger>
@@ -147,18 +154,20 @@
         <Setter Property="Background" Value="{DynamicResource TileFill}"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="CornerRadius" Value="0"/>
-        <Setter Property="Padding" Value="18,14"/>
+        <Setter Property="Padding" Value="20,16"/>
         <Setter Property="Margin" Value="0,0,0,4"/>
     </Style>
 
     <!-- ── 버튼 (목록 행) ─────────────────────────────────── -->
+    <!-- 목록 행·스위치·카드의 글자는 모두 왼쪽 20에서 시작한다 (테두리 1 포함 19) -->
     <Style x:Key="NavButton" TargetType="Button">
         <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
         <Setter Property="Foreground" Value="{DynamicResource Text}"/>
         <Setter Property="Background" Value="{DynamicResource TileFill}"/>
         <Setter Property="BorderBrush" Value="Transparent"/>
-        <Setter Property="FontSize" Value="15"/>
-        <Setter Property="Padding" Value="18,14"/>
+        <Setter Property="FontSize" Value="16"/>
+        <Setter Property="MinHeight" Value="48"/>
+        <Setter Property="Padding" Value="19,14"/>
         <Setter Property="Margin" Value="0,0,0,4"/>
         <Setter Property="HorizontalContentAlignment" Value="Left"/>
         <Setter Property="m:Press.Scale" Value="0.98"/>
@@ -249,7 +258,7 @@
         <Setter Property="Background" Value="{DynamicResource Accent}"/>
         <Setter Property="Foreground" Value="{DynamicResource AccentText}"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
-        <Setter Property="FontSize" Value="17"/>
+        <Setter Property="FontSize" Value="18"/>
         <Setter Property="Padding" Value="28,12"/>
         <Setter Property="HorizontalContentAlignment" Value="Center"/>
         <Setter Property="m:Press.Scale" Value="0.95"/>
@@ -404,8 +413,8 @@
                             <StackPanel VerticalAlignment="Center">
                                 <TextBlock Text="{TemplateBinding Tag}" FontFamily="{StaticResource LucideFont}" FontSize="22"
                                            HorizontalAlignment="Center" Foreground="{TemplateBinding Foreground}"/>
-                                <ContentPresenter HorizontalAlignment="Center" Margin="0,8,0,0"
-                                                  TextElement.FontSize="11" TextElement.Foreground="{TemplateBinding Foreground}"/>
+                                <ContentPresenter HorizontalAlignment="Center" Margin="0,6,0,0"
+                                                  TextElement.FontSize="13" TextElement.Foreground="{TemplateBinding Foreground}"/>
                             </StackPanel>
                         </Border>
                         <Border x:Name="Hover" Background="#FFFFFF" Opacity="0" IsHitTestVisible="False"/>
@@ -443,9 +452,12 @@
         <Setter Property="Foreground" Value="{DynamicResource Text}"/>
         <Setter Property="Background" Value="{DynamicResource TileFill}"/>
         <Setter Property="BorderBrush" Value="Transparent"/>
-        <Setter Property="FontSize" Value="15"/>
+        <Setter Property="FontSize" Value="16"/>
+        <!-- 손가락 크기: 높이 44 이상 -->
+        <Setter Property="MinHeight" Value="44"/>
+        <Setter Property="MinWidth" Value="56"/>
         <Setter Property="Padding" Value="16,8"/>
-        <Setter Property="Margin" Value="0,0,6,6"/>
+        <Setter Property="Margin" Value="0,0,8,8"/>
         <Setter Property="m:Press.Scale" Value="0.95"/>
         <Setter Property="Template">
             <Setter.Value>
@@ -483,20 +495,21 @@
     <Style x:Key="ChipRadio" TargetType="RadioButton" BasedOn="{StaticResource Chip}"/>
 
     <!-- ── 빠른 설정 타일 (정사각 메트로 타일: 아이콘 위, 이름 아래 왼쪽) ── -->
+    <!-- 빠른 설정 패널(420) 안쪽 369에 한 줄 3개: 3 × (112 + 8) = 360 -->
     <Style x:Key="QuickTile" TargetType="ToggleButton" BasedOn="{StaticResource Chip}">
-        <Setter Property="Width" Value="104"/>
-        <Setter Property="Height" Value="80"/>
-        <Setter Property="Margin" Value="0,0,6,6"/>
+        <Setter Property="Width" Value="112"/>
+        <Setter Property="Height" Value="88"/>
+        <Setter Property="Margin" Value="0,0,8,8"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ToggleButton">
                     <Grid>
-                        <Border x:Name="Bd" Background="{TemplateBinding Background}" Padding="10,8">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" Padding="12,10">
                             <Grid>
                                 <!-- Tag = Lucide 아이콘 글자 -->
-                                <TextBlock Text="{TemplateBinding Tag}" FontFamily="{StaticResource LucideFont}" FontSize="20"
+                                <TextBlock Text="{TemplateBinding Tag}" FontFamily="{StaticResource LucideFont}" FontSize="22"
                                            HorizontalAlignment="Left" VerticalAlignment="Top" Foreground="{TemplateBinding Foreground}"/>
-                                <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Bottom" TextElement.FontSize="13"/>
+                                <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Bottom" TextElement.FontSize="15"/>
                             </Grid>
                         </Border>
                         <Border x:Name="Ring" Style="{StaticResource FocusRing}"/>
@@ -529,8 +542,9 @@
         <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
         <Setter Property="Foreground" Value="{DynamicResource Text}"/>
         <Setter Property="Background" Value="{DynamicResource TileFill}"/>
-        <Setter Property="FontSize" Value="15"/>
-        <Setter Property="Padding" Value="18,14"/>
+        <Setter Property="FontSize" Value="16"/>
+        <Setter Property="MinHeight" Value="48"/>
+        <Setter Property="Padding" Value="20,14"/>
         <Setter Property="Margin" Value="0,0,0,4"/>
         <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
         <Setter Property="m:Press.Scale" Value="0.98"/>
@@ -541,11 +555,11 @@
                         <Border x:Name="Bd" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
                             <DockPanel>
                                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0">
-                                    <TextBlock x:Name="State" Text="끔" FontSize="15" Margin="0,0,14,0" VerticalAlignment="Center"
+                                    <TextBlock x:Name="State" Text="끔" FontSize="16" Margin="0,0,14,0" VerticalAlignment="Center"
                                                Foreground="{DynamicResource TextDim}"/>
-                                    <Grid Width="44" Height="22">
+                                    <Grid Width="48" Height="24">
                                         <Border x:Name="Track" BorderThickness="2" BorderBrush="{DynamicResource StrokeStrong}" Background="Transparent"/>
-                                        <Border x:Name="Knob" Width="10" Height="10" Margin="6,0" HorizontalAlignment="Left" VerticalAlignment="Center"
+                                        <Border x:Name="Knob" Width="12" Height="12" Margin="6,0" HorizontalAlignment="Left" VerticalAlignment="Center"
                                                 Background="{DynamicResource TextDim}"/>
                                     </Grid>
                                 </StackPanel>
@@ -581,32 +595,37 @@
         </Setter>
     </Style>
 
-    <!-- ── 슬라이더 (메트로: 굵은 직사각 트랙 + 세로 막대 손잡이) ── -->
+    <!-- ── 슬라이더 (메트로: 굵은 직사각 트랙 + 세로 막대 손잡이) ──
+         높이 44 = 손가락으로 집기 쉬운 크기. 손잡이는 보이는 막대(12×28)보다 넓은 28×44 영역으로 잡힌다.
+         패드: 포커스가 오면 바탕이 밝아지고 테두리 두 겹, ←/→ = SmallChange만큼. -->
     <Style TargetType="Slider">
         <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
         <Setter Property="IsMoveToPointEnabled" Value="True"/>
         <Setter Property="IsSnapToTickEnabled" Value="True"/>
         <Setter Property="TickFrequency" Value="1"/>
-        <Setter Property="Height" Value="36"/>
+        <Setter Property="Height" Value="44"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Slider">
-                    <Grid>
-                        <Border x:Name="Ring" Style="{StaticResource FocusRing}" Margin="-1"/>
-                        <Grid VerticalAlignment="Center" Margin="10,0">
-                            <Border Height="8" Background="{DynamicResource StrokeStrong}" Opacity="0.5"/>
+                    <Grid Background="Transparent">
+                        <Border x:Name="Bg" Background="Transparent"/>
+                        <!-- 손잡이 영역 28 중 보이는 막대는 가운데 12 → 트랙·채움을 8씩 안쪽으로 맞춘다 -->
+                        <Grid VerticalAlignment="Stretch" Margin="2,0">
+                            <Border Height="8" Margin="8,0" Background="{DynamicResource StrokeStrong}" Opacity="0.5"/>
                             <Track x:Name="PART_Track">
                                 <Track.DecreaseRepeatButton>
                                     <RepeatButton Focusable="False" IsTabStop="False">
                                         <RepeatButton.Template>
                                             <ControlTemplate TargetType="RepeatButton">
-                                                <Border Height="8" Background="{DynamicResource Accent}"/>
+                                                <Grid Background="Transparent">
+                                                    <Border Height="8" Margin="8,0,-8,0" Background="{DynamicResource Accent}"/>
+                                                </Grid>
                                             </ControlTemplate>
                                         </RepeatButton.Template>
                                     </RepeatButton>
                                 </Track.DecreaseRepeatButton>
                                 <Track.IncreaseRepeatButton>
-                                    <RepeatButton Focusable="False" IsTabStop="False" Opacity="0">
+                                    <RepeatButton Focusable="False" IsTabStop="False">
                                         <RepeatButton.Template>
                                             <ControlTemplate TargetType="RepeatButton"><Border Background="Transparent"/></ControlTemplate>
                                         </RepeatButton.Template>
@@ -616,17 +635,23 @@
                                     <Thumb Focusable="False">
                                         <Thumb.Template>
                                             <ControlTemplate TargetType="Thumb">
-                                                <Border Width="10" Height="24" Background="{DynamicResource Text}"/>
+                                                <Grid Width="28" Background="Transparent">
+                                                    <Border Width="12" Height="28" Background="{DynamicResource Text}"/>
+                                                </Grid>
                                             </ControlTemplate>
                                         </Thumb.Template>
                                     </Thumb>
                                 </Track.Thumb>
                             </Track>
                         </Grid>
+                        <Border x:Name="Ring" Style="{StaticResource FocusRing}" Margin="-1"/>
+                        <Border x:Name="Inner" Style="{StaticResource FocusRingInner}" Margin="2"/>
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Bg" Property="Background" Value="{DynamicResource TileFill}"/>
                             <Setter TargetName="Ring" Property="BorderBrush" Value="{DynamicResource FocusOuter}"/>
+                            <Setter TargetName="Inner" Property="BorderBrush" Value="{DynamicResource FocusInner}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Opacity" Value="0.4"/>
@@ -643,15 +668,18 @@
         <Setter Property="Foreground" Value="{DynamicResource Text}"/>
         <Setter Property="CaretBrush" Value="{DynamicResource Text}"/>
         <Setter Property="SelectionBrush" Value="{DynamicResource Accent}"/>
-        <Setter Property="FontSize" Value="15"/>
+        <Setter Property="FontSize" Value="16"/>
+        <Setter Property="MinHeight" Value="48"/>
+        <Setter Property="Padding" Value="12,8"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
         <Setter Property="Margin" Value="0,0,0,8"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="TextBox">
                     <Grid>
                         <Border x:Name="Bd" Background="{DynamicResource TileFill}" BorderBrush="{DynamicResource StrokeStrong}" BorderThickness="2"
-                                Padding="10,7">
-                            <ScrollViewer x:Name="PART_ContentHost" Focusable="False"/>
+                                Padding="{TemplateBinding Padding}">
+                            <ScrollViewer x:Name="PART_ContentHost" Focusable="False" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
                         </Border>
                     </Grid>
                     <ControlTemplate.Triggers>

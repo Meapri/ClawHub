@@ -5,7 +5,7 @@
              xmlns:v="clr-namespace:ClawApp.Views"
              KeyboardNavigation.DirectionalNavigation="Contained">
     <!-- 아트 바꾸기 (ArtPickerViewModel). 후보는 패드 방향키로 이동, A로 적용. -->
-    <DockPanel Margin="32,0,22,12">
+    <DockPanel Margin="48,0,40,12">
 
         <!-- 종류 (LB/RB) + 지금 적용된 아트 -->
         <DockPanel DockPanel.Dock="Top" Margin="0,0,0,12">
@@ -85,7 +85,7 @@
                                     <!-- 미리보기가 없을 때: 제목 + 출처 -->
                                     <StackPanel VerticalAlignment="Center" Margin="10"
                                                 Visibility="{Binding HasThumb, Converter={StaticResource NotVis}}">
-                                        <TextBlock Text="{Binding Title}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource Text}"
+                                        <TextBlock Text="{Binding Title}" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource Text}"
                                                    TextWrapping="Wrap" TextAlignment="Center"/>
                                         <TextBlock Text="불러오는 중…" Style="{StaticResource Caption}" HorizontalAlignment="Center"
                                                    Visibility="{Binding IsLoading, Converter={StaticResource Vis}}"/>
@@ -95,8 +95,8 @@
                                     <Image Source="{Binding Thumb}" Stretch="Uniform" Margin="2"
                                            Visibility="{Binding HasThumb, Converter={StaticResource Vis}}"/>
                                     <Border VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="6"
-                                            Padding="6,1" Background="#99000000">
-                                        <TextBlock Text="{Binding SourceLabel}" FontSize="11" Foreground="White"/>
+                                            Padding="6,2" Background="#B3000000">
+                                        <TextBlock Text="{Binding SourceLabel}" FontSize="13" Foreground="White"/>
                                     </Border>
                                 </Grid>
                             </Button>

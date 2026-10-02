@@ -73,7 +73,7 @@ public sealed class ButtonGlyph : Grid
         {
             var text = new TextBlock
             {
-                Text = key, FontSize = 11, FontWeight = FontWeights.Bold,
+                Text = key, FontSize = 13, FontWeight = FontWeights.Bold,
                 HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center,
             };
             if (Tint is { } tt) text.Foreground = tt;

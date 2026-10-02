@@ -8,26 +8,26 @@
     <StackPanel>
         <TextBlock Text="캡처" Style="{StaticResource Section}" Margin="2,0,0,8"/>
         <WrapPanel>
-            <Button Style="{StaticResource NavButton}" Command="{Binding ScreenshotCommand}" Margin="0,0,8,0">
+            <Button Style="{StaticResource NavButton}" Command="{Binding ScreenshotCommand}" Margin="0,0,8,8">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="{DynamicResource Icon.Camera}" FontFamily="{DynamicResource LucideFont}" VerticalAlignment="Center" Margin="0,0,10,0"/>
                     <TextBlock Text="스크린샷"/>
                 </StackPanel>
             </Button>
-            <Button Style="{StaticResource NavButton}" Command="{Binding ToggleRecordingCommand}" Margin="0,0,8,0">
+            <Button Style="{StaticResource NavButton}" Command="{Binding ToggleRecordingCommand}" Margin="0,0,8,8">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="{DynamicResource Icon.Video}" FontFamily="{DynamicResource LucideFont}" VerticalAlignment="Center" Margin="0,0,10,0"/>
                     <TextBlock Text="녹화 시작/중지"/>
                 </StackPanel>
             </Button>
-            <Button Style="{StaticResource NavButton}" Command="{Binding SaveLast30sCommand}">
+            <Button Style="{StaticResource NavButton}" Command="{Binding SaveLast30sCommand}" Margin="0,0,0,8">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="{DynamicResource Icon.Film}" FontFamily="{DynamicResource LucideFont}" VerticalAlignment="Center" Margin="0,0,10,0"/>
                     <TextBlock Text="최근 30초 저장"/>
                 </StackPanel>
             </Button>
         </WrapPanel>
-        <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="2,4,0,0"
+        <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="2,0,0,0"
                    Text="Windows Game Bar로 저장돼요 (동영상\캡처 폴더). 최근 30초 저장은 설정 → 게임 → 캡처의 '방금 일어난 일 기록'을 켜야 해요."/>
     </StackPanel>
 </UserControl>

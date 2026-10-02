@@ -59,8 +59,9 @@
                 <Grid>
                     <TextBlock Text="{Binding Cap}" HorizontalAlignment="Center" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                     <!-- 이 프로필에서 이미 이 키를 쓰는 버튼 -->
-                    <TextBlock Text="{Binding UsedBy}" FontSize="10" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Top"
-                               Margin="0,2,0,0" Opacity="0.65" Visibility="{Binding UsedBy, Converter={StaticResource NullVis}}"/>
+                    <!-- 44px 키 구석의 꼬리표: 키 이름과 겹치지 않는 최대 크기 -->
+                    <TextBlock Text="{Binding UsedBy}" FontSize="12" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Top"
+                               Margin="0,0,1,0" Opacity="0.75" Visibility="{Binding UsedBy, Converter={StaticResource NullVis}}"/>
                 </Grid>
             </Button>
         </Grid>
@@ -78,10 +79,10 @@
                                    Visibility="{Binding HasGlyph, Converter={StaticResource Vis}}"/>
                     <TextBlock Text="{Binding Icon}" Style="{StaticResource Icon}" FontSize="30" HorizontalAlignment="Center" Margin="0,0,0,10"
                                Visibility="{Binding HasIcon, Converter={StaticResource Vis}}"/>
-                    <TextBlock Text="{Binding Cap}" FontSize="14" TextAlignment="Center" TextWrapping="Wrap"/>
+                    <TextBlock Text="{Binding Cap}" FontSize="15" TextAlignment="Center" TextWrapping="Wrap"/>
                 </StackPanel>
-                <TextBlock Text="{Binding UsedBy}" FontSize="11" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Top"
-                           Margin="0,4,4,0" Opacity="0.65" Visibility="{Binding UsedBy, Converter={StaticResource NullVis}}"/>
+                <TextBlock Text="{Binding UsedBy}" FontSize="13" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Top"
+                           Margin="0,4,6,0" Opacity="0.75" Visibility="{Binding UsedBy, Converter={StaticResource NullVis}}"/>
             </Grid>
         </Button>
     </DataTemplate>

@@ -5,8 +5,14 @@
              xmlns:v="clr-namespace:ClawApp.Views"
              KeyboardNavigation.DirectionalNavigation="Contained">
     <!-- 프로필 목록: 이름 · 요약 · 쓰는 게임 + 주요 버튼 미리보기 -->
+    <!-- 줄 폭은 최대 900, 왼쪽 48에 붙인다 (MaxWidth만 주면 가운데로 가 버림) -->
     <ScrollViewer Margin="42,-6,40,12">
-        <StackPanel MaxWidth="900" Margin="6" HorizontalAlignment="Stretch">
+        <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" MaxWidth="912"/>
+            <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
+        <StackPanel Margin="6">
             <ItemsControl ItemsSource="{Binding Rows}" Focusable="False" m:Entrance.Stagger="Items">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
@@ -20,13 +26,13 @@
                                            Foreground="{DynamicResource TextDim}" Margin="16,0,0,0"/>
                                 <StackPanel>
                                     <DockPanel>
-                                        <Border DockPanel.Dock="Right" Background="{DynamicResource Accent}" Padding="8,2" VerticalAlignment="Center"
+                                        <Border DockPanel.Dock="Right" Background="{DynamicResource Accent}" Padding="8,2" Margin="12,0,0,0" VerticalAlignment="Center"
                                                 Visibility="{Binding InUse, Converter={StaticResource Vis}}">
-                                            <TextBlock Text="사용 중" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource AccentText}"/>
+                                            <TextBlock Text="사용 중" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource AccentText}"/>
                                         </Border>
                                         <TextBlock Text="{Binding Profile.Name}" FontSize="20" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
                                     </DockPanel>
-                                    <TextBlock Style="{StaticResource Caption}" FontSize="13" Margin="0,3,0,0" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap">
+                                    <TextBlock Style="{StaticResource Caption}" Margin="0,4,0,0" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap">
                                         <Run Text="{Binding Summary, Mode=OneWay}"/><Run Text="  ·  "/><Run Text="{Binding UsedBy, Mode=OneWay}"/>
                                     </TextBlock>
                                     <!-- 주요 버튼 미리보기: [A] Space  [X] Z ... -->
@@ -35,9 +41,9 @@
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
                                                 <StackPanel Orientation="Horizontal" Margin="0,0,16,4">
-                                                    <v:ButtonGlyph Key="{Binding Button}" Width="22" Height="22" Margin="0,0,6,0"/>
+                                                    <v:ButtonGlyph Key="{Binding Button}" Width="24" Height="24" Margin="0,0,6,0"/>
                                                     <Border BorderBrush="{DynamicResource Accent}" BorderThickness="1,1,1,2" Padding="6,0" VerticalAlignment="Center">
-                                                        <TextBlock Text="{Binding Keys}" FontSize="13" FontWeight="SemiBold"/>
+                                                        <TextBlock Text="{Binding Keys}" FontSize="14" FontWeight="SemiBold"/>
                                                     </Border>
                                                 </StackPanel>
                                             </DataTemplate>
@@ -57,5 +63,6 @@
                 </StackPanel>
             </Button>
         </StackPanel>
+        </Grid>
     </ScrollViewer>
 </UserControl>

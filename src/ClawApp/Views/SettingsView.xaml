@@ -14,16 +14,17 @@
             <Setter Property="VerticalAlignment" Value="Center"/>
         </Style>
         <Style x:Key="Value" TargetType="TextBlock">
-            <Setter Property="Width" Value="44"/>
+            <Setter Property="Width" Value="56"/>
             <Setter Property="TextAlignment" Value="Right"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="Foreground" Value="{DynamicResource TextDim}"/>
         </Style>
     </UserControl.Resources>
 
+    <!-- 왼쪽 44 + 분류 목록 여백 4 = 다른 화면과 같은 48. 분류 열은 가장 긴 이름(디스플레이·사운드)에 맞춘 폭 -->
     <Grid Margin="44,0,40,8">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="290"/>
+            <ColumnDefinition Width="256"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
@@ -50,11 +51,11 @@
             </ItemsControl>
         </ScrollViewer>
 
-        <ScrollViewer x:Name="ContentHost" Grid.Column="1" Margin="28,0,0,0">
-            <!-- 분류마다 카드 폭이 내용에 따라 달라지지 않게 한 열(최대 760)로 고정 -->
+        <ScrollViewer x:Name="ContentHost" Grid.Column="1" Margin="24,0,0,0">
+            <!-- 분류마다 카드 폭이 내용에 따라 달라지지 않게 한 열(최대 880, 1280 화면이면 남는 폭을 다 씀)로 고정 -->
             <Grid>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" MaxWidth="772"/>
+                <ColumnDefinition Width="*" MaxWidth="880"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
             <StackPanel Margin="6,4,6,16">
@@ -124,10 +125,10 @@
                             </Border>
                             <StackPanel>
                                 <TextBlock Text="배경 사진" Margin="0,0,0,8"/>
-                                <Button Style="{StaticResource NavButton}" Command="{Binding PickBackdropFromGamesCommand}" Padding="14,10">
+                                <Button Style="{StaticResource NavButton}" Command="{Binding PickBackdropFromGamesCommand}">
                                     <StackPanel Orientation="Horizontal"><TextBlock Text="{StaticResource Icon.Image}" Style="{StaticResource Icon}" FontSize="16" Margin="0,0,12,0"/><TextBlock Text="게임 아트에서 고르기"/></StackPanel>
                                 </Button>
-                                <Button Style="{StaticResource NavButton}" Command="{Binding PickBackdropFileCommand}" Padding="14,10">
+                                <Button Style="{StaticResource NavButton}" Command="{Binding PickBackdropFileCommand}">
                                     <StackPanel Orientation="Horizontal"><TextBlock Text="{StaticResource Icon.FileSearch}" Style="{StaticResource Icon}" FontSize="16" Margin="0,0,12,0"/><TextBlock Text="사진 파일에서 고르기"/></StackPanel>
                                 </Button>
                             </StackPanel>
@@ -181,7 +182,7 @@
                                                       Command="{Binding DataContext.PinActionCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                       CommandParameter="{Binding}">
                                             <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="{Binding Glyph}" Style="{StaticResource Icon}" FontSize="15" Margin="0,0,8,0"/>
+                                                <TextBlock Text="{Binding Glyph}" Style="{StaticResource Icon}" FontSize="16" Margin="0,0,8,0"/>
                                                 <TextBlock Text="{Binding Info.Label}"/>
                                             </StackPanel>
                                         </cv:ChoiceChip>
@@ -233,7 +234,7 @@
                     <Button Style="{StaticResource NavButton}" Command="{Binding OpenProfilesCommand}" HorizontalContentAlignment="Stretch">
                         <DockPanel>
                             <TextBlock DockPanel.Dock="Left" Text="{StaticResource Icon.Keyboard}" Style="{StaticResource Icon}" Margin="0,0,16,0"/>
-                            <TextBlock DockPanel.Dock="Right" Text="{StaticResource Icon.ChevronRight}" Style="{StaticResource Icon}" FontSize="12"/>
+                            <TextBlock DockPanel.Dock="Right" Text="{StaticResource Icon.ChevronRight}" Style="{StaticResource Icon}" FontSize="16" Foreground="{DynamicResource TextDim}"/>
                             <StackPanel>
                                 <TextBlock Text="키 매핑 프로필"/>
                                 <TextBlock Text="버튼을 키보드·마우스 입력으로 바꾸는 게임별 설정" Style="{StaticResource Caption}"/>
@@ -284,7 +285,7 @@
                                                       Command="{Binding DataContext.PickColorCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                       CommandParameter="{Binding}">
                                             <StackPanel Orientation="Horizontal">
-                                                <Ellipse Width="14" Height="14" Fill="{Binding Swatch}" Margin="0,0,8,0" Stroke="#40000000"/>
+                                                <Ellipse Width="16" Height="16" Fill="{Binding Swatch}" Margin="0,0,8,0" Stroke="#40000000"/>
                                                 <TextBlock Text="{Binding Label}"/>
                                             </StackPanel>
                                         </cv:ChoiceChip>

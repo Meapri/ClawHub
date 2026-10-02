@@ -11,7 +11,7 @@
         <Button DockPanel.Dock="Right" Style="{StaticResource NavButton}" Command="{Binding AddProgramCommand}" VerticalAlignment="Top"
                 Padding="16,10" Margin="0,2,0,0">
             <StackPanel Orientation="Horizontal">
-                <v:ButtonGlyph Key="Y" Width="22" Height="22" Margin="0,0,10,0"/>
+                <v:ButtonGlyph Key="Y" Width="24" Height="24" Margin="0,0,10,0"/>
                 <TextBlock Text="프로그램 추가" VerticalAlignment="Center"/>
             </StackPanel>
         </Button>
@@ -32,7 +32,7 @@
                     <Setter Property="Template">
                         <Setter.Value>
                             <ControlTemplate TargetType="ListBoxItem">
-                                <StackPanel Margin="0,0,30,0">
+                                <StackPanel Margin="0,0,32,0">
                                     <TextBlock x:Name="Label" Text="{Binding Label}" Style="{StaticResource PivotItem}"/>
                                     <!-- 고른 분류 밑의 강조색 막대 -->
                                     <Border x:Name="Bar" Height="3" Width="24" HorizontalAlignment="Left" Margin="1,4,0,0"
