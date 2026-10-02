@@ -29,13 +29,11 @@ public sealed partial class ProfileRow(MappingProfile profile, string summary, I
     /// <summary>지금 실행 중인 게임이 쓰는 프로필.</summary>
     public bool IsActive { get; } = isActive;
     public IReadOnlyList<ProfilesViewModel.Pair> Preview { get; } = preview;
-    /// <summary>삭제를 한 번 눌러 둔 상태 (3초 안에 한 번 더 누르면 삭제).</summary>
-    [ObservableProperty] private bool _deleteArmed;
 }
 
 /// <summary>
 /// 매핑 프로필 목록: 내 프로필 / 기본 제공 템플릿으로 나눠 보여 주고, 줄마다 쓰는 게임·주요 버튼 미리보기.
-/// 패드: A 편집, X 복제, Y 이름 바꾸기 (포커스한 줄), 삭제는 줄 오른쪽 휴지통(두 번 눌러 확인). 터치는 줄 오른쪽 버튼.
+/// 패드: A 편집, X 복제, Y 이름 바꾸기 (포커스한 줄), 삭제는 줄 오른쪽 휴지통(확인 창). 터치는 줄 오른쪽 버튼.
 /// </summary>
 public sealed partial class ProfilesViewModel : ObservableObject, INavPage
 {
@@ -47,17 +45,10 @@ public sealed partial class ProfilesViewModel : ObservableObject, INavPage
         [ClawButton.A, ClawButton.B, ClawButton.X, ClawButton.Y, ClawButton.LB, ClawButton.RB, ClawButton.LT, ClawButton.RT, ClawButton.M1, ClawButton.M2];
 
     private readonly ShellViewModel _shell;
-    private readonly DispatcherTimer _disarm;
 
     public ProfilesViewModel(ShellViewModel shell)
     {
         _shell = shell;
-        _disarm = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
-        _disarm.Tick += (_, _) =>
-        {
-            _disarm.Stop();
-            foreach (var r in UserRows.Concat(PresetRows)) r.DeleteArmed = false;
-        };
     }
 
     [ObservableProperty] private ObservableCollection<ProfileRow> _userRows = [];
@@ -146,27 +137,21 @@ public sealed partial class ProfilesViewModel : ObservableObject, INavPage
         FocusProfileRequested?.Invoke(copy.Id);
     }
 
-    [RelayCommand]
-    private void Delete(ProfileRow? row)
+    [RelayCommand(AllowConcurrentExecutions = true)]
+    private async Task Delete(ProfileRow? row)
     {
         if ((row ?? FocusedRow) is not { } r) return;
-        if (!r.DeleteArmed)
-        {
-            foreach (var other in UserRows.Concat(PresetRows)) other.DeleteArmed = other == r;
-            _disarm.Stop();
-            _disarm.Start();
-            _shell.ShowToast(r.InUse
-                ? $"한 번 더 누르면 '{r.Name}'을(를) 지워요 — 게임 {r.Games.Count}개는 매핑 없이 실행돼요"
-                : $"한 번 더 누르면 '{r.Name}'을(를) 지워요");
-            return;
-        }
+        var ok = await _shell.ConfirmAsync($"'{r.Name}' 프로필을 지울까요?",
+            r.IsPreset ? "기본 제공 템플릿은 지우면 다시 생기지 않아요."
+            : r.InUse ? $"이 프로필을 쓰는 게임 {r.Games.Count}개는 매핑 없이 실행돼요." : "",
+            "삭제", danger: true);
+        if (!ok) return;
 
         // 지운 뒤 포커스: 같은 묶음의 다음 줄 → 이전 줄
         var list = r.IsPreset ? PresetRows : UserRows;
         var i = list.IndexOf(r);
         var neighbor = i + 1 < list.Count ? list[i + 1] : i > 0 ? list[i - 1] : null;
 
-        _disarm.Stop();
         _shell.Profiles.Delete(r.Profile.Id);
         foreach (var g in _shell.Library.Games.Where(g => g.MappingProfileId == r.Profile.Id).ToList())
             _shell.Library.SetProfile(g, null);

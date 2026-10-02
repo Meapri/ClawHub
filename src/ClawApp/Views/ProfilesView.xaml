@@ -7,7 +7,7 @@
              KeyboardNavigation.DirectionalNavigation="Contained">
     <!--
         프로필 목록: 내 프로필 / 기본 제공 템플릿. 줄 = [본문: 이름·배지·요약·쓰는 게임·버튼 미리보기 (A 편집)] [이름(Y) · 복제(X) · 삭제].
-        삭제는 두 번 눌러야 한다 (첫 번째에 "한 번 더"로 바뀜). 이름 바꾸기는 목록 위 입력줄에서.
+        삭제는 확인 창을 거친다. 이름 바꾸기는 목록 위 입력줄에서.
     -->
     <UserControl.Resources>
         <DataTemplate x:Key="ProfileRowTemplate">
@@ -104,13 +104,6 @@
                 </DataTrigger>
                 <DataTrigger Binding="{Binding InUse}" Value="True">
                     <Setter TargetName="GamesLine" Property="Foreground" Value="{DynamicResource Text}"/>
-                </DataTrigger>
-                <!-- 한 번 누른 삭제: 위험 색 테두리 + "한 번 더" -->
-                <DataTrigger Binding="{Binding DeleteArmed}" Value="True">
-                    <Setter TargetName="DeleteButton" Property="Foreground" Value="{DynamicResource Danger}"/>
-                    <Setter TargetName="DeleteButton" Property="BorderBrush" Value="{DynamicResource Danger}"/>
-                    <Setter TargetName="DeleteLabel" Property="Text" Value="한 번 더"/>
-                    <Setter TargetName="DeleteLabel" Property="FontWeight" Value="SemiBold"/>
                 </DataTrigger>
             </DataTemplate.Triggers>
         </DataTemplate>
