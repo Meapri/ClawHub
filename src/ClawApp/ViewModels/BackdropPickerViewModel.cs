@@ -4,8 +4,11 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace ClawApp.ViewModels;
 
-/// <summary>배경 고르기: 라이브러리 게임의 배경·커버 아트 중에서 패드로 고른다 (파일은 설정의 "파일에서 고르기").</summary>
-public sealed partial class BackdropPickerViewModel(ShellViewModel shell) : INavPage
+/// <summary>
+/// 배경 고르기: 라이브러리 게임의 배경·커버 아트 중에서 패드로 고른다 (파일은 설정의 "사진 파일에서 고르기").
+/// 고르면 <paramref name="mode"/>(전체 화면 이미지 또는 타일 그림)로 바뀐다.
+/// </summary>
+public sealed partial class BackdropPickerViewModel(ShellViewModel shell, BackdropMode mode) : INavPage
 {
     public sealed record Choice(string Title, string Path, ImageSource Image, bool IsCurrent);
 
@@ -34,7 +37,8 @@ public sealed partial class BackdropPickerViewModel(ShellViewModel shell) : INav
     private void Choose(Choice choice)
     {
         shell.Settings.Home.BackdropImage = choice.Path;
-        shell.Settings.Home.BackdropMode = BackdropMode.Image;
+        if (mode == BackdropMode.TilePicture && shell.Settings.Home.TileTransparency < 60) shell.Settings.Home.TileTransparency = 85;
+        shell.Settings.Home.BackdropMode = mode;
         shell.ApplyHomeSettings();
         shell.ShowToast($"배경: {choice.Title}");
         shell.GoBack(); // 설정 화면은 OnShown에서 새 값을 읽는다

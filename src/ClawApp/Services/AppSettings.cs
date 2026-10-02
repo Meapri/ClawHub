@@ -14,8 +14,11 @@ public enum TileSize { Small, Medium, Large }
 /// <summary>"이어서 플레이" 큰 타일.</summary>
 public enum HeroTileSize { Large, Medium, Hidden }
 
-/// <summary>전체 화면 배경: 고른 게임의 아트(포커스를 따라 바뀜) · 고정 이미지 · 단색.</summary>
-public enum BackdropMode { GameArt, Image, Plain }
+/// <summary>
+/// 전체 화면 배경: 고른 게임의 아트(포커스를 따라 바뀜) · 전체 화면 이미지 · 단색 ·
+/// 타일 그림(Windows 10 Mobile처럼 바탕은 단색, 사진은 타일 안에서만 보임).
+/// </summary>
+public enum BackdropMode { GameArt, Image, Plain, TilePicture }
 
 public sealed class HomeSettings
 {
@@ -40,6 +43,12 @@ public sealed class HomeSettings
 
     /// <summary>배경을 덮는 테마색 층의 진하기 % (높을수록 글자가 잘 보이고 그림은 흐려진다).</summary>
     public int BackdropDim { get; set; } = 72;
+
+    /// <summary>타일 투명도 % (0 = 불투명한 타일 색, 100 = 색 없이 배경·타일 그림만).</summary>
+    public int TileTransparency { get; set; }
+
+    /// <summary>배경 사진에서 강조색을 뽑아 쓴다 (전체 화면 이미지·타일 그림일 때).</summary>
+    public bool AccentFromImage { get; set; }
 }
 
 public sealed class AppSettings

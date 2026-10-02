@@ -115,10 +115,7 @@ public sealed partial class SettingsViewModel : ObservableObject, INavPage
     public void OnShown()
     {
         Quick.Refresh();
-        // 배경 고르기에서 돌아왔을 때 등: 홈 화면 항목 다시 읽기
-        foreach (var p in new[] { nameof(BgGameArt), nameof(BgImage), nameof(BgPlain), nameof(BackdropModeText), nameof(BackdropPreview),
-                     nameof(HasBackdropPreview), nameof(TileOverrideText) })
-            OnPropertyChanged(p);
+        RefreshHomeSection(); // 배경 고르기에서 돌아왔을 때 등
         _ = _shell.RefreshStatusAsync().ContinueWith(_ => LoadFromStatus(), TaskScheduler.FromCurrentSynchronizationContext());
     }
 

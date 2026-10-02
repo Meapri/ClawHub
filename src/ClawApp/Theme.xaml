@@ -9,7 +9,8 @@
 -->
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:m="clr-namespace:ClawApp.Motion">
+                    xmlns:m="clr-namespace:ClawApp.Motion"
+                    xmlns:sys="clr-namespace:System;assembly=System.Runtime">
 
     <!-- Lucide 아이콘 글꼴 + Icon.* 글자 (단색 선 아이콘, shadcn 느낌) -->
     <ResourceDictionary.MergedDictionaries>
@@ -260,6 +261,9 @@
     <!-- ── 메트로 타일 (홈 그리드의 기본 단위) ──────────────
          크기: 작게 80×80 · 보통 168×168 · 넓게 344×168 · 크게 344×344 (간격 8)
          내용은 사용하는 쪽이 채운다. 기본 색은 강조색 단색. -->
+    <!-- 타일 색 층의 불투명도 (설정 → 홈 화면 → 타일 투명도). 코드가 덮어쓴다 -->
+    <sys:Double x:Key="TileBackgroundOpacity">1</sys:Double>
+
     <Style x:Key="MetroTile" TargetType="Button">
         <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
         <Setter Property="Background" Value="{DynamicResource TileAccent}"/>
@@ -276,7 +280,10 @@
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
                     <Grid>
-                        <Border x:Name="Bd" Background="{TemplateBinding Background}" ClipToBounds="True" Padding="{TemplateBinding Padding}">
+                        <!-- 그림 층 (타일 그림 모드) → 타일 색 (투명도 설정) → 내용 -->
+                        <Border m:TilePicture.Host="True"/>
+                        <Border Background="{TemplateBinding Background}" Opacity="{DynamicResource TileBackgroundOpacity}"/>
+                        <Border x:Name="Bd" ClipToBounds="True" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                               VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
                         </Border>
@@ -314,7 +321,9 @@
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
                     <Grid>
-                        <Border x:Name="Bd" Background="{TemplateBinding Background}" ClipToBounds="True">
+                        <Border m:TilePicture.Host="True"/>
+                        <Border Background="{TemplateBinding Background}" Opacity="{DynamicResource TileBackgroundOpacity}"/>
+                        <Border x:Name="Bd" ClipToBounds="True">
                             <StackPanel VerticalAlignment="Bottom" Margin="14,0,14,12">
                                 <TextBlock Text="{TemplateBinding Tag}" FontFamily="{StaticResource LucideFont}" FontSize="34"
                                            Foreground="{TemplateBinding Foreground}" Margin="-1,0,0,12"/>
@@ -350,6 +359,7 @@
     <Style x:Key="DangerTile" TargetType="Button" BasedOn="{StaticResource FunctionTile}">
         <Setter Property="Background" Value="{DynamicResource DangerFill}"/>
         <Setter Property="Foreground" Value="{DynamicResource OnDanger}"/>
+        <Setter Property="m:TilePicture.Skip" Value="True"/>
     </Style>
 
     <!-- 작은 타일 (80×80): 아이콘 + 짧은 이름. 전원 묶음 등 -->
@@ -362,7 +372,9 @@
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
                     <Grid>
-                        <Border x:Name="Bd" Background="{TemplateBinding Background}">
+                        <Border m:TilePicture.Host="True"/>
+                        <Border Background="{TemplateBinding Background}" Opacity="{DynamicResource TileBackgroundOpacity}"/>
+                        <Border x:Name="Bd">
                             <StackPanel VerticalAlignment="Center">
                                 <TextBlock Text="{TemplateBinding Tag}" FontFamily="{StaticResource LucideFont}" FontSize="22"
                                            HorizontalAlignment="Center" Foreground="{TemplateBinding Foreground}"/>

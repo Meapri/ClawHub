@@ -103,25 +103,26 @@
                         <StackPanel>
                             <WrapPanel>
                                 <RadioButton Style="{StaticResource ChipRadio}" GroupName="bg" Content="게임 아트" IsChecked="{Binding BgGameArt}"/>
-                                <RadioButton Style="{StaticResource ChipRadio}" GroupName="bg" Content="고정 이미지" IsChecked="{Binding BgImage}"/>
+                                <RadioButton Style="{StaticResource ChipRadio}" GroupName="bg" Content="전체 화면 이미지" IsChecked="{Binding BgImage}"/>
+                                <RadioButton Style="{StaticResource ChipRadio}" GroupName="bg" Content="타일 그림" IsChecked="{Binding BgTilePicture}"/>
                                 <RadioButton Style="{StaticResource ChipRadio}" GroupName="bg" Content="단색" IsChecked="{Binding BgPlain}"/>
                             </WrapPanel>
                             <TextBlock Text="{Binding BackdropModeText}" Style="{StaticResource Caption}"/>
                         </StackPanel>
                     </Border>
-                    <Border Style="{StaticResource CardPanel}">
+                    <!-- 사진 (전체 화면 이미지·타일 그림) -->
+                    <Border Style="{StaticResource CardPanel}" Visibility="{Binding UsesPicture, Converter={StaticResource Vis}}">
                         <DockPanel>
-                            <!-- 고른 그림 미리보기 -->
                             <Border DockPanel.Dock="Right" Width="200" Height="112" Margin="16,0,0,0" Background="{DynamicResource TileFill}" ClipToBounds="True">
                                 <Grid>
-                                    <TextBlock Text="고른 그림 없음" Style="{StaticResource Caption}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                    <TextBlock Text="고른 사진 없음" Style="{StaticResource Caption}" HorizontalAlignment="Center" VerticalAlignment="Center"
                                                Visibility="{Binding HasBackdropPreview, Converter={StaticResource NotVis}}"/>
                                     <Image Source="{Binding BackdropPreview}" Stretch="UniformToFill"
                                            Visibility="{Binding HasBackdropPreview, Converter={StaticResource Vis}}"/>
                                 </Grid>
                             </Border>
                             <StackPanel>
-                                <TextBlock Text="고정 이미지" Margin="0,0,0,8"/>
+                                <TextBlock Text="배경 사진" Margin="0,0,0,8"/>
                                 <Button Style="{StaticResource NavButton}" Command="{Binding PickBackdropFromGamesCommand}" Padding="14,10">
                                     <StackPanel Orientation="Horizontal"><TextBlock Text="{StaticResource Icon.Image}" Style="{StaticResource Icon}" FontSize="16" Margin="0,0,12,0"/><TextBlock Text="게임 아트에서 고르기"/></StackPanel>
                                 </Button>
@@ -131,12 +132,23 @@
                             </StackPanel>
                         </DockPanel>
                     </Border>
+                    <ToggleButton Style="{StaticResource Switch}" IsChecked="{Binding AccentFromImage}" Visibility="{Binding UsesPicture, Converter={StaticResource Vis}}">
+                        <StackPanel>
+                            <TextBlock Text="배경 사진에서 강조색 뽑기"/>
+                            <TextBlock Text="사진에서 가장 눈에 띄는 색을 골라 타일·버튼 색으로 써요. 끄면 Windows 강조색으로 돌아와요." Style="{StaticResource Caption}"/>
+                        </StackPanel>
+                    </ToggleButton>
                     <Border Style="{StaticResource CardPanel}">
                         <StackPanel>
-                            <DockPanel><TextBlock DockPanel.Dock="Right" Text="{Binding BackdropBlur}" Style="{StaticResource Value}"/><TextBlock Text="흐림" Style="{StaticResource SliderTitle}"/></DockPanel>
-                            <Slider Minimum="0" Maximum="80" SmallChange="8" TickFrequency="8" Value="{Binding BackdropBlur}"/>
-                            <DockPanel Margin="0,8,0,0"><TextBlock DockPanel.Dock="Right" Text="{Binding BackdropDim, StringFormat={}{0}%}" Style="{StaticResource Value}"/><TextBlock Text="덮개 진하기 (높을수록 글자가 또렷)" Style="{StaticResource SliderTitle}"/></DockPanel>
-                            <Slider Minimum="20" Maximum="95" SmallChange="5" TickFrequency="5" Value="{Binding BackdropDim}"/>
+                            <DockPanel><TextBlock DockPanel.Dock="Right" Text="{Binding TileTransparency, StringFormat={}{0}%}" Style="{StaticResource Value}"/><TextBlock Text="타일 투명도" Style="{StaticResource SliderTitle}"/></DockPanel>
+                            <Slider Minimum="0" Maximum="100" SmallChange="5" TickFrequency="5" Value="{Binding TileTransparency}"/>
+                            <TextBlock Text="높일수록 타일 색이 옅어지고 배경(타일 그림이면 사진)이 비쳐요." Style="{StaticResource Caption}"/>
+                            <StackPanel Visibility="{Binding UsesFullScreenArt, Converter={StaticResource Vis}}">
+                                <DockPanel Margin="0,12,0,0"><TextBlock DockPanel.Dock="Right" Text="{Binding BackdropBlur}" Style="{StaticResource Value}"/><TextBlock Text="배경 흐림" Style="{StaticResource SliderTitle}"/></DockPanel>
+                                <Slider Minimum="0" Maximum="80" SmallChange="8" TickFrequency="8" Value="{Binding BackdropBlur}"/>
+                                <DockPanel Margin="0,8,0,0"><TextBlock DockPanel.Dock="Right" Text="{Binding BackdropDim, StringFormat={}{0}%}" Style="{StaticResource Value}"/><TextBlock Text="덮개 진하기 (높을수록 글자가 또렷)" Style="{StaticResource SliderTitle}"/></DockPanel>
+                                <Slider Minimum="20" Maximum="95" SmallChange="5" TickFrequency="5" Value="{Binding BackdropDim}"/>
+                            </StackPanel>
                         </StackPanel>
                     </Border>
                     <Button Style="{StaticResource NavButton}" Command="{Binding ResetBackdropCommand}">
