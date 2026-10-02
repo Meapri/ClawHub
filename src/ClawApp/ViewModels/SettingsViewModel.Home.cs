@@ -164,17 +164,10 @@ public sealed partial class SettingsViewModel
         _shell.ShowToast($"{item.Info.Label} 타일을 시작 화면 끝에 붙였어요");
     }
 
-    private DateTime _resetArmedAt;
-
-    [RelayCommand]
-    private void ResetStart()
+    [RelayCommand(AllowConcurrentExecutions = true)]
+    private async Task ResetStart()
     {
-        if (DateTime.UtcNow - _resetArmedAt > TimeSpan.FromSeconds(3))
-        {
-            _resetArmedAt = DateTime.UtcNow;
-            _shell.ShowToast("한 번 더 누르면 시작 화면을 처음 배치로 되돌려요 (폴더·크기·순서가 지워져요)");
-            return;
-        }
+        if (!await _shell.ConfirmAsync("시작 화면을 처음 배치로 되돌릴까요?", "폴더·타일 크기·순서가 모두 지워져요.", "되돌리기", danger: true)) return;
         _shell.Start.ResetToDefault(_shell.Library);
         OnPropertyChanged(nameof(StartActionItems));
         _shell.ShowToast("시작 화면을 처음 배치로 되돌렸어요");

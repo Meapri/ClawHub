@@ -356,20 +356,10 @@ public sealed partial class MappingEditorViewModel : ObservableObject, INavPage
     }
 
     public IReadOnlyList<MappingProfile> Presets { get; } = MappingPresets.All;
-    private string? _presetArmed;
-    private DateTime _presetArmedAt;
-
-    [RelayCommand]
-    private void ApplyPreset(MappingProfile preset)
+    [RelayCommand(AllowConcurrentExecutions = true)]
+    private async Task ApplyPreset(MappingProfile preset)
     {
-        if (_presetArmed != preset.Id || DateTime.UtcNow - _presetArmedAt > TimeSpan.FromSeconds(3))
-        {
-            _presetArmed = preset.Id;
-            _presetArmedAt = DateTime.UtcNow;
-            _shell.ShowToast($"한 번 더 누르면 '{preset.Name}'으로 모든 버튼을 덮어써요");
-            return;
-        }
-        _presetArmed = null;
+        if (!await _shell.ConfirmAsync($"'{preset.Name}' 배치를 불러올까요?", "지금 프로필의 버튼 배치를 모두 덮어써요.", "불러오기", danger: true)) return;
         Profile.Bindings = preset.Bindings.ToDictionary(kv => kv.Key, kv => kv.Value.ToList());
         Profile.Mode = preset.Mode;
         Save();
@@ -397,17 +387,10 @@ public sealed partial class MappingEditorViewModel : ObservableObject, INavPage
         _shell.Navigate(new MappingEditorViewModel(_shell, copy));
     }
 
-    private DateTime _deleteArmedAt;
-
-    [RelayCommand]
-    private void Delete()
+    [RelayCommand(AllowConcurrentExecutions = true)]
+    private async Task Delete()
     {
-        if (DateTime.UtcNow - _deleteArmedAt > TimeSpan.FromSeconds(3))
-        {
-            _deleteArmedAt = DateTime.UtcNow;
-            _shell.ShowToast("한 번 더 누르면 이 프로필을 삭제해요");
-            return;
-        }
+        if (!await _shell.ConfirmAsync($"'{Profile.Name}' 프로필을 삭제할까요?", "이 프로필을 쓰던 게임은 매핑 없이 실행돼요. 되돌릴 수 없어요.", "삭제", danger: true)) return;
         _shell.Profiles.Delete(Profile.Id);
         foreach (var g in _shell.Library.Games.Where(g => g.MappingProfileId == Profile.Id))
             _shell.Library.SetProfile(g, null);

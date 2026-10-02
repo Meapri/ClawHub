@@ -385,8 +385,8 @@ public sealed partial class ShellViewModel : ObservableObject
 
     public void UpdateHints()
     {
-        IReadOnlyList<Hint> hints = IsAnyPanelOpen
-            ? [new("A", "선택"), new("B", "닫기")]
+        IReadOnlyList<Hint> hints = IsConfirmOpen ? [new("A", "선택"), new("B", "취소")]
+            : IsAnyPanelOpen ? [new("A", "선택"), new("B", "닫기")]
             : CurrentPage?.Hints ?? [];
         // 같은 힌트면 그대로 둔다 — 새 목록을 넣으면 하단 힌트(패드 그림 + 글자)를 전부 다시 만든다 (홈 재구성마다 불림)
         if (Hints.SequenceEqual(hints)) return;
@@ -504,6 +504,7 @@ public sealed partial class ShellViewModel : ObservableObject
     /// <summary>본체 버튼 (서비스 이벤트) 또는 패드 Menu/View, 키보드 F1/F2. 항상 UI 스레드에서 호출된다.</summary>
     public void OnMsiButton(MsiButton button)
     {
+        CancelConfirm(); // 확인 대화 상자는 본체 버튼으로 빠져나간다
         if (button == MsiButton.MainMenu) OnHomeButton();
         else OnQuickSettingsButton();
     }
@@ -809,12 +810,13 @@ public sealed partial class ShellViewModel : ObservableObject
         _ = SyncControllerAsync();
     }
 
-    /// <summary>"게임 종료". 홈 타일에서 실수로 누르지 않도록 3초 안에 한 번 더 눌러야 실행.</summary>
-    [RelayCommand]
-    private void QuitGame()
+    /// <summary>"게임 종료". 홈 타일에서 실수로 누르지 않도록 확인 대화 상자를 거친다.</summary>
+    [RelayCommand(AllowConcurrentExecutions = true)]
+    private async Task QuitGame()
     {
         if (Session is null || RunningGame is null) return;
-        if (!ConfirmTwice("quit", $"{RunningGame.Title}을(를) 종료해요")) return;
+        if (!await ConfirmAsync($"{RunningGame.Title}을(를) 종료할까요?", "저장하지 않은 진행 상황은 사라질 수 있어요.", "게임 종료", danger: true)) return;
+        if (Session is null) return; // 기다리는 사이 게임이 이미 끝남
         KillInBackground(Session);
         CloseMenus();
         ShowToast("게임을 종료하는 중…");
@@ -971,31 +973,25 @@ public sealed partial class ShellViewModel : ObservableObject
         _ = RefreshStatusBarAsync();
     }
 
-    private string? _pendingPower;
-    private DateTime _pendingPowerAt;
+    // 실수로 A를 눌러 꺼지지 않도록 확인 대화 상자를 거친다 (처음 포커스는 취소)
+    [RelayCommand] private static void Sleep() => SystemControls.Sleep();
 
-    /// <summary>실수로 A를 눌러 꺼지지 않도록 3초 안에 한 번 더 눌러야 실행.</summary>
-    private bool ConfirmTwice(string action, string label)
+    [RelayCommand(AllowConcurrentExecutions = true)]
+    private async Task Restart()
     {
-        if (_pendingPower == action && DateTime.UtcNow - _pendingPowerAt < TimeSpan.FromSeconds(3))
-        {
-            _pendingPower = null;
-            return true;
-        }
-        _pendingPower = action;
-        _pendingPowerAt = DateTime.UtcNow;
-        ShowToast($"한 번 더 누르면 {label}");
-        return false;
+        if (await ConfirmAsync("다시 시작할까요?", "열려 있는 게임과 프로그램이 모두 닫혀요.", "다시 시작", danger: true)) SystemControls.Restart();
     }
 
-    [RelayCommand] private static void Sleep() => SystemControls.Sleep();
-    [RelayCommand] private void Restart() { if (ConfirmTwice("restart", "다시 시작해요")) SystemControls.Restart(); }
-    [RelayCommand] private void Shutdown() { if (ConfirmTwice("shutdown", "시스템을 종료해요")) SystemControls.Shutdown(); }
+    [RelayCommand(AllowConcurrentExecutions = true)]
+    private async Task Shutdown()
+    {
+        if (await ConfirmAsync("시스템을 종료할까요?", "열려 있는 게임과 프로그램이 모두 닫혀요.", "종료", danger: true)) SystemControls.Shutdown();
+    }
 
-    [RelayCommand]
+    [RelayCommand(AllowConcurrentExecutions = true)]
     private async Task ExitApp()
     {
-        if (!ConfirmTwice("exit", "ClawHub를 종료해요")) return;
+        if (!await ConfirmAsync("ClawHub를 끌까요?", "게임 매핑이 풀리고 컨트롤러가 원래 버튼으로 돌아가요.", "끄기", danger: true)) return;
         if (ServiceConnected)
         {
             try { await Service.SendAsync(new Request { Op = Ops.RestoreMapping }, TimeSpan.FromSeconds(3)); }
