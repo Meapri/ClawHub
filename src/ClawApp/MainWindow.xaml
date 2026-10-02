@@ -160,7 +160,8 @@
                         <!-- 패드 버튼 그림 (A/B/X/Y는 Xbox 색 그대로, LB·RB·☰·… 는 글자색 실루엣) -->
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="24,0,0,0">
                             <v:ButtonGlyph Key="{Binding Glyph}" Width="28" Height="28" Margin="0,0,8,0"/>
-                            <TextBlock Text="{Binding Label}" VerticalAlignment="Center" Foreground="{DynamicResource TextDim}"/>
+                            <!-- 흐린 배경 위에서도 읽히게: 굵게 + 본문 글자색 -->
+                            <TextBlock Text="{Binding Label}" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="{DynamicResource Text}"/>
                         </StackPanel>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
