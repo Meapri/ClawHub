@@ -1,11 +1,17 @@
 <UserControl x:Class="ClawApp.Views.Sections.GameArtSection"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <!-- 게임 상세의 "아트 바꾸기" 버튼 (DataContext = GameViewModel). -->
-    <Button Style="{StaticResource NavButton}" Command="{Binding OpenArtPickerCommand}">
-        <StackPanel Orientation="Horizontal">
-            <TextBlock Text="{DynamicResource Icon.Image}" FontFamily="{DynamicResource LucideFont}" VerticalAlignment="Center" Margin="0,0,14,0"/>
-            <TextBlock Text="아트 바꾸기"/>
-        </StackPanel>
+    <!-- 게임 상세 → 관리의 "아트 바꾸기" 버튼 (DataContext = GameViewModel). 옆의 고정 버튼과 같은 두 줄 모양. -->
+    <Button Style="{StaticResource NavButton}" Command="{Binding OpenArtPickerCommand}" HorizontalContentAlignment="Stretch">
+        <DockPanel>
+            <TextBlock DockPanel.Dock="Right" Text="{DynamicResource Icon.ChevronRight}" Style="{DynamicResource Icon}" FontSize="16"
+                       Foreground="{DynamicResource TextDim}" Margin="10,0,0,0"/>
+            <TextBlock DockPanel.Dock="Left" Text="{DynamicResource Icon.Image}" Style="{DynamicResource Icon}" Margin="0,0,14,0"/>
+            <StackPanel>
+                <TextBlock Text="아트 바꾸기"/>
+                <TextBlock Text="커버 · 배경 · 로고를 검색하거나 파일에서 골라요" Style="{DynamicResource Caption}" TextWrapping="NoWrap"
+                           TextTrimming="CharacterEllipsis"/>
+            </StackPanel>
+        </DockPanel>
     </Button>
 </UserControl>
