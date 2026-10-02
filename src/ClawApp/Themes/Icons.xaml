@@ -73,6 +73,7 @@
     <sys:String x:Key="Icon.History">&#xE1F5;</sys:String>
     <sys:String x:Key="Icon.Clock">&#xE087;</sys:String>
     <sys:String x:Key="Icon.ArrowRight">&#xE049;</sys:String>
+    <sys:String x:Key="Icon.ArrowLeft">&#xE048;</sys:String>
     <sys:String x:Key="Icon.Undo2">&#xE2A1;</sys:String>
     <!-- 시작 화면 편집 -->
     <sys:String x:Key="Icon.Folder">&#xE0D7;</sys:String>

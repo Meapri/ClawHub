@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:v="clr-namespace:ClawApp.Views"
         xmlns:m="clr-namespace:ClawApp.Motion"
+        xmlns:local="clr-namespace:ClawApp"
         Title="ClawHub" Icon="Assets/ClawHub.ico"
         WindowStyle="None" ResizeMode="NoResize" ShowInTaskbar="False" Topmost="True"
         Background="Transparent"
@@ -15,6 +16,83 @@
     <WindowChrome.WindowChrome>
         <WindowChrome GlassFrameThickness="-1" CaptionHeight="0" ResizeBorderThickness="0" CornerRadius="0" UseAeroCaptionButtons="False"/>
     </WindowChrome.WindowChrome>
+
+    <Window.Resources>
+        <!-- 터치용 뒤로 버튼 (제목 왼쪽). 패드는 B가 있으므로 포커스를 받지 않는다. 손가락 크기 52×52 -->
+        <Style x:Key="BackButton" TargetType="Button">
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Width" Value="52"/>
+            <Setter Property="Height" Value="52"/>
+            <Setter Property="Foreground" Value="{DynamicResource Text}"/>
+            <Setter Property="m:Press.Scale" Value="0.9"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid Background="Transparent">
+                            <Border x:Name="Hover" Background="{DynamicResource TileFill}" Opacity="0"/>
+                            <Border x:Name="Down" Background="{DynamicResource TileFillHover}" Opacity="0"/>
+                            <TextBlock Text="{StaticResource Icon.ArrowLeft}" FontFamily="{StaticResource LucideFont}" FontSize="30"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{TemplateBinding Foreground}"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Hover" Property="Opacity" Value="1"/></Trigger>
+                            <Trigger Property="IsPressed" Value="True"><Setter TargetName="Down" Property="Opacity" Value="1"/></Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 하단 힌트 = 누르면 그 패드 버튼과 같은 동작 (터치·마우스). 패드 포커스는 받지 않는다 -->
+        <Style x:Key="HintButton" TargetType="Button">
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Height" Value="44"/>
+            <Setter Property="Padding" Value="12,0"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="m:Press.Scale" Value="0.96"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid Background="Transparent">
+                            <Border x:Name="Hover" Background="{DynamicResource TileFill}" Opacity="0"/>
+                            <Border x:Name="Down" Background="{DynamicResource TileFillHover}" Opacity="0"/>
+                            <ContentPresenter Margin="{TemplateBinding Padding}" VerticalAlignment="Center"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Hover" Property="Opacity" Value="1"/></Trigger>
+                            <Trigger Property="IsPressed" Value="True"><Setter TargetName="Down" Property="Opacity" Value="1"/></Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 확인 대화 상자 버튼: 확인 = 강조색(위험하면 빨강), 취소 = 테두리 버튼 -->
+        <Style x:Key="DialogConfirm" TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
+            <Setter Property="MinWidth" Value="160"/>
+            <Setter Property="MinHeight" Value="52"/>
+            <Setter Property="Margin" Value="0"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Danger}" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource DangerFill}"/>
+                    <Setter Property="Foreground" Value="{DynamicResource OnDanger}"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="DialogCancel" TargetType="Button" BasedOn="{StaticResource NavButton}">
+            <Setter Property="MinWidth" Value="160"/>
+            <Setter Property="MinHeight" Value="52"/>
+            <Setter Property="Margin" Value="0"/>
+            <Setter Property="Padding" Value="27,11"/>
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource StrokeStrong}"/>
+            <Setter Property="m:Press.Scale" Value="0.95"/>
+        </Style>
+    </Window.Resources>
 
     <Grid>
         <!-- ── 셸 화면 ─────────────────────────────────────── -->
@@ -142,7 +220,13 @@
                 </StackPanel>
                 <StackPanel VerticalAlignment="Top" HorizontalAlignment="Left" Margin="0,0,24,0">
                     <TextBlock Text="CLAWHUB" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource TextDim}" Margin="1,0,0,0"/>
-                    <TextBlock x:Name="PivotHeader" Text="{Binding PageTitle}" Style="{StaticResource PivotTitle}" Margin="-2,-4,0,0"/>
+                    <!-- 큰 제목. 홈이 아닌 페이지는 왼쪽에 터치용 뒤로 버튼 (패드 B와 같은 경로, 패드 포커스는 받지 않음) -->
+                    <DockPanel x:Name="PivotHeader" Margin="-2,-4,0,0">
+                        <Button DockPanel.Dock="Left" Style="{StaticResource BackButton}" Click="BackButton_Click" ToolTip="뒤로"
+                                Uid="CaptureBypass" VerticalAlignment="Center" Margin="-10,4,6,0"
+                                Visibility="{Binding ShowBackButton, Converter={StaticResource Vis}}"/>
+                        <TextBlock Text="{Binding PageTitle}" Style="{StaticResource PivotTitle}"/>
+                    </DockPanel>
                 </StackPanel>
             </Grid>
 
@@ -150,19 +234,21 @@
             <ContentControl x:Name="PageHost" Grid.Row="1" Content="{Binding CurrentPage}" Focusable="False"
                             PreviewGotKeyboardFocus="PageHost_GotKeyboardFocus"/>
 
-            <!-- 하단 버튼 힌트 -->
-            <ItemsControl Grid.Row="2" ItemsSource="{Binding Hints}" HorizontalAlignment="Right" Margin="0,0,40,0" Focusable="False">
+            <!-- 하단 버튼 힌트: 누르면 그 패드 버튼과 같은 동작 (항목 안쪽 여백 12 → 오른쪽 여백 28 + 12 = 40) -->
+            <ItemsControl Grid.Row="2" ItemsSource="{Binding Hints}" HorizontalAlignment="Right" Margin="0,0,28,0" Focusable="False" Uid="CaptureBypass">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate><StackPanel Orientation="Horizontal" VerticalAlignment="Center"/></ItemsPanelTemplate>
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <!-- 패드 버튼 그림 (A/B/X/Y는 Xbox 색 그대로, LB·RB·☰·… 는 글자색 실루엣) -->
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="24,0,0,0">
-                            <v:ButtonGlyph Key="{Binding Glyph}" Width="28" Height="28" Margin="0,0,8,0"/>
-                            <!-- 흐린 배경 위에서도 읽히게: 굵게 + 본문 글자색 -->
-                            <TextBlock Text="{Binding Label}" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="{DynamicResource Text}"/>
-                        </StackPanel>
+                        <Button Style="{StaticResource HintButton}" Click="HintButton_Click">
+                            <!-- 패드 버튼 그림 (A/B/X/Y는 Xbox 색 그대로, LB·RB·☰·… 는 글자색 실루엣) -->
+                            <StackPanel Orientation="Horizontal">
+                                <v:ButtonGlyph Key="{Binding Glyph}" Width="28" Height="28" Margin="0,0,8,0"/>
+                                <!-- 흐린 배경 위에서도 읽히게: 굵게 + 본문 글자색 -->
+                                <TextBlock Text="{Binding Label}" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="{DynamicResource Text}"/>
+                            </StackPanel>
+                        </Button>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
@@ -186,20 +272,72 @@
         <Grid Background="{DynamicResource BackdropTint}" Visibility="{Binding BusyText, Converter={StaticResource NullVis}}">
             <StackPanel VerticalAlignment="Center">
                 <m:MetroDots HorizontalAlignment="Stretch" Margin="0,0,0,28"/>
-                <TextBlock Text="{Binding BusyText}" Style="{StaticResource H1}" Margin="48,0" m:Entrance.Stagger="Self"/>
+                <!-- 긴 게임 이름도 잘리지 않게 두 줄까지 -->
+                <TextBlock Text="{Binding BusyText}" Style="{StaticResource H1}" Margin="48,0" m:Entrance.Stagger="Self"
+                           TextWrapping="Wrap" MaxHeight="88" LineHeight="42" LineStackingStrategy="BlockLineHeight"/>
             </StackPanel>
         </Grid>
 
-        <!-- ── 알림 (메트로 토스트: 오른쪽 위, 강조색 막대) ──── -->
-        <Border VerticalAlignment="Top" HorizontalAlignment="Right" Margin="0,24,40,0" MaxWidth="560"
-                Background="{DynamicResource Bg1}" Visibility="{Binding Toast, Converter={StaticResource NullVis}}"
-                IsHitTestVisible="False" m:Entrance.Stagger="Self" m:Entrance.Offset="48">
+        <!-- ── 확인 대화 상자 (메트로 메시지 대화: 화면을 가로지르는 띠) ──────────
+             열려 있는 동안 패드·키 입력은 여기로만 (MainWindow.Route). 바깥(어둡게 한 곳)을 누르면 취소 -->
+        <Grid x:Name="ConfirmLayer" Visibility="{Binding IsConfirmOpen, Converter={StaticResource Vis}}"
+              KeyboardNavigation.DirectionalNavigation="Contained" KeyboardNavigation.TabNavigation="Cycle">
+            <Border Background="{DynamicResource Scrim}" MouseDown="ConfirmScrim_MouseDown"/>
+            <Border VerticalAlignment="Center" Background="{DynamicResource Bg1}" BorderBrush="{DynamicResource StrokeStrong}" BorderThickness="0,1"
+                    DataContext="{Binding Confirm}">
+                <Grid MaxWidth="760" Margin="48,32,48,32" m:Entrance.Stagger="Self" m:Entrance.Offset="40">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock FontFamily="{StaticResource LucideFont}" FontSize="32" VerticalAlignment="Top" Margin="0,4,20,0">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Text" Value="{StaticResource Icon.CircleAlert}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Danger}" Value="True">
+                                        <Setter Property="Text" Value="{StaticResource Icon.TriangleAlert}"/>
+                                        <Setter Property="Foreground" Value="{DynamicResource Danger}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                    <StackPanel Grid.Column="1">
+                        <TextBlock Text="{Binding Title}" Style="{StaticResource H1}" TextWrapping="Wrap" TextTrimming="None"/>
+                        <TextBlock Text="{Binding Message}" FontSize="17" Foreground="{DynamicResource TextDim}" TextWrapping="Wrap" Margin="0,10,0,0"
+                                   Visibility="{Binding HasMessage, Converter={StaticResource Vis}}"/>
+                        <!-- 위험한 동작이면 처음 포커스는 취소 (A 두 번에 실행되지 않게), 아니면 확인 -->
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,28,0,0">
+                            <Button Style="{StaticResource DialogConfirm}" Content="{Binding ConfirmLabel}" Margin="0,0,12,0"
+                                    Command="{Binding DataContext.ConfirmAcceptCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                    local:Nav.InitialFocus="{Binding Danger, Converter={x:Static local:InvertBool.Instance}}"/>
+                            <Button Style="{StaticResource DialogCancel}" Content="{Binding CancelLabel}"
+                                    Command="{Binding DataContext.CancelConfirmCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                    local:Nav.InitialFocus="{Binding Danger}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- ── 알림 (메트로 토스트: 아래 가운데, 힌트 바 바로 위. 강조색 막대 + 카드, 두 줄까지) ──── -->
+        <Border x:Name="ToastCard" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="40,0,40,64" MaxWidth="640" MinWidth="280"
+                Background="{DynamicResource Bg1}" BorderBrush="{DynamicResource Stroke}" BorderThickness="0,1,1,1"
+                Visibility="{Binding Toast, Converter={StaticResource NullVis}}" IsHitTestVisible="False">
             <DockPanel>
-                <Border DockPanel.Dock="Left" Width="6" Background="{DynamicResource Accent}"/>
-                <StackPanel Orientation="Horizontal" Margin="16,12,20,12">
-                    <TextBlock Text="{StaticResource Icon.Info}" Style="{StaticResource Icon}" Foreground="{DynamicResource Accent}" Margin="0,0,12,0"/>
-                    <TextBlock Text="{Binding Toast}" TextWrapping="Wrap" MaxWidth="480" VerticalAlignment="Center"/>
-                </StackPanel>
+                <Border DockPanel.Dock="Left" Width="4" Background="{DynamicResource Accent}"/>
+                <Grid Margin="16,13,22,13">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{StaticResource Icon.Info}" Style="{StaticResource Icon}" Foreground="{DynamicResource Accent}"
+                               VerticalAlignment="Top" Margin="0,2,12,0"/>
+                    <TextBlock Grid.Column="1" Text="{Binding Toast}" FontWeight="Medium" VerticalAlignment="Center"
+                               TextWrapping="Wrap" TextTrimming="CharacterEllipsis" LineHeight="22" LineStackingStrategy="BlockLineHeight" MaxHeight="44"/>
+                </Grid>
             </DockPanel>
         </Border>
     </Grid>

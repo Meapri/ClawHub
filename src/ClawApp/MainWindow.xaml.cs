@@ -62,6 +62,9 @@ public partial class MainWindow : Window
         if (e.PropertyName == nameof(ShellViewModel.IsWindowVisible)) ApplyWindowVisibility();
         else if (e.PropertyName == nameof(ShellViewModel.IsShellVisible)) ApplyBackdrop();
         else if (e.PropertyName == nameof(ShellViewModel.CurrentPage)) PlayPageEntrance();
+        else if (e.PropertyName == nameof(ShellViewModel.IsConfirmOpen)) OnConfirmChanged();
+        else if (e.PropertyName == nameof(ShellViewModel.Toast) && _vm.Toast is not null && Motion.MotionCore.Enabled)
+            Motion.MotionCore.SlideIn(ToastCard, 0, 20, TimeSpan.Zero, Motion.MotionCore.Ms(360), fadeRatio: 0.5); // 아래에서 살짝 떠오른다
     }
 
     // ── Windows 11 백드롭 ─────────────────────────────────
@@ -141,7 +144,7 @@ public partial class MainWindow : Window
     // ── 입력 ───────────────────────────────────────────────
 
     /// <summary>매핑 테스트 중이면 키·마우스 입력을 화면 이동 대신 그 페이지에 넘긴다.</summary>
-    private IKeyCapture? Capture => _vm.CurrentPage is IKeyCapture { IsCapturing: true } c && !_vm.IsAnyPanelOpen ? c : null;
+    private IKeyCapture? Capture => _vm.CurrentPage is IKeyCapture { IsCapturing: true } c && !_vm.IsAnyPanelOpen && !_vm.IsConfirmOpen ? c : null;
 
     private void OnKeyUp(object sender, KeyEventArgs e)
     {
@@ -216,6 +219,12 @@ public partial class MainWindow : Window
     private void Route(NavAction a)
     {
         if (_vm.BusyText is not null) return;
+        // 확인 대화 상자가 떠 있으면 그것만 입력을 받는다 (본체 버튼 Menu/View는 대화 상자를 취소하고 원래대로)
+        if (_vm.IsConfirmOpen && a is not (NavAction.MainMenu or NavAction.QuickAccess))
+        {
+            RouteConfirm(a);
+            return;
+        }
         if (Capture is not null)
         {
             _vm.CurrentPage?.Handle(a); // 테스트 중: B만 의미 있음 (끝내기)
@@ -264,6 +273,86 @@ public partial class MainWindow : Window
                 if (!_vm.IsAnyPanelOpen) _vm.CurrentPage?.Handle(a);
                 return;
         }
+    }
+
+    /// <summary>확인 대화 상자 입력: A = 포커스된 버튼, B = 취소, 방향 = 버튼 사이 이동. 아래 페이지는 아무것도 받지 않는다.</summary>
+    private void RouteConfirm(NavAction a)
+    {
+        var inside = Keyboard.FocusedElement is Visual f && ConfirmLayer.IsAncestorOf(f);
+        switch (a)
+        {
+            case NavAction.Back:
+                _vm.CancelConfirm();
+                return;
+            case NavAction.Accept when inside:
+                Invoke(Keyboard.FocusedElement as UIElement);
+                return;
+            case NavAction.Up or NavAction.Down or NavAction.Left or NavAction.Right when inside:
+                MoveFocus(a);
+                return;
+            default:
+                if (!inside) FocusCurrent(); // 포커스가 바깥에 있으면 대화 상자로 데려온다
+                return;
+        }
+    }
+
+    // ── 확인 대화 상자 ─────────────────────────────────────
+
+    /// <summary>대화 상자를 열기 전 포커스 (닫히면 그 자리로 돌아간다).</summary>
+    private IInputElement? _focusBeforeConfirm;
+
+    private void OnConfirmChanged()
+    {
+        if (_vm.IsConfirmOpen)
+        {
+            if (Keyboard.FocusedElement is not Visual f || !ConfirmLayer.IsAncestorOf(f)) _focusBeforeConfirm = Keyboard.FocusedElement;
+            Dispatcher.BeginInvoke(FocusCurrent, DispatcherPriority.ContextIdle); // 레이아웃 뒤 기본 버튼으로
+            return;
+        }
+        var back = _focusBeforeConfirm;
+        _focusBeforeConfirm = null;
+        if (back is UIElement { IsVisible: true, IsEnabled: true, Focusable: true } el && Keyboard.Focus(el) == el) return;
+        Dispatcher.BeginInvoke(FocusCurrent, DispatcherPriority.ContextIdle);
+    }
+
+    /// <summary>대화 상자 바깥을 누르면 취소. 그 아래 힌트(A 선택·B 취소)를 누른 거면 그 동작으로.</summary>
+    private void ConfirmScrim_MouseDown(object sender, MouseButtonEventArgs e)
+    {
+        e.Handled = true;
+        if (HintActionAt(e) is { } hint) Route(hint);
+        else _vm.CancelConfirm();
+    }
+
+    // ── 터치: 뒤로 버튼·힌트 바 ─────────────────────────────
+
+    /// <summary>제목 옆 뒤로 버튼 = 패드 B (페이지가 먼저 받고, 처리하지 않으면 이전 페이지로).</summary>
+    private void BackButton_Click(object sender, RoutedEventArgs e) => Route(NavAction.Back);
+
+    /// <summary>힌트를 누르면 그 패드 버튼을 누른 것과 같다 (A는 지금 포커스된 요소를 실행).</summary>
+    private void HintButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { DataContext: Hint h } && ActionFor(h.Glyph) is { } a) Route(a);
+    }
+
+    private static NavAction? ActionFor(string glyph) => glyph switch
+    {
+        "A" => NavAction.Accept,
+        "B" => NavAction.Back,
+        "X" => NavAction.Secondary,
+        "Y" => NavAction.Options,
+        "LB" => NavAction.TabPrev,
+        "RB" => NavAction.TabNext,
+        "☰" or "Menu" => NavAction.MainMenu,
+        "…" or "View" => NavAction.QuickAccess,
+        _ => null,
+    };
+
+    /// <summary>덮개(스크림) 아래 힌트 바의 항목을 눌렀으면 그 동작.</summary>
+    private NavAction? HintActionAt(MouseEventArgs e)
+    {
+        for (var d = Shell.InputHitTest(e.GetPosition(Shell)) as DependencyObject; d is not null; d = VisualTreeHelper.GetParent(d))
+            if (d is Button { DataContext: Hint h } b && b.Style == FindResource("HintButton")) return ActionFor(h.Glyph);
+        return null;
     }
 
     private void MoveFocus(NavAction a)
@@ -338,7 +427,8 @@ public partial class MainWindow : Window
     private void FocusCurrent()
     {
         // 앱 안 빠른 설정 패널(위젯이 없을 때의 대체 경로)
-        DependencyObject root = _vm.IsQuickAccessOpen ? QuickPanel : _vm.StatusPanel is not null ? StatusFlyout : PageHost;
+        DependencyObject root = _vm.IsConfirmOpen ? ConfirmLayer
+            : _vm.IsQuickAccessOpen ? QuickPanel : _vm.StatusPanel is not null ? StatusFlyout : PageHost;
 
         if (root == PageHost && _vm.CurrentPage is { } page && _focusMemory.TryGetValue(page, out var index))
         {
@@ -381,14 +471,26 @@ public partial class MainWindow : Window
         return null;
     }
 
-    /// <summary>패널 바깥을 누르면 닫힌다. 상단 표시줄의 다른 항목을 누른 거면 그 패널로 바로 바꾼다.</summary>
+    /// <summary>
+    /// 패널 바깥을 누르면 닫힌다. 상단 표시줄의 다른 항목을 누른 거면 그 패널로 바로 바꾸고,
+    /// 지금 열린 패널의 항목(같은 아이콘)을 다시 누른 거면 닫기만 한다. 힌트 바(A 선택·B 닫기)는 그 동작으로.
+    /// </summary>
     private void Scrim_MouseDown(object sender, MouseButtonEventArgs e)
     {
+        e.Handled = true;
+        if (HintActionAt(e) is { } hint)
+        {
+            Route(hint);
+            return;
+        }
         var target = Shell.InputHitTest(e.GetPosition(Shell)) as DependencyObject;
         while (target is not null and not ButtonBase) target = VisualTreeHelper.GetParent(target);
+        var openStatus = _vm.StatusPanel;
+        var quickOpen = _vm.IsQuickAccessOpen;
         _vm.ClosePanels();
-        if (target is Button { Command: { } cmd } b && b.Style == FindResource("StatusButton") && cmd.CanExecute(b.CommandParameter))
-            cmd.Execute(b.CommandParameter);
+        if (target is not Button { Command: { } cmd } b || b.Style != FindResource("StatusButton")) return;
+        var same = (openStatus is not null && Equals(b.CommandParameter, openStatus)) || (quickOpen && cmd == _vm.OpenQuickSettingsCommand);
+        if (!same && cmd.CanExecute(b.CommandParameter)) cmd.Execute(b.CommandParameter);
     }
 
     [DllImport("user32.dll")] private static extern IntPtr GetForegroundWindow();
