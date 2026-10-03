@@ -37,6 +37,7 @@ public partial class MainWindow : Window
         Height = SystemParameters.PrimaryScreenHeight;
 
         _vm.FocusRequested += () => Dispatcher.BeginInvoke(FocusCurrent, DispatcherPriority.ContextIdle);
+        _vm.QuickAccess.TabChanged += () => { if (_vm.IsQuickAccessOpen) Dispatcher.BeginInvoke(FocusCurrent, DispatcherPriority.Loaded); }; // 탭을 바꾸면 그 탭 첫 항목으로
         _vm.PropertyChanged += OnVmChanged;
 
         _pad.Action += a => { if (IsActive) Route(a); };
@@ -378,6 +379,9 @@ public partial class MainWindow : Window
                 if (Keyboard.FocusedElement is not TextBox && !_vm.IsAnyPanelOpen && _vm.CurrentPage?.Handle(a) == true) return;
                 Invoke(Keyboard.FocusedElement as UIElement);
                 return;
+            case NavAction.TabPrev or NavAction.TabNext when _vm.IsQuickAccessOpen:
+                _vm.QuickAccess.SwitchTab(a == NavAction.TabNext ? 1 : -1); // 빠른 설정 탭 (SteamOS처럼 LB/RB)
+                return;
             default:
                 if (!_vm.IsAnyPanelOpen) _vm.CurrentPage?.Handle(a);
                 return;
@@ -550,9 +554,11 @@ public partial class MainWindow : Window
             if (index < all.Count && Keyboard.Focus(all[index]) == all[index]) return;
         }
 
+        // 빠른 설정: 탭 내용 안에서만 찾는다 (아니면 맨 아래 설정 버튼이 먼저 잡힌다)
+        if (ReferenceEquals(root, QuickPanel)) root = QuickPanel.Scroller;
         var target = FindFocusable(root, initialOnly: true) ?? FindFocusable(root, initialOnly: false);
         if (target is not null) Keyboard.Focus(target);
-        if (ReferenceEquals(root, QuickPanel)) QuickPanel.ScrollToTopAfterOpen();
+        if (ReferenceEquals(root, QuickPanel.Scroller)) QuickPanel.ScrollToTopAfterOpen();
     }
 
     private void PageHost_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)

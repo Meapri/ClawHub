@@ -6,7 +6,13 @@
              xmlns:m="clr-namespace:ClawApp.Motion"
              xmlns:s="clr-namespace:ClawApp.Views.Sections"
              KeyboardNavigation.DirectionalNavigation="Contained">
-    <!-- 메트로 참(charms) 바: 오른쪽 가장자리에 붙은 직각 패널. 토글 타일 → 슬라이더 → 하단 바 -->
+    <!--
+        SteamOS 빠른 메뉴처럼: 왼쪽 세로 아이콘 탭(LB/RB) + 오른쪽에 그 탭의 항목만.
+        게임(실행 중일 때) · 성능 · 화면·소리 · 전원 · 캡처. 맨 아래 = 배터리 + 전체 설정.
+    -->
+    <UserControl.Resources>
+        <ItemsPanelTemplate x:Key="Wrap"><WrapPanel/></ItemsPanelTemplate>
+    </UserControl.Resources>
     <Border Background="{DynamicResource Bg1}" BorderBrush="{DynamicResource Accent}" BorderThickness="3,0,0,0">
         <DockPanel>
             <!-- 하단 바: 배터리 + 전체 설정 -->
@@ -24,158 +30,219 @@
                 </DockPanel>
             </Border>
 
-            <ScrollViewer x:Name="Scroller" Padding="18,18,18,2">
-                <StackPanel Margin="6" m:Entrance.Stagger="Items" m:Entrance.Offset="48">
-                    <TextBlock Text="빠른 설정" Style="{StaticResource H1}" Margin="0,0,0,16"/>
-                    <!-- 실시간 상태 (2초마다) -->
-                    <!-- 2×2: 한 칸이 넓어야 "3시간 20분" 같은 값이 잘리지 않는다 -->
-                    <Border Style="{StaticResource CardPanel}" Padding="16,12" Margin="0,0,0,16">
-                        <UniformGrid Columns="2">
-                            <UniformGrid.Resources>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="FontSize" Value="18"/>
-                                    <Setter Property="FontWeight" Value="SemiBold"/>
-                                    <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
-                                </Style>
-                            </UniformGrid.Resources>
-                            <StackPanel Margin="0,0,8,8">
-                                <TextBlock Text="CPU" Style="{StaticResource Caption}"/>
-                                <TextBlock Text="{Binding CpuTempText}"/>
-                            </StackPanel>
-                            <StackPanel Margin="0,0,0,8">
-                                <TextBlock Text="CPU 전력" Style="{StaticResource Caption}"/>
-                                <TextBlock Text="{Binding GpuTempText}"/>
-                            </StackPanel>
-                            <StackPanel Margin="0,0,8,0">
-                                <TextBlock Text="배터리 소모" Style="{StaticResource Caption}"/>
-                                <TextBlock Text="{Binding PowerText}"/>
-                            </StackPanel>
-                            <StackPanel>
-                                <TextBlock Text="남은 시간" Style="{StaticResource Caption}"/>
-                                <TextBlock Text="{Binding RemainingText}"/>
-                            </StackPanel>
-                        </UniformGrid>
-                    </Border>
-                    <!-- 키 매핑 (게임/앱 실행 중일 때) -->
-                    <StackPanel Visibility="{Binding TargetTitle, Converter={StaticResource NullVis}}" Margin="0,0,0,12">
+            <!-- 왼쪽 탭 (터치로 누르거나 LB/RB) -->
+            <Border DockPanel.Dock="Left" Width="64" Background="{DynamicResource Surface}">
+                <DockPanel>
+                    <cv:ButtonGlyph DockPanel.Dock="Top" Key="LB" Width="26" Height="26" Margin="0,16,0,8" HorizontalAlignment="Center"/>
+                    <cv:ButtonGlyph DockPanel.Dock="Bottom" Key="RB" Width="26" Height="26" Margin="0,8,0,16" HorizontalAlignment="Center" VerticalAlignment="Top"/>
+                    <ItemsControl ItemsSource="{Binding Tabs}" Focusable="False" VerticalAlignment="Top">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Focusable="False" Cursor="Hand" ToolTip="{Binding Label}" Height="58"
+                                        Command="{Binding DataContext.SelectTabCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Grid Background="Transparent">
+                                                <Border x:Name="Fill" Background="{DynamicResource TileFillHover}" Opacity="0"/>
+                                                <Border x:Name="Bar" Width="4" HorizontalAlignment="Left" Background="{DynamicResource Accent}" Opacity="0"/>
+                                                <StackPanel VerticalAlignment="Center">
+                                                    <TextBlock x:Name="Glyph" Text="{Binding Icon}" Style="{StaticResource Icon}" FontSize="22" HorizontalAlignment="Center"
+                                                               Foreground="{DynamicResource TextDim}"/>
+                                                    <TextBlock x:Name="Caption" Text="{Binding Label}" FontSize="10.5" HorizontalAlignment="Center" Margin="0,3,0,0"
+                                                               Foreground="{DynamicResource TextDim}" TextTrimming="CharacterEllipsis"/>
+                                                </StackPanel>
+                                            </Grid>
+                                            <ControlTemplate.Triggers>
+                                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                    <Setter TargetName="Fill" Property="Opacity" Value="1"/>
+                                                    <Setter TargetName="Bar" Property="Opacity" Value="1"/>
+                                                    <Setter TargetName="Glyph" Property="Foreground" Value="{DynamicResource Accent}"/>
+                                                    <Setter TargetName="Caption" Property="Foreground" Value="{DynamicResource Text}"/>
+                                                </DataTrigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </DockPanel>
+            </Border>
+
+            <ScrollViewer x:Name="Scroller" Padding="14,16,14,2">
+                <StackPanel Margin="6">
+                    <TextBlock Text="{Binding TabTitle}" Style="{StaticResource H1}" Margin="0,0,0,14" TextTrimming="CharacterEllipsis"/>
+
+                    <!-- ══ 게임 (실행 중일 때) ══ -->
+                    <StackPanel Visibility="{Binding SelectedTab, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=game}"
+                                m:Entrance.Stagger="Items" m:Entrance.Offset="32">
                         <Button Style="{StaticResource NavButton}" Command="{Binding CycleProfileCommand}" local:Nav.InitialFocus="True"
                                 HorizontalContentAlignment="Stretch">
                             <DockPanel>
                                 <TextBlock DockPanel.Dock="Left" Text="{StaticResource Icon.Keyboard}" Style="{StaticResource Icon}" Margin="0,0,14,0"/>
                                 <TextBlock DockPanel.Dock="Right" Text="A로 변경" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="10,0,0,0"/>
                                 <StackPanel>
-                                    <TextBlock Text="{Binding TargetTitle}" Style="{StaticResource Caption}" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Text="게임 중 쓸 매핑" Style="{StaticResource Caption}"/>
                                     <TextBlock Text="{Binding ProfileText}" FontWeight="SemiBold" TextWrapping="Wrap"/>
                                 </StackPanel>
                             </DockPanel>
                         </Button>
                         <!-- 게임 도중 바로 리매핑: 편집하고 게임으로 돌아가면 바로 적용된다 -->
-                        <Button Style="{StaticResource NavButton}" Command="{Binding EditMappingCommand}" HorizontalContentAlignment="Stretch" Margin="0">
+                        <Button Style="{StaticResource NavButton}" Command="{Binding EditMappingCommand}" HorizontalContentAlignment="Stretch">
                             <DockPanel>
                                 <TextBlock DockPanel.Dock="Right" Text="{StaticResource Icon.ChevronRight}" Style="{StaticResource Icon}" FontSize="16"/>
                                 <TextBlock Text="{StaticResource Icon.Pencil}" Style="{StaticResource Icon}" FontSize="16" Margin="0,0,14,0"/>
                                 <TextBlock Text="이 게임 매핑 편집" VerticalAlignment="Center"/>
                             </DockPanel>
                         </Button>
+                        <Button Style="{StaticResource NavButton}" Command="{Binding DataContext.QuitGameCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                HorizontalContentAlignment="Stretch" Foreground="{DynamicResource Danger}">
+                            <DockPanel>
+                                <TextBlock Text="{StaticResource Icon.CircleStop}" Style="{StaticResource Icon}" FontSize="16" Margin="0,0,14,0"/>
+                                <TextBlock Text="게임 종료" VerticalAlignment="Center"/>
+                            </DockPanel>
+                        </Button>
+                        <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="2,6,0,0"
+                                   Text="성능·FPS는 '성능' 탭에서 바꿔요. 게임마다 따로 저장하려면 게임 상세에서 정해 주세요."/>
                     </StackPanel>
 
-                    <!-- 성능 타일 -->
-                    <TextBlock Text="{Binding PerfUnavailableText}" Style="{StaticResource Caption}" Foreground="{DynamicResource Warn}" Margin="0,0,0,8"
-                               Visibility="{Binding PerfAvailable, Converter={StaticResource NotVis}}"/>
-                    <WrapPanel IsEnabled="{Binding PerfAvailable}">
-                        <RadioButton Style="{StaticResource QuickTileRadio}" GroupName="perf" Tag="{StaticResource Icon.Leaf}" Content="절전" IsChecked="{Binding IsBattery}"
-                                     local:Nav.InitialFocus="True"/> <!-- 게임이 없을 때 첫 포커스 (예전엔 맨 아래 설정 버튼에 갔다) -->
-                        <RadioButton Style="{StaticResource QuickTileRadio}" GroupName="perf" Tag="{StaticResource Icon.Scale}" Content="균형" IsChecked="{Binding IsBalanced}"/>
-                        <RadioButton Style="{StaticResource QuickTileRadio}" GroupName="perf" Tag="{StaticResource Icon.Rocket}" Content="성능" IsChecked="{Binding IsPerformance}"/>
-                        <RadioButton Style="{StaticResource QuickTileRadio}" GroupName="perf" Tag="{StaticResource Icon.SlidersHorizontal}" Content="수동 TDP" IsChecked="{Binding IsManualMode}"/>
-                        <ToggleButton Style="{StaticResource QuickTile}" Tag="{StaticResource Icon.Snowflake}" Content="쿨러 부스트" IsChecked="{Binding CoolerBoost}"/>
-                    </WrapPanel>
-                    <TextBlock Style="{StaticResource Caption}" Margin="2,0,0,0"><Run Text="TDP "/><Run Text="{Binding TdpText, Mode=OneWay}"/></TextBlock>
-                    <TextBlock Text="{Binding PerfNote}" Style="{StaticResource Caption}" Foreground="{DynamicResource Accent}" Margin="2,2,0,0"
-                               Visibility="{Binding PerfNote, Converter={StaticResource NullVis}}"/>
-                    <StackPanel m:Reveal.IsShown="{Binding IsManual}" m:Reveal.Kind="Inline" IsEnabled="{Binding PerfAvailable}" Margin="0,8,0,0">
-                        <DockPanel>
-                            <TextBlock Text="PL1" Width="40" VerticalAlignment="Center" Foreground="{DynamicResource TextDim}"/>
-                            <TextBlock DockPanel.Dock="Right" Text="{Binding Pl1, StringFormat={}{0}W}" Width="44" TextAlignment="Right" VerticalAlignment="Center"/>
-                            <Slider Minimum="8" Maximum="45" SmallChange="1" Value="{Binding Pl1}"/>
-                        </DockPanel>
-                        <DockPanel>
-                            <TextBlock Text="PL2" Width="40" VerticalAlignment="Center" Foreground="{DynamicResource TextDim}"/>
-                            <TextBlock DockPanel.Dock="Right" Text="{Binding Pl2, StringFormat={}{0}W}" Width="44" TextAlignment="Right" VerticalAlignment="Center"/>
-                            <Slider Minimum="8" Maximum="45" SmallChange="1" Value="{Binding Pl2}"/>
-                        </DockPanel>
+                    <!-- ══ 성능 ══ -->
+                    <StackPanel Visibility="{Binding SelectedTab, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=perf}"
+                                m:Entrance.Stagger="Items" m:Entrance.Offset="32">
+                        <!-- 실시간 상태 (2초마다). 2×2: 한 칸이 넓어야 "3시간 20분" 같은 값이 잘리지 않는다 -->
+                        <Border Style="{StaticResource CardPanel}" Padding="16,12" Margin="0,0,0,14">
+                            <UniformGrid Columns="2">
+                                <UniformGrid.Resources>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="FontSize" Value="18"/>
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                    </Style>
+                                </UniformGrid.Resources>
+                                <StackPanel Margin="0,0,8,8">
+                                    <TextBlock Text="CPU" Style="{StaticResource Caption}"/>
+                                    <TextBlock Text="{Binding CpuTempText}"/>
+                                </StackPanel>
+                                <StackPanel Margin="0,0,0,8">
+                                    <TextBlock Text="CPU 전력" Style="{StaticResource Caption}"/>
+                                    <TextBlock Text="{Binding GpuTempText}"/>
+                                </StackPanel>
+                                <StackPanel Margin="0,0,8,0">
+                                    <TextBlock Text="배터리 소모" Style="{StaticResource Caption}"/>
+                                    <TextBlock Text="{Binding PowerText}"/>
+                                </StackPanel>
+                                <StackPanel>
+                                    <TextBlock Text="남은 시간" Style="{StaticResource Caption}"/>
+                                    <TextBlock Text="{Binding RemainingText}"/>
+                                </StackPanel>
+                            </UniformGrid>
+                        </Border>
+                        <TextBlock Text="{Binding PerfUnavailableText}" Style="{StaticResource Caption}" Foreground="{DynamicResource Warn}" Margin="0,0,0,8"
+                                   Visibility="{Binding PerfAvailable, Converter={StaticResource NotVis}}"/>
+                        <WrapPanel IsEnabled="{Binding PerfAvailable}">
+                            <RadioButton Style="{StaticResource QuickTileRadio}" GroupName="perf" Tag="{StaticResource Icon.Leaf}" Content="절전" IsChecked="{Binding IsBattery}"
+                                         local:Nav.InitialFocus="True"/>
+                            <RadioButton Style="{StaticResource QuickTileRadio}" GroupName="perf" Tag="{StaticResource Icon.Scale}" Content="균형" IsChecked="{Binding IsBalanced}"/>
+                            <RadioButton Style="{StaticResource QuickTileRadio}" GroupName="perf" Tag="{StaticResource Icon.Rocket}" Content="성능" IsChecked="{Binding IsPerformance}"/>
+                            <RadioButton Style="{StaticResource QuickTileRadio}" GroupName="perf" Tag="{StaticResource Icon.SlidersHorizontal}" Content="수동 TDP" IsChecked="{Binding IsManualMode}"/>
+                            <ToggleButton Style="{StaticResource QuickTile}" Tag="{StaticResource Icon.Snowflake}" Content="쿨러 부스트" IsChecked="{Binding CoolerBoost}"/>
+                        </WrapPanel>
+                        <TextBlock Style="{StaticResource Caption}" Margin="2,0,0,0"><Run Text="TDP "/><Run Text="{Binding TdpText, Mode=OneWay}"/></TextBlock>
+                        <TextBlock Text="{Binding PerfNote}" Style="{StaticResource Caption}" Foreground="{DynamicResource Accent}" Margin="2,2,0,0" TextWrapping="Wrap"
+                                   Visibility="{Binding PerfNote, Converter={StaticResource NullVis}}"/>
+                        <StackPanel m:Reveal.IsShown="{Binding IsManual}" m:Reveal.Kind="Inline" IsEnabled="{Binding PerfAvailable}" Margin="0,8,0,0">
+                            <DockPanel>
+                                <TextBlock Text="PL1" Width="40" VerticalAlignment="Center" Foreground="{DynamicResource TextDim}"/>
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding Pl1, StringFormat={}{0}W}" Width="44" TextAlignment="Right" VerticalAlignment="Center"/>
+                                <Slider Minimum="8" Maximum="45" SmallChange="1" Value="{Binding Pl1}"/>
+                            </DockPanel>
+                            <DockPanel>
+                                <TextBlock Text="PL2" Width="40" VerticalAlignment="Center" Foreground="{DynamicResource TextDim}"/>
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding Pl2, StringFormat={}{0}W}" Width="44" TextAlignment="Right" VerticalAlignment="Center"/>
+                                <Slider Minimum="8" Maximum="45" SmallChange="1" Value="{Binding Pl2}"/>
+                            </DockPanel>
+                        </StackPanel>
+
+                        <!-- FPS 제한 / 프레임 생성 (Intel 드라이버) -->
+                        <StackPanel Visibility="{Binding GpuAvailable, Converter={StaticResource Vis}}">
+                            <TextBlock Text="FPS 제한" Style="{StaticResource Section}" Margin="2,16,0,2"/>
+                            <TextBlock Text="{Binding FpsNote}" Style="{StaticResource Caption}" Margin="2,0,0,8"/>
+                            <ItemsControl ItemsSource="{Binding FpsChoices}" Focusable="False" ItemsPanel="{StaticResource Wrap}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <cv:ChoiceChip Style="{StaticResource Chip}" Content="{Binding Label}" IsChecked="{Binding IsSelected, Mode=OneWay}"
+                                                       Command="{Binding DataContext.PickFpsCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock Text="XeSS 프레임 생성" Style="{StaticResource Section}" Margin="2,10,0,8"/>
+                            <ItemsControl ItemsSource="{Binding FrameGenChoices}" Focusable="False" ItemsPanel="{StaticResource Wrap}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <cv:ChoiceChip Style="{StaticResource Chip}" Content="{Binding Label}" IsChecked="{Binding IsSelected, Mode=OneWay}"
+                                                       Command="{Binding DataContext.PickFrameGenCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock Text="지원하는 게임(XeSS 2 이상)에서만 동작해요" Style="{StaticResource Caption}" Margin="2,0,0,0"/>
+                        </StackPanel>
+                        <s:EnduranceGamingSection DataContext="{Binding Power}" Margin="0,16,0,0"/>
                     </StackPanel>
 
-                    <!-- FPS 제한 / 프레임 생성 (Intel 드라이버) -->
-                    <StackPanel Visibility="{Binding GpuAvailable, Converter={StaticResource Vis}}">
-                        <TextBlock Text="FPS 제한" Style="{StaticResource Section}" Margin="2,16,0,2"/>
-                        <TextBlock Text="{Binding FpsNote}" Style="{StaticResource Caption}" Margin="2,0,0,8"/>
-                        <ItemsControl ItemsSource="{Binding FpsChoices}" Focusable="False">
-                            <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                    <!-- ══ 화면·소리 ══ -->
+                    <StackPanel Visibility="{Binding SelectedTab, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=display}"
+                                m:Entrance.Stagger="Items" m:Entrance.Offset="32">
+                        <DockPanel>
+                            <TextBlock Text="{StaticResource Icon.Sun}" Style="{StaticResource Icon}" Width="30"/>
+                            <TextBlock DockPanel.Dock="Right" Text="{Binding Brightness}" Width="40" TextAlignment="Right" VerticalAlignment="Center"/>
+                            <Slider Minimum="0" Maximum="100" SmallChange="5" Value="{Binding Brightness}" local:Nav.InitialFocus="True"/>
+                        </DockPanel>
+                        <DockPanel Margin="0,4,0,0">
+                            <TextBlock Text="{StaticResource Icon.Volume2}" Style="{StaticResource Icon}" Width="30"/>
+                            <TextBlock DockPanel.Dock="Right" Text="{Binding Volume}" Width="40" TextAlignment="Right" VerticalAlignment="Center"/>
+                            <Slider Minimum="0" Maximum="100" SmallChange="5" Value="{Binding Volume}"/>
+                        </DockPanel>
+                        <!-- 출력 장치 (헤드폰·스피커가 둘 이상일 때) -->
+                        <TextBlock Text="출력 장치" Style="{StaticResource Caption}" Margin="2,10,0,6"
+                                   Visibility="{Binding Sound.HasManyOutputs, Converter={StaticResource Vis}}"/>
+                        <ItemsControl ItemsSource="{Binding Sound.Outputs}" Focusable="False" ItemsPanel="{StaticResource Wrap}"
+                                      Visibility="{Binding Sound.HasManyOutputs, Converter={StaticResource Vis}}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <cv:ChoiceChip Style="{StaticResource Chip}" Content="{Binding Label}" IsChecked="{Binding IsSelected, Mode=OneWay}"
-                                                  Command="{Binding DataContext.PickFpsCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
+                                    <cv:ChoiceChip Style="{StaticResource Chip}" IsChecked="{Binding IsSelected, Mode=OneWay}" MaxWidth="360"
+                                                   Command="{Binding DataContext.Sound.PickOutputCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}">
+                                        <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis"/>
+                                    </cv:ChoiceChip>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
-                        <TextBlock Text="XeSS 프레임 생성" Style="{StaticResource Section}" Margin="2,10,0,8"/>
-                        <ItemsControl ItemsSource="{Binding FrameGenChoices}" Focusable="False">
-                            <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <cv:ChoiceChip Style="{StaticResource Chip}" Content="{Binding Label}" IsChecked="{Binding IsSelected, Mode=OneWay}"
-                                                  Command="{Binding DataContext.PickFrameGenCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                        <TextBlock Text="지원하는 게임(XeSS 2 이상)에서만 동작해요" Style="{StaticResource Caption}" Margin="2,0,0,0"/>
+                        <!-- 마이크 켜기/끄기 (연결된 마이크 모두) — 버튼 매핑의 '시스템 → 마이크 켜기/끄기'와 같다 -->
+                        <Button Style="{StaticResource NavButton}" Command="{Binding ToggleMicCommand}" HorizontalContentAlignment="Stretch" Margin="0,8,0,0">
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Right" Text="A로 변경" Style="{StaticResource Caption}" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding MicIcon}" Style="{StaticResource Icon}" Width="30"/>
+                                <TextBlock Text="{Binding MicText}" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                            </DockPanel>
+                        </Button>
                     </StackPanel>
 
-                    <!-- 슬라이더: 아이콘 + 막대 (Windows 빠른 설정과 같은 배치) -->
-                    <DockPanel Margin="0,16,0,0">
-                        <TextBlock Text="{StaticResource Icon.Sun}" Style="{StaticResource Icon}" Width="30"/>
-                        <TextBlock DockPanel.Dock="Right" Text="{Binding Brightness}" Width="40" TextAlignment="Right" VerticalAlignment="Center"/>
-                        <Slider Minimum="0" Maximum="100" SmallChange="5" Value="{Binding Brightness}"/>
-                    </DockPanel>
-                    <DockPanel Margin="0,4,0,0">
-                        <TextBlock Text="{StaticResource Icon.Volume2}" Style="{StaticResource Icon}" Width="30"/>
-                        <TextBlock DockPanel.Dock="Right" Text="{Binding Volume}" Width="40" TextAlignment="Right" VerticalAlignment="Center"/>
-                        <Slider Minimum="0" Maximum="100" SmallChange="5" Value="{Binding Volume}"/>
-                    </DockPanel>
-                    <!-- 마이크 켜기/끄기 (연결된 마이크 모두) — 버튼 매핑의 '시스템 → 마이크 켜기/끄기'와 같다 -->
-                    <!-- 출력 장치 (헤드폰·스피커가 둘 이상일 때) -->
-                    <ItemsControl ItemsSource="{Binding Sound.Outputs}" Focusable="False" Margin="0,6,0,0"
-                                  Visibility="{Binding Sound.HasManyOutputs, Converter={StaticResource Vis}}">
-                        <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <cv:ChoiceChip Style="{StaticResource Chip}" IsChecked="{Binding IsSelected, Mode=OneWay}" MaxWidth="360"
-                                               Command="{Binding DataContext.Sound.PickOutputCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}">
-                                    <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis"/>
-                                </cv:ChoiceChip>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                    <Button Style="{StaticResource NavButton}" Command="{Binding ToggleMicCommand}" HorizontalContentAlignment="Stretch" Margin="0,8,0,0">
-                        <DockPanel>
-                            <TextBlock DockPanel.Dock="Right" Text="A로 변경" Style="{StaticResource Caption}" VerticalAlignment="Center"/>
-                            <TextBlock Text="{Binding MicIcon}" Style="{StaticResource Icon}" Width="30"/>
-                            <TextBlock Text="{Binding MicText}" VerticalAlignment="Center" FontWeight="SemiBold"/>
-                        </DockPanel>
-                    </Button>
+                    <!-- ══ 전원 ══ -->
+                    <StackPanel Visibility="{Binding SelectedTab, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=power}"
+                                m:Entrance.Stagger="Items" m:Entrance.Offset="32">
+                        <TextBlock Text="충전 한도" Style="{StaticResource Section}" Margin="2,0,0,8"/>
+                        <WrapPanel IsEnabled="{Binding ChargeLimitAvailable}">
+                            <RadioButton Style="{StaticResource ChipRadio}" GroupName="limit" Content="100%" IsChecked="{Binding Limit100}" local:Nav.InitialFocus="True"/>
+                            <RadioButton Style="{StaticResource ChipRadio}" GroupName="limit" Content="80%" IsChecked="{Binding Limit80}"/>
+                            <RadioButton Style="{StaticResource ChipRadio}" GroupName="limit" Content="60%" IsChecked="{Binding Limit60}"/>
+                        </WrapPanel>
+                        <s:SleepQuickSection DataContext="{Binding PowerPlan}" Margin="0,16,0,0"/>
+                    </StackPanel>
 
-                    <!-- 충전 한도 -->
-                    <TextBlock Text="충전 한도" Style="{StaticResource Section}" Margin="2,16,0,8"/>
-                    <WrapPanel IsEnabled="{Binding ChargeLimitAvailable}">
-                        <RadioButton Style="{StaticResource ChipRadio}" GroupName="limit" Content="100%" IsChecked="{Binding Limit100}"/>
-                        <RadioButton Style="{StaticResource ChipRadio}" GroupName="limit" Content="80%" IsChecked="{Binding Limit80}"/>
-                        <RadioButton Style="{StaticResource ChipRadio}" GroupName="limit" Content="60%" IsChecked="{Binding Limit60}"/>
-                    </WrapPanel>
-
-                    <s:EnduranceGamingSection DataContext="{Binding Power}" Margin="0,16,0,0"/>
-                    <s:SleepQuickSection DataContext="{Binding PowerPlan}" Margin="0,16,0,0"/>
-                    <s:CaptureSection DataContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Window}}" Margin="0,16,0,0"/>
+                    <!-- ══ 캡처 ══ -->
+                    <StackPanel Visibility="{Binding SelectedTab, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=tools}"
+                                m:Entrance.Stagger="Items" m:Entrance.Offset="32">
+                        <s:CaptureSection DataContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                    </StackPanel>
                 </StackPanel>
             </ScrollViewer>
         </DockPanel>

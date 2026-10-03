@@ -683,7 +683,7 @@ public sealed partial class ShellViewModel : ObservableObject
     private void OpenQuickPanel()
     {
         IsQuickAccessOpen = true;
-        QuickAccess.Refresh();
+        QuickAccess.Refresh(opening: true);
         AfterPanelChange();
     }
 

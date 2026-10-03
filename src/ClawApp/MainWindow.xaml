@@ -286,7 +286,7 @@
                         m:Reveal.IsShown="{Binding StatusPanel, Converter={x:Static local:HasValue.Instance}}" m:Reveal.ExitY="-12"/>
 
         <!-- ── 빠른 설정 (오른쪽 가장자리에서 미끄러져 나오는 참 바, 닫히면 그쪽으로 되돌아간다) ── -->
-        <v:QuickAccessPanel x:Name="QuickPanel" Width="420" HorizontalAlignment="Right"
+        <v:QuickAccessPanel x:Name="QuickPanel" Width="480" HorizontalAlignment="Right"
                             DataContext="{Binding QuickAccess}" m:Entrance.Stagger="Self" m:Entrance.Offset="80"
                             m:Reveal.IsShown="{Binding DataContext.IsQuickAccessOpen, RelativeSource={RelativeSource AncestorType=Window}}"
                             m:Reveal.ExitX="64"/>

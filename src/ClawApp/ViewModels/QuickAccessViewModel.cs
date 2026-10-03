@@ -192,7 +192,8 @@ public sealed partial class QuickAccessViewModel : ObservableObject
     [CommunityToolkit.Mvvm.Input.RelayCommand]
     private void EditMapping() => _shell.EditRunningMapping();
 
-    public void Refresh()
+    /// <param name="opening">패널을 막 열었을 때 — 시작 탭을 고른다 (게임 중이면 게임 탭).</param>
+    public void Refresh(bool opening = false)
     {
         _loading = true;
         try
@@ -213,6 +214,7 @@ public sealed partial class QuickAccessViewModel : ObservableObject
             _loading = false;
         }
         OnPropertyChanged(string.Empty); // 파생 속성 전체 갱신
+        RefreshTabs(opening);
         _ = LoadSystemValuesAsync();
         _ = _shell.Sound.RefreshAsync();
 
