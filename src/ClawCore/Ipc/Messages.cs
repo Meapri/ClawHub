@@ -29,6 +29,11 @@ public sealed class Request
     public int? FpsLimit { get; set; }
     /// <summary>SetGraphics: XeSS 프레임 생성 0 끔, 1 = 2배, 2 = 3배, 3 = 4배. null이면 그대로.</summary>
     public int? FrameGeneration { get; set; }
+    /// <summary>
+    /// GetTelemetry (성능 오버레이): FPS를 잴 앞 창의 프로세스. 0 = 앞 창 없음. 앱이 알려 준 게임이 있으면 그 게임이 먼저.
+    /// 값이 있으면 응답에 최근 프레임 시간(<see cref="Telemetry.FrameTimes"/>)도 담는다.
+    /// </summary>
+    public int? FramePid { get; set; }
     /// <summary>SetBrightness: 0–100.</summary>
     public int? Brightness { get; set; }
     /// <summary>SetDisplayQuality: 바꿀 항목만 (null = 그대로).</summary>
@@ -75,6 +80,8 @@ public static class AppCommands
     /// <summary>Game Bar가 열려 위젯이 보인다 / 닫혔다. Game Bar는 앞 창으로 잡히지 않을 때가 많아서 런처는 이것으로 "넘겨준 동안"을 판단한다.</summary>
     /// <summary>"SetVolume:&lt;0–100&gt;" — 시스템 볼륨. 위젯은 샌드박스라 직접 못 바꿔서 앱이 대신 바꾼다.</summary>
     public const string SetVolumePrefix = "SetVolume:";
+    /// <summary>"SetOverlay:&lt;0–3&gt;" — 성능 오버레이 단계 (끔·FPS·한 줄·자세히).</summary>
+    public const string SetOverlayPrefix = "SetOverlay:";
     public const string WidgetShown = "WidgetShown";
     public const string WidgetHidden = "WidgetHidden";
 }
@@ -98,6 +105,8 @@ public sealed class AppState
     public bool OnBattery { get; set; }
     /// <summary>실행 중 게임의 렌더링 프로세스 ID (FPS 측정 대상). null = 모름/게임 없음.</summary>
     public int? RunningGamePid { get; set; }
+    /// <summary>성능 오버레이 단계 0–3 (위젯이 고른 단계를 보여 준다).</summary>
+    public int OverlayLevel { get; set; }
     /// <summary>시스템 볼륨 0–100 (null = 모름). 위젯(AppContainer)은 직접 못 읽어서 앱이 알려 준다.</summary>
     public int? Volume { get; set; }
 }
@@ -164,6 +173,8 @@ public sealed class Telemetry
     public double? FrameTimeMs { get; set; }
     /// <summary>1% low FPS (최근 30초 프레임 시간 99백분위).</summary>
     public double? FpsLow1 { get; set; }
+    /// <summary>최근 프레임 시간 (ms, 오래된 것부터, 최대 2초·240개). 성능 오버레이의 프레임 그래프용 — FramePid를 보낸 요청에만.</summary>
+    public List<float>? FrameTimes { get; set; }
     /// <summary>최근 2분 (2초 간격, 오래된 것부터). 그래프용.</summary>
     public List<TelemetrySample> History { get; set; } = [];
 }

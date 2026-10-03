@@ -92,7 +92,7 @@ public sealed class RequestHandler(ILogger<RequestHandler> log, ControllerManage
                     controller.SetSettings(req.ControllerSettings ?? throw new ArgumentException("ControllerSettings 누락"));
                     break;
                 case Ops.GetTelemetry:
-                    return new Response { Telemetry = system.GetTelemetry() }; // 자주 불리므로 상태는 생략
+                    return new Response { Telemetry = system.GetTelemetry(req.FramePid) }; // 자주 불리므로 상태는 생략
                 case Ops.SetGraphics:
                     system.SetGraphics(req.FpsLimit, req.FrameGeneration);
                     break;

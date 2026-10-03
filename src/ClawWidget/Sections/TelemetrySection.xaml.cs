@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using ClawWidget.Ipc;
 using ClawWidget.UI;
 using Windows.UI.Xaml;
@@ -12,6 +13,7 @@ namespace ClawWidget.Sections
         private readonly AnimatedNumber _battery;
         private readonly AnimatedNumber _batteryWatts;
         private readonly Sparkline _spark;
+        private readonly ChoiceGroup<int> _overlay;
 
         public TelemetrySection()
         {
@@ -21,10 +23,34 @@ namespace ClawWidget.Sections
             _battery = new AnimatedNumber(BatteryValue, v => System.Math.Round(v) + "%");
             _batteryWatts = new AnimatedNumber(BatteryWattsValue, v => v.ToString("0.0") + " W");
             _spark = new Sparkline(SparkCanvas, CpuLine, CpuFill, BatteryLine);
+            _overlay = new ChoiceGroup<int>(OverlayGrid, 4, new[]
+            {
+                new KeyValuePair<int, object>(0, "끔"),
+                new KeyValuePair<int, object>(1, "FPS"),
+                new KeyValuePair<int, object>(2, "한 줄"),
+                new KeyValuePair<int, object>(3, "자세히"),
+            });
+            _overlay.Chosen += v => _ = Run(Requests.AppCommand(AppCommands.SetOverlayPrefix + v), "성능 오버레이를 바꾸지 못했어요");
         }
 
         /// <summary>연결이 없어도 자리는 지킨다 (값은 "–").</summary>
         public override bool IsAvailable(ServiceStatus status) => true;
+
+        public override void OnDensity(bool compact)
+        {
+            base.OnDensity(compact);
+            _overlay.ItemMinHeight = ItemHeight(compact);
+        }
+
+        protected override void OnStatus(ServiceStatus s)
+        {
+            // 오버레이는 런처 앱이 그린다 — 앱이 없으면 고를 수 없다
+            var app = s != null ? s.AppState : null;
+            OverlayGrid.IsHitTestVisible = app != null;
+            OverlayGrid.Opacity = app != null ? 1 : 0.4;
+            OverlayDetail.Text = app == null ? "ClawHub 앱이 꺼져 있어요" : "";
+            if (app != null) _overlay.Select(true, app.OverlayLevel);
+        }
 
         protected override void OnTelemetry(Telemetry t)
         {

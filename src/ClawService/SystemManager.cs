@@ -41,10 +41,14 @@ public sealed class SystemManager(ILogger<SystemManager> log, EcManager ec, Fram
         set
         {
             _appState = value;
-            frames.SetTarget(value?.RunningGamePid);
+            // 게임이 없으면 성능 오버레이가 최근(5초 안) 알려 준 앞 창을 계속 잰다
+            var overlay = DateTime.UtcNow - _overlayPidAt < TimeSpan.FromSeconds(5) ? _overlayPid : null;
+            frames.SetTarget(value?.RunningGamePid ?? overlay);
         }
     }
     private AppState? _appState;
+    private int? _overlayPid;
+    private DateTime _overlayPidAt = DateTime.MinValue;
 
     public void Start()
     {
@@ -115,8 +119,14 @@ public sealed class SystemManager(ILogger<SystemManager> log, EcManager ec, Fram
         }
     }
 
-    public Telemetry GetTelemetry()
+    /// <param name="framePid">성능 오버레이가 보는 앞 창 (0 = 없음, null = 오버레이 아님). 게임으로 알려 준 PID가 없을 때만 측정 대상으로.</param>
+    public Telemetry GetTelemetry(int? framePid = null)
     {
+        if (framePid is { } fp)
+        {
+            (_overlayPid, _overlayPidAt) = (fp, DateTime.UtcNow);
+            if (_appState?.RunningGamePid is null) frames.SetTarget(fp);
+        }
         frames.NotePoll(); // 누가 보고 있을 때만 PresentMon을 돌린다
         lock (_lock) _lastWatched = DateTime.UtcNow;
         Sample(onlyIfStale: true); // 느리게 재던 중이었으면 지금 값을 바로
@@ -129,6 +139,8 @@ public sealed class SystemManager(ILogger<SystemManager> log, EcManager ec, Fram
                 Fps = fps?.Fps,
                 FrameTimeMs = fps?.FrameTimeMs,
                 FpsLow1 = fps?.FpsLow1,
+                FrameTimes = framePid is null ? null : frames.RecentFrames(),
+                GpuTemp = _latest.GpuTemp,
                 CpuTemp = _latest.CpuTemp,
                 CpuWatts = _latest.CpuWatts,
                 BatteryPercent = _latest.BatteryPercent,

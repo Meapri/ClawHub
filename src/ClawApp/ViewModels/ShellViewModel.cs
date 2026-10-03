@@ -160,6 +160,7 @@ public sealed partial class ShellViewModel : ObservableObject
             OnBattery = OnBattery,
             RunningGamePid = game is null ? null : await Task.Run(() => GameProcessPicker.Pick(Session)), // FPS 측정 대상
             Volume = await Task.Run(SystemControls.GetVolume), // 위젯 볼륨 슬라이더용 (위젯은 직접 못 읽는다)
+            OverlayLevel = OverlayLevel,
         };
         var json = System.Text.Json.JsonSerializer.Serialize(state, ClawCore.JsonStore.Options);
         if (json == _sentAppState) return; // 바뀐 것 없음
@@ -196,6 +197,9 @@ public sealed partial class ShellViewModel : ObservableObject
                     SystemControls.SetVolume(Math.Clamp(percent, 0, 100));
                     _ = PushAppStateAsync(); // 위젯이 다음 상태 조회에서 새 값을 본다
                 }
+                return;
+            case var o when o.StartsWith(AppCommands.SetOverlayPrefix, StringComparison.Ordinal):
+                if (int.TryParse(o.AsSpan(AppCommands.SetOverlayPrefix.Length), out var level)) SetOverlayLevel(level);
                 return;
             case AppCommands.CycleProfile:
                 CycleTargetProfile();
@@ -268,6 +272,7 @@ public sealed partial class ShellViewModel : ObservableObject
         });
         Service.Start();
         InitPower();
+        InitOverlay();
 
         _clockTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(10) };
         _clockTimer.Tick += (_, _) => UpdateClock();

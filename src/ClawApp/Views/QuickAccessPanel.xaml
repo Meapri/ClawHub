@@ -163,6 +163,18 @@
                             </DockPanel>
                         </StackPanel>
 
+                        <!-- 성능 오버레이 (SteamOS처럼 4단계) — 버튼 매핑 '시스템 → 성능 오버레이 단계'로도 바꾼다 -->
+                        <TextBlock Text="성능 오버레이" Style="{StaticResource Section}" Margin="2,16,0,2"/>
+                        <TextBlock Text="{Binding OverlayNote}" Style="{StaticResource Caption}" Margin="2,0,0,8" TextWrapping="Wrap"/>
+                        <ItemsControl ItemsSource="{Binding OverlayChoices}" Focusable="False" ItemsPanel="{StaticResource Wrap}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <cv:ChoiceChip Style="{StaticResource Chip}" Content="{Binding Label}" IsChecked="{Binding IsSelected, Mode=OneWay}"
+                                                   Command="{Binding DataContext.PickOverlayCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
                         <!-- FPS 제한 / 프레임 생성 (Intel 드라이버) -->
                         <StackPanel Visibility="{Binding GpuAvailable, Converter={StaticResource Vis}}">
                             <TextBlock Text="FPS 제한" Style="{StaticResource Section}" Margin="2,16,0,2"/>

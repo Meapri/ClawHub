@@ -34,6 +34,9 @@ public sealed partial class ShellViewModel
             case "HUB":
                 ShowFromOutside();
                 break;
+            case "OVERLAY":
+                CycleOverlayLevel();
+                break;
             case "XBOXMODE":
                 ToggleXboxModeCommand.Execute(null);
                 break;

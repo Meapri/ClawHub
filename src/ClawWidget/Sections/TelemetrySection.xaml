@@ -58,6 +58,13 @@
                     <TextBlock Style="{StaticResource MetricLabelStyle}" Text="배터리 전력 · 최근 2분" />
                 </StackPanel>
             </StackPanel>
+
+            <!-- 성능 오버레이 단계 (게임 화면 왼쪽 위, 런처 앱이 그린다) -->
+            <Grid Margin="0,4,0,0">
+                <TextBlock Text="성능 오버레이" Style="{StaticResource CaptionStyle}" />
+                <TextBlock x:Name="OverlayDetail" HorizontalAlignment="Right" Style="{StaticResource CaptionStyle}" Text="" />
+            </Grid>
+            <Grid x:Name="OverlayGrid" Margin="-2,-4,-2,0" />
         </StackPanel>
     </Border>
 </local:WidgetSection>

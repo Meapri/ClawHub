@@ -72,6 +72,9 @@ public sealed class AppSettings
     /// </summary>
     public bool KeepAwakeWhileGaming { get; set; } = true;
 
+    /// <summary>성능 오버레이 단계: 0 끔 · 1 FPS · 2 한 줄 · 3 자세히 (SteamOS와 같은 4단계).</summary>
+    public int PerfOverlayLevel { get; set; }
+
     /// <summary>SteamGridDB API 키 (아트 고르기에서 사용, 없으면 Steam 검색만).</summary>
     public string? SteamGridDbKey { get; set; }
 

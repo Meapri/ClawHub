@@ -101,6 +101,24 @@ public sealed class FrameStats
         return chain == _mainChain;
     }
 
+    /// <summary>최근 프레임 시간 (오래된 것부터): 합이 <paramref name="windowMs"/>가 될 때까지, 최대 <paramref name="max"/>개.</summary>
+    public List<float> Recent(double windowMs, int max)
+    {
+        lock (_lock)
+        {
+            var list = new List<float>(Math.Min(max, _frames.Count));
+            double sum = 0;
+            foreach (var ms in _frames.Reverse())
+            {
+                if (list.Count >= max || sum >= windowMs) break;
+                list.Add((float)Math.Round(ms, 2));
+                sum += ms;
+            }
+            list.Reverse();
+            return list;
+        }
+    }
+
     /// <summary>
     /// 최근 1초 평균 FPS·프레임 시간과 최근 30초의 1% low. 프레임이 <paramref name="staleAfter"/> 동안
     /// 없었으면(게임 일시 정지·최소화) null.

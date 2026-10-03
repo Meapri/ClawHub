@@ -75,6 +75,9 @@ public sealed class FrameMonitor(ILogger<FrameMonitor> log) : IDisposable
     /// <summary>현재 측정값. 측정 중이 아니거나 최근 프레임이 없으면 null.</summary>
     public FrameSnapshot? Current => _running ? _stats.Snapshot(Stale) : null; // 락 없이 (정리 중에도 조회가 막히지 않게)
 
+    /// <summary>최근 프레임 시간 (그래프용). 측정 중이 아니면 null.</summary>
+    public List<float>? RecentFrames() => _running && _stats.Snapshot(Stale) is not null ? _stats.Recent(2000, 240) : null;
+
     private volatile bool _running;
 
     private void Supervise()

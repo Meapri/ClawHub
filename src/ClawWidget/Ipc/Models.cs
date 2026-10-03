@@ -58,6 +58,8 @@ namespace ClawWidget.Ipc
         /// <summary>Game Bar가 열려 이 위젯이 보인다 / 닫혀 안 보인다 (고정 HUD만 남은 것은 닫힘). 런처가 매핑을 풀고 되돌리는 기준.</summary>
         /// <summary>"SetVolume:&lt;0–100&gt;" — 앱이 대신 시스템 볼륨을 바꾼다.</summary>
         public const string SetVolumePrefix = "SetVolume:";
+        /// <summary>"SetOverlay:&lt;0–3&gt;" — 성능 오버레이 단계 (끔·FPS·한 줄·자세히).</summary>
+        public const string SetOverlayPrefix = "SetOverlay:";
         public const string WidgetShown = "WidgetShown";
         public const string WidgetHidden = "WidgetHidden";
     }
@@ -170,6 +172,8 @@ namespace ClawWidget.Ipc
         public bool OnBattery;
         /// <summary>시스템 볼륨 0–100 (앱이 알려 준 값, null = 모름).</summary>
         public int? Volume;
+        /// <summary>성능 오버레이 단계 0–3.</summary>
+        public int OverlayLevel;
 
         /// <summary>지금 전원 상태에서 이 게임에 적용되는 전용 성능 모드 이름 (없으면 null).</summary>
         public string CurrentGamePerformanceMode =>
@@ -194,6 +198,7 @@ namespace ClawWidget.Ipc
                 GameFpsLimitOnBattery = Json.Int(o, "GameFpsLimitOnBattery"),
                 OnBattery = Json.Bool(o, "OnBattery") ?? false,
                 Volume = Json.Int(o, "Volume"),
+                OverlayLevel = Json.Int(o, "OverlayLevel") ?? 0,
             };
             var arr = Json.Get(o, "Profiles");
             if (arr != null && arr.ValueType == JsonValueType.Array)
