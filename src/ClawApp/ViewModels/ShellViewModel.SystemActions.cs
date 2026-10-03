@@ -34,6 +34,9 @@ public sealed partial class ShellViewModel
             case "HUB":
                 ShowFromOutside();
                 break;
+            case "XBOXMODE":
+                ToggleXboxModeCommand.Execute(null);
+                break;
             case "QUICK":
                 OnQuickSettingsButton();
                 break;

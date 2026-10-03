@@ -120,7 +120,7 @@ public static class KeyboardLayout
     {
         ["SYS_MIC"] = "MicOff", ["SYS_KEYBOARD"] = "Keyboard", ["SYS_HUB"] = "House", ["SYS_QUICK"] = "SlidersHorizontal",
         ["SYS_SCREENSHOT"] = "Camera", ["SYS_RECORD"] = "CircleDot", ["SYS_CLIP"] = "History",
-        ["SYS_PROFILE"] = "Gamepad2", ["SYS_BRIGHT_UP"] = "Sun", ["SYS_BRIGHT_DOWN"] = "SunDim",
+        ["SYS_PROFILE"] = "Gamepad2", ["SYS_BRIGHT_UP"] = "Sun", ["SYS_BRIGHT_DOWN"] = "SunDim", ["SYS_XBOXMODE"] = "MonitorPlay",
     };
 
     /// <summary>시스템 탭: 마이크 켜기/끄기 등 ClawHub가 처리하는 동작.</summary>

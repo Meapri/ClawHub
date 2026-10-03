@@ -200,6 +200,7 @@ public sealed partial class HomeViewModel : ObservableObject, INavPage
             case "profiles": _shell.OpenProfilesCommand.Execute(null); break;
             case "settings": _shell.OpenSettingsCommand.Execute(null); break;
             case "xbox": _shell.OpenXboxAppCommand.Execute(null); break;
+            case "xboxmode": _shell.ToggleXboxModeCommand.Execute(null); break;
             case "desktop": _shell.GoToDesktopCommand.Execute(null); break;
             case "desktoppad": _shell.GoToDesktopGamepadCommand.Execute(null); break;
             case "quick": _shell.OpenQuickSettingsCommand.Execute(null); break;

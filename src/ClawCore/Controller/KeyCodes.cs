@@ -83,6 +83,7 @@ public static class KeyCodes
         Sys("MIC", "마이크 켜기/끄기"); Sys("KEYBOARD", "터치 키보드"); Sys("HUB", "ClawHub 열기"); Sys("QUICK", "빠른 설정");
         Sys("SCREENSHOT", "스크린샷"); Sys("RECORD", "녹화 시작/중지"); Sys("CLIP", "방금 장면 저장");
         Sys("PROFILE", "다음 매핑 프로필"); Sys("BRIGHT_UP", "밝기 +"); Sys("BRIGHT_DOWN", "밝기 −");
+        Sys("XBOXMODE", "Xbox 모드 켜기/끄기");
         return list;
     }
 }

@@ -78,6 +78,20 @@ public static class XboxIntegration
         keybd_event(VkLWin, 0, Extended | KeyUp, UIntPtr.Zero);
     }
 
+    /// <summary>
+    /// Win+F11: Windows Xbox 모드(전체 화면 환경) 들어가기/나오기 토글. Xbox 앱의 "XBOX 모드" 버튼·Game Bar의
+    /// "전체 화면 환경"과 같은 공식 단축키다 (명령줄로 여는 방법은 따로 없다). 이 기능을 끈 PC에서는 아무 일도 없다.
+    /// </summary>
+    public static void PressWinF11()
+    {
+        const byte VkLWin = 0x5B, VkF11 = 0x7A;
+        const uint Extended = 0x1, KeyUp = 0x2;
+        keybd_event(VkLWin, 0, Extended, UIntPtr.Zero);
+        keybd_event(VkF11, 0, 0, UIntPtr.Zero);
+        keybd_event(VkF11, 0, KeyUp, UIntPtr.Zero);
+        keybd_event(VkLWin, 0, Extended | KeyUp, UIntPtr.Zero);
+    }
+
     // ── 지금 앞에 있는 앱 판별 ──────────────────────────────
 
     public readonly record struct Owner(string Name, string? Path);

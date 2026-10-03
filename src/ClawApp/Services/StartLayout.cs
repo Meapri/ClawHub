@@ -42,6 +42,8 @@ public sealed class StartLayout
     public List<StartTileDef>? Tiles { get; set; }
     /// <summary>프로그램 추가로 넣은 게임·앱을 시작 화면에 바로 고정.</summary>
     public bool AutoPinNew { get; set; } = true;
+    /// <summary>새로 생긴 기능 타일을 한 번 붙여 준 기록 (사용자가 뺀 뒤에는 다시 붙이지 않는다).</summary>
+    public List<string> OfferedActions { get; set; } = [];
 }
 
 /// <summary>ClawHub 기능 타일. 아이콘은 Themes/Icons.xaml의 Icon.&lt;이름&gt;.</summary>
@@ -55,6 +57,7 @@ public static class StartActions
         new("profiles", "키 매핑", "Keyboard", false),
         new("settings", "설정", "Settings", true),
         new("xbox", "Xbox 앱", "Gamepad2", true),
+        new("xboxmode", "Xbox 모드", "MonitorPlay", false),
         new("desktop", "데스크톱으로", "Monitor", false),
         new("desktoppad", "데스크톱 (게임패드)", "Gamepad2", true),
         new("quick", "빠른 설정", "SlidersHorizontal", false),
@@ -93,11 +96,35 @@ public sealed class StartScreen(AppSettings settings)
     /// <summary>처음 실행 (또는 구역이 없던 예전 형식): 기본 배치.</summary>
     public void EnsureDefault(GameLibrary library)
     {
-        if (Layout.Initialized && Groups.Count > 0) return;
+        if (Layout.Initialized && Groups.Count > 0)
+        {
+            OfferNewActions();
+            return;
+        }
         Layout.Tiles = null;
         Layout.Groups = BuildDefault(library);
         Layout.Initialized = true;
+        Layout.OfferedActions = [.. NewActions]; // 기본 배치에 이미 들어 있다
         settings.Save();
+    }
+
+    /// <summary>나중에 생긴 기능 타일 (기존 사용자의 시작 화면에도 한 번 붙여 준다).</summary>
+    private static readonly string[] NewActions = ["xboxmode"];
+
+    /// <summary>기존 배치에 새 기능 타일을 한 번만: 같은 종류(Xbox 앱) 타일 바로 뒤, 없으면 맨 끝.</summary>
+    private void OfferNewActions()
+    {
+        var added = false;
+        foreach (var key in NewActions.Where(k => !Layout.OfferedActions.Contains(k)))
+        {
+            Layout.OfferedActions.Add(key);
+            added = true;
+            if (IsActionPinned(key)) continue;
+            var near = Groups.FirstOrDefault(g => g.Tiles.Any(t => t.Kind == StartTileKind.Action && t.Ref == "xbox"));
+            if (near is not null) near.Tiles.Insert(near.Tiles.FindIndex(t => t.Kind == StartTileKind.Action && t.Ref == "xbox") + 1, Act(key));
+            else LastGroupTiles().Add(Act(key));
+        }
+        if (added) settings.Save();
     }
 
     public void ResetToDefault(GameLibrary library)
@@ -127,7 +154,7 @@ public sealed class StartScreen(AppSettings settings)
             Title = "ClawHub",
             Tiles =
             [
-                Act("profiles"), Act("settings"), Act("xbox"), Act("desktop"), Act("quick"),
+                Act("profiles"), Act("settings"), Act("xbox"), Act("xboxmode"), Act("desktop"), Act("quick"),
                 new StartTileDef
                 {
                     Kind = StartTileKind.Folder, Title = "전원",

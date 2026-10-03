@@ -338,6 +338,24 @@ public sealed partial class ShellViewModel : ObservableObject
     private void OpenXboxApp() => OpenXboxHome();
 
     /// <summary>
+    /// Windows Xbox 모드(전체 화면 환경)로 들어가거나 나온다 (Win+F11 토글 — Xbox 앱 오른쪽 위 "XBOX 모드" 버튼과 같다).
+    /// 들어가면 홈은 Xbox 앱이 맡으므로 ClawHub는 숨어서 버튼·자동 매핑만 맡는 동반 모드가 된다
+    /// (시작 방식이 "자동"일 때 — 사용자가 고정해 둔 방식은 바꾸지 않는다).
+    /// </summary>
+    [RelayCommand]
+    private void ToggleXboxMode()
+    {
+        var entering = !IsCompanion;
+        XboxIntegration.PressWinF11();
+        if (Settings.StartupMode == StartupMode.Auto) IsCompanion = entering;
+        if (!entering) return; // 나올 때는 Windows 바탕화면으로 돌아간다 — ClawHub가 앞에 있으면 그대로
+        _inDesktop = false;
+        _returnWindow = IntPtr.Zero;
+        HideWindow();
+        BeginHandoff(Handoff.XboxApp); // Xbox 앱이 앞에 있는 동안은 게임 매핑을 풀어 둔다
+    }
+
+    /// <summary>
     /// Xbox 앱 홈을 앞으로. ClawHub 창은 숨기되 게임 창을 다시 앞으로 올리지는 않는다
     /// (Xbox 앱이 앞에 있어야 하므로). Xbox 앱이 앞에 있는 동안은 게임 매핑을 풀어 둔다.
     /// </summary>
