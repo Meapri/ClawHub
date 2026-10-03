@@ -33,6 +33,44 @@ public sealed class StartPanel : Panel
 
     private static IStartCell? Cell(UIElement child) => (child as FrameworkElement)?.DataContext as IStartCell;
 
+    // ── 타일 크기가 바뀌면 다시 배치 ──────────────────────────
+    // 예전에는 크기를 바꿔도(패드 X·편집) 패널이 다시 재지 않아, 타일은 예전 크기 칸에 남고 안의 내용만 새 크기 배치로 바뀌어
+    // 글자·아이콘이 칸 밖으로 밀려 빈 타일처럼 보였다 (화면이 한 단계씩 늦게 따라옴). 칸의 Span이 바뀌면 바로 다시 잰다.
+
+    protected override void OnVisualChildrenChanged(DependencyObject? added, DependencyObject? removed)
+    {
+        base.OnVisualChildrenChanged(added, removed);
+        if (removed is FrameworkElement r)
+        {
+            r.DataContextChanged -= OnChildContextChanged;
+            Watch(r.DataContext, false);
+        }
+        if (added is FrameworkElement a)
+        {
+            a.DataContextChanged += OnChildContextChanged;
+            Watch(a.DataContext, true);
+        }
+    }
+
+    private void OnChildContextChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        Watch(e.OldValue, false);
+        Watch(e.NewValue, true);
+        InvalidateMeasure();
+    }
+
+    private void Watch(object? context, bool on)
+    {
+        if (context is not (IStartCell and System.ComponentModel.INotifyPropertyChanged n)) return;
+        n.PropertyChanged -= OnCellChanged; // 두 번 붙지 않게
+        if (on) n.PropertyChanged += OnCellChanged;
+    }
+
+    private void OnCellChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is null or "" or nameof(IStartCell.Span) or "Size") InvalidateMeasure();
+    }
+
     protected override Size MeasureOverride(Size available)
     {
         var height = double.IsInfinity(available.Height) ? 6 * Unit : available.Height + Gap;
