@@ -144,6 +144,19 @@
                         <Slider Minimum="0" Maximum="100" SmallChange="5" Value="{Binding Volume}"/>
                     </DockPanel>
                     <!-- 마이크 켜기/끄기 (연결된 마이크 모두) — 버튼 매핑의 '시스템 → 마이크 켜기/끄기'와 같다 -->
+                    <!-- 출력 장치 (헤드폰·스피커가 둘 이상일 때) -->
+                    <ItemsControl ItemsSource="{Binding Sound.Outputs}" Focusable="False" Margin="0,6,0,0"
+                                  Visibility="{Binding Sound.HasManyOutputs, Converter={StaticResource Vis}}">
+                        <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <cv:ChoiceChip Style="{StaticResource Chip}" IsChecked="{Binding IsSelected, Mode=OneWay}" MaxWidth="360"
+                                               Command="{Binding DataContext.Sound.PickOutputCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}">
+                                    <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis"/>
+                                </cv:ChoiceChip>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
                     <Button Style="{StaticResource NavButton}" Command="{Binding ToggleMicCommand}" HorizontalContentAlignment="Stretch" Margin="0,8,0,0">
                         <DockPanel>
                             <TextBlock DockPanel.Dock="Right" Text="A로 변경" Style="{StaticResource Caption}" VerticalAlignment="Center"/>

@@ -28,6 +28,9 @@ public sealed partial class ShellViewModel : ObservableObject
     public ProfileStore Profiles { get; } = new();
     public AppSettings Settings { get; } = AppSettings.Load();
     public QuickAccessViewModel QuickAccess { get; }
+    /// <summary>사운드 설정 (설정 화면·빠른 설정이 함께 쓴다).</summary>
+    public SoundViewModel Sound => _sound ??= new SoundViewModel(this);
+    private SoundViewModel? _sound;
     public HomeViewModel Home { get; }
     /// <summary>시작 화면 배치 (고정·순서·크기·폴더).</summary>
     public StartScreen Start { get; }

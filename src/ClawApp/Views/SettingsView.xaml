@@ -385,6 +385,7 @@
                             <Slider Minimum="0" Maximum="100" SmallChange="5" Value="{Binding Volume}"/>
                         </StackPanel>
                     </Border>
+                    <s:SoundSection DataContext="{Binding Sound}" Margin="0,8,0,16"/>
                     <TextBlock Text="디스플레이" Style="{StaticResource Section}"/>
                     <Border Style="{StaticResource CardPanel}">
                         <StackPanel>

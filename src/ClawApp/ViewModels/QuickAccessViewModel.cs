@@ -161,6 +161,9 @@ public sealed partial class QuickAccessViewModel : ObservableObject
     public bool Limit60 { get => ChargeLimit == ClawCore.Ec.ChargeLimit.Battery; set { if (value) _ = SetChargeLimitAsync(ClawCore.Ec.ChargeLimit.Battery); } }
 
     /// <summary>매핑 대상: 실행 중 게임, 없으면 본체 버튼으로 런처를 띄우기 직전에 앞에 있던 앱.</summary>
+    /// <summary>출력 장치 바꾸기 (헤드폰·스피커 — 설정의 사운드와 같은 인스턴스).</summary>
+    public SoundViewModel Sound => _shell.Sound;
+
     public string? TargetTitle => _shell.RunningGame?.Title ?? _shell.ForegroundApp?.Name;
     public string ProfileText => _shell.RunningGame is { } g
         ? _shell.Profiles.LabelForGame(g.MappingProfileId)
@@ -211,6 +214,7 @@ public sealed partial class QuickAccessViewModel : ObservableObject
         }
         OnPropertyChanged(string.Empty); // 파생 속성 전체 갱신
         _ = LoadSystemValuesAsync();
+        _ = _shell.Sound.RefreshAsync();
 
         MarkFps();
         _ = LoadFrameGenerationAsync();
