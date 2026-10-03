@@ -56,6 +56,7 @@ public sealed class AdvancedInputEngine : IDisposable
     {
         if (profile is not null && ReferenceEquals(profile, _source)) return; // 같은 프로필 다시 동기화 — 누르고 있던 것 유지
         _source = profile;
+        if (EngineLog.On) EngineLog.Write($"Use {profile?.Id ?? "(없음)"} adv={profile?.Advanced?.Enabled} buttons={string.Join(",", profile?.EngineButtons() ?? [])}");
         profile = profile?.Clone(); // 엔진 스레드가 읽는 동안 편집기가 바꿔도 안전하게
         foreach (var a in profile?.Advanced?.Buttons.Values.AsEnumerable() ?? [])
             if (a.Radial is { Count: 8 } r && new[] { 1, 3, 5, 7 }.All(i => r[i].Keys.Count == 0))
@@ -76,8 +77,20 @@ public sealed class AdvancedInputEngine : IDisposable
         EnsureThreads();
     }
 
+    private Timer? _diag;
+
     private void EnsureThreads()
     {
+        // 진단: 1초마다 훅이 받은 키 개수와 패드(XInput) 버튼 비트 — 게임이 앞에 있을 때 무엇이 들어오는지
+        if (EngineLog.On && _diag is null)
+            _diag = new Timer(_ =>
+            {
+                XInputState st = default;
+                var slot = -1;
+                for (var i = 0; i < 4 && slot < 0; i++)
+                    if (i != VirtualPad.VirtualSlot && XInputGetState(i, ref st) == 0) slot = i;
+                EngineLog.Write($"tick hook={_hookCount} pad{slot} buttons=0x{st.Gamepad.Buttons:X4} config={_config?.Profile.Id} fg={GetForegroundWindow():X}");
+            }, null, 1000, 1000);
         if (_worker is null)
         {
             _worker = new Thread(WorkerLoop) { IsBackground = true, Name = "ClawHub.AdvancedInput", Priority = ThreadPriority.AboveNormal };
@@ -109,6 +122,18 @@ public sealed class AdvancedInputEngine : IDisposable
 
     private IntPtr HookCallback(int code, IntPtr wParam, IntPtr lParam)
     {
+        if (EngineLog.On && code >= 0)
+        {
+            // 진단: 키 내용은 적지 않고 받은 개수만 (보안 프로그램이 훅을 막는지), F13~F24만 이름으로
+            var kk = Marshal.PtrToStructure<KbdLlHookStruct>(lParam);
+            _hookCount++;
+            if (kk.VkCode is >= 0x7C and <= 0x87) EngineLog.Write($"hook F{kk.VkCode - 0x7C + 13} msg={(int)wParam:X} injected={(kk.Flags & 0x10) != 0}");
+            if (Environment.TickCount64 - _hookLogAt > 3000)
+            {
+                _hookLogAt = Environment.TickCount64;
+                EngineLog.Write($"hook alive: {_hookCount} key events so far · foreground {GetForegroundWindow():X}");
+            }
+        }
         if (code >= 0 && _config is { } cfg)
         {
             var k = Marshal.PtrToStructure<KbdLlHookStruct>(lParam);
@@ -119,12 +144,14 @@ public sealed class AdvancedInputEngine : IDisposable
                 var down = msg is WmKeydown or WmSyskeydown;
                 if (k.VkCode == VkF23)
                 {
+                    if (EngineLog.On) EngineLog.Write($"hook F23 {(down ? "down" : "up")}");
                     if (down && !_f23Down) Rescue(cfg, k.Time);
                     _f23Down = down;
                     return 1; // 운반 키의 머리는 게임에 보이지 않게
                 }
                 if (cfg.ByVk.TryGetValue(k.VkCode, out var button) && (_f23Down || _carrierDown.Contains(k.VkCode)))
                 {
+                    if (EngineLog.On) EngineLog.Write($"hook {button} {(down ? "down" : "up")}");
                     if (down)
                     {
                         if (_carrierDown.Add(k.VkCode)) _events.Add((button, true)); // 키 반복은 무시
@@ -143,6 +170,7 @@ public sealed class AdvancedInputEngine : IDisposable
         return CallNextHookEx(_hook, code, wParam, lParam);
     }
 
+    private long _hookCount, _hookLogAt;
     private int _strayVk;
     private int _strayAt;
 
@@ -270,6 +298,7 @@ public sealed class AdvancedInputEngine : IDisposable
             _radialButton = b;
             _radialPick = -1;
             s.Phase = Phase.Radial;
+            if (EngineLog.On) EngineLog.Write($"radial show {slices.Count} view={RadialView?.GetType().Name}");
             RadialView?.Show(slices, a.RadialSize);
             return;
         }
@@ -528,6 +557,7 @@ public sealed class AdvancedInputEngine : IDisposable
         public XInputGamepad Gamepad;
     }
 
+    [DllImport("user32.dll")] private static extern IntPtr GetForegroundWindow();
     [DllImport("user32.dll", SetLastError = true)] private static extern IntPtr SetWindowsHookEx(int id, HookProc proc, IntPtr mod, uint threadId);
     [DllImport("user32.dll")] private static extern bool UnhookWindowsHookEx(IntPtr hook);
     [DllImport("user32.dll")] private static extern IntPtr CallNextHookEx(IntPtr hook, int code, IntPtr wParam, IntPtr lParam);

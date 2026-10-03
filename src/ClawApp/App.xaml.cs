@@ -115,6 +115,12 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+        // 이미 실행 중이라 넘겨주고 끝나거나 UIAccess 본체로 넘긴 시작 단계: 정리할 것이 없다 (엔진을 새로 만들지 않게)
+        if (_window is null)
+        {
+            base.OnExit(e);
+            return;
+        }
         _single?.Dispose();
         Input.AdvancedInputEngine.Instance.Dispose(); // 누르고 있던 키를 떼고 훅을 푼다
         Input.VirtualPad.Stop(); // 실제 패드 숨김은 서비스가 앱 연결이 끊기면 되돌린다

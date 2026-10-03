@@ -138,7 +138,16 @@ public sealed class RadialMenuWindow : Window, AdvancedInputEngine.IRadialView
                 0x0001 | 0x0010 | 0x0040); // 크기 그대로 · 활성화 없이 · 보이기
         }
         else SetWindowPos(hwnd, new IntPtr(-1), 0, 0, 0, 0, 0x0001 | 0x0002 | 0x0010 | 0x0040);
+        if (Input.EngineLog.On)
+        {
+            GetWindowBand(hwnd, out var band);
+            GetWindowBand(GetForegroundWindow(), out var fgBand);
+            GetWindowRect(hwnd, out var at);
+            Input.EngineLog.Write($"radial window {hwnd:X} band={band} visible={IsVisible} opacity={Opacity:0.00} at {at.Left},{at.Top} · foreground {GetForegroundWindow():X} band={fgBand}");
+        }
     }
+
+    [DllImport("user32.dll")] private static extern bool GetWindowBand(IntPtr hwnd, out uint band);
 
     private void Close2(bool activated)
     {
