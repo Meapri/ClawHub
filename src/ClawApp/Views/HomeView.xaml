@@ -178,7 +178,7 @@
                             HorizontalAlignment="Right" VerticalAlignment="Bottom"
                             Command="{Binding DataContext.ResizeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
                     <Button Style="{StaticResource TileEditButton}" Content="{StaticResource Icon.FolderOutput}" ToolTip="폴더에서 꺼내기"
-                            HorizontalAlignment="Left" VerticalAlignment="Bottom" Visibility="{Binding IsInFolder, Converter={StaticResource Vis}}"
+                            HorizontalAlignment="Left" VerticalAlignment="Top" Visibility="{Binding IsInFolder, Converter={StaticResource Vis}}"
                             Command="{Binding DataContext.TakeOutCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
                     <Button Style="{StaticResource TileEditButton}" Content="{StaticResource Icon.FolderPen}" ToolTip="폴더 이름"
                             HorizontalAlignment="Left" VerticalAlignment="Top" Visibility="{Binding IsFolder, Converter={StaticResource Vis}}"
@@ -443,9 +443,10 @@
                         </StackPanel>
                     </DockPanel>
                 </DockPanel>
-                <ScrollViewer x:Name="FolderScroller" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" PanningMode="HorizontalOnly">
+                <!-- 편집 중 고른 타일의 모서리 버튼은 타일 밖으로 12px 나온다 — 스크롤 영역이 자르지 않게 안쪽 여백 16 (바깥은 -12로 자리 유지) -->
+                <ScrollViewer x:Name="FolderScroller" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" PanningMode="HorizontalOnly" Margin="-12">
                     <ItemsControl x:Name="FolderBoard" ItemsSource="{Binding FolderTiles}" ItemTemplate="{StaticResource StartTile}" Focusable="False"
-                                  ItemContainerStyle="{StaticResource StartTileContainer}" Height="{Binding FolderBoardHeight}" Margin="4">
+                                  ItemContainerStyle="{StaticResource StartTileContainer}" Height="{Binding FolderBoardHeight}" Margin="16">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate><v:StartPanel/></ItemsPanelTemplate>
                         </ItemsControl.ItemsPanel>
