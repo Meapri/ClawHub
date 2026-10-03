@@ -17,13 +17,48 @@ if ($existing -and $existing.Status -ne 'Stopped') {
     Write-Host 'Stopping existing ClawHub service (controller mapping is restored on stop)...'
     Stop-Service ClawHub
 }
-Get-Process ClawApp -ErrorAction SilentlyContinue | Stop-Process -Force
+Get-Process ClawApp, ClawOverlay -ErrorAction SilentlyContinue | Stop-Process -Force
 
 Write-Host 'Publishing...'
 dotnet publish "$root\src\ClawService" -c Release -o "$InstallDir\service" --nologo -v q
 if ($LASTEXITCODE) { throw 'ClawService publish failed' }
 dotnet publish "$root\src\ClawApp" -c Release -o "$InstallDir\app" --nologo -v q
 if ($LASTEXITCODE) { throw 'ClawApp publish failed' }
+
+# Overlays above fullscreen games: Windows only lets signed UIAccess programs draw there. A UIAccess exe cannot be
+# started through package activation (Xbox mode home app), and a UIAccess build cannot run from bin, so ClawApp.exe
+# stays a normal app and a copy of it with the UIAccess manifest embedded and signed becomes ClawOverlay.exe
+# (same ClawApp.dll). ClawApp starts it ("--overlay-host") and hands it the radial menu, notifications and
+# performance overlay. Needs the ClawHub Dev code-signing cert (created by src\ClawWidget\build.ps1 -CreateCert;
+# not a CA, so it can only vouch for files it signs itself), trusted machine-wide below.
+$cert = Get-ChildItem Cert:\CurrentUser\My | Where-Object { $_.Subject -eq 'CN=ClawHub Dev' -and $_.HasPrivateKey -and $_.NotAfter -gt (Get-Date) } |
+    Sort-Object NotAfter -Descending | Select-Object -First 1
+$kit = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin\*\x64" -Directory -ErrorAction SilentlyContinue |
+    Where-Object { (Test-Path "$($_.FullName)\signtool.exe") -and (Test-Path "$($_.FullName)\mt.exe") } |
+    Sort-Object FullName -Descending | Select-Object -First 1 -ExpandProperty FullName
+$overlayExe = "$InstallDir\app\ClawOverlay.exe"
+if ($cert -and $kit) {
+    Copy-Item "$InstallDir\app\ClawApp.exe" $overlayExe -Force
+    & "$kit\mt.exe" -nologo -manifest "$root\src\ClawApp\app.uiaccess.manifest" "-outputresource:$overlayExe;#1"
+    if ($LASTEXITCODE) { throw 'Embedding the UIAccess manifest failed' }
+
+    foreach ($storeName in 'Root', 'TrustedPublisher') {
+        $store = New-Object Security.Cryptography.X509Certificates.X509Store $storeName, 'LocalMachine'
+        $store.Open('ReadWrite')
+        if (-not ($store.Certificates | Where-Object Thumbprint -eq $cert.Thumbprint)) {
+            $store.Add([Security.Cryptography.X509Certificates.X509Certificate2]::new($cert.RawData))
+            Write-Host "Trusted ClawHub Dev certificate in LocalMachine\$storeName"
+        }
+        $store.Close()
+    }
+    & "$kit\signtool.exe" sign /sha1 $cert.Thumbprint /s My /fd SHA256 /q $overlayExe
+    if ($LASTEXITCODE) { throw 'Signing ClawOverlay.exe failed' }
+    Write-Host 'ClawOverlay.exe signed (UIAccess: overlays show above fullscreen games)'
+}
+else {
+    Write-Warning 'No ClawHub Dev signing cert or Windows SDK (mt/signtool): overlays will not show over fullscreen games.'
+    if (Test-Path $overlayExe) { Remove-Item $overlayExe -Force }
+}
 
 # Service data (controller baseline, EC state): SYSTEM/Administrators full, Users read-only
 $data = "$env:ProgramData\ClawHub"

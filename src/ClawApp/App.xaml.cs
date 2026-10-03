@@ -9,6 +9,14 @@ public partial class App : Application
 
     protected override void OnStartup(StartupEventArgs e)
     {
+        // 오버레이 프로세스 (ClawOverlay.exe --overlay-host 파이프): 창만 그린다 — 한 번만 실행 검사·본 창 없음
+        if (e.Args.Length >= 2 && e.Args[0] == Services.OverlayHost.HostArg)
+        {
+            Services.SystemTheme.Apply(this);
+            Services.OverlayHost.RunHost(this, e.Args[1]);
+            return;
+        }
+
         _single = new Mutex(true, @"Local\ClawHub.App", out var first);
         if (!first)
         {
@@ -57,7 +65,9 @@ public partial class App : Application
 
         base.OnStartup(e);
         _window = new MainWindow(); // 표시 여부는 창이 직접 결정 (Xbox 모드면 숨은 채로 시작)
-        Input.AdvancedInputEngine.Instance.RadialView = new Views.RadialMenuWindow();
+        Input.AdvancedInputEngine.Instance.RadialView = new Services.RadialViewRouter(new Views.RadialMenuWindow());
+        // 전체 화면 게임 위에 그리는 오버레이 프로세스 (설치본에만 있다) — 첫 화면을 띄운 뒤에
+        Dispatcher.BeginInvoke(Services.OverlayHost.Start, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
     }
 
     /// <summary>처리 못 한 UI 예외 기록 (%LocalAppData%\ClawHub\app-errors.log, 1MB 넘으면 새로).</summary>
@@ -80,6 +90,11 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+        if (Services.OverlayHost.IsHost)
+        {
+            base.OnExit(e);
+            return;
+        }
         _single?.Dispose();
         Input.AdvancedInputEngine.Instance.Dispose(); // 누르고 있던 키를 떼고 훅을 푼다
         Input.VirtualPad.Stop(); // 실제 패드 숨김은 서비스가 앱 연결이 끊기면 되돌린다

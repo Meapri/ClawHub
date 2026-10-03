@@ -57,13 +57,12 @@ public sealed partial class ShellViewModel
     {
         _overlayCts?.Cancel();
         _overlayCts = null;
-        _overlayWindow?.Hide();
+        HidePerf();
     }
 
     private async Task OverlayLoopAsync(CancellationToken ct)
     {
         using var metrics = await Task.Run(() => new SystemMetrics());
-        var window = _overlayWindow ??= new PerfOverlayWindow();
         (double? Watts, TimeSpan? Remaining) battery = (null, null);
         var batteryAt = DateTime.MinValue;
         while (!ct.IsCancellationRequested)
@@ -72,7 +71,7 @@ public sealed partial class ShellViewModel
             if (level == 0) break;
             if (IsWindowVisible && !IsQuickAccessOpen)
             {
-                window.Hide(); // 허브 화면이 앞에 있으면 가린다 (빠른 설정만 열렸을 때는 단계 바꾸는 걸 보이게 둔다)
+                HidePerf(); // 허브 화면이 앞에 있으면 가린다 (빠른 설정만 열렸을 때는 단계 바꾸는 걸 보이게 둔다)
                 metrics.Sample(gpu: false); // 카운터 기준값은 계속 (다시 보일 때 첫 값이 바로 나오게)
             }
             else
@@ -93,7 +92,7 @@ public sealed partial class ShellViewModel
                 }
                 if (ct.IsCancellationRequested) break;
                 var b = SystemControls.GetBattery();
-                window.Update(level, new PerfOverlayData(
+                ShowPerf(level, new PerfOverlayData(
                     t?.Fps, t?.FpsLow1, t?.FrameTimeMs, t?.FrameTimes,
                     sample.CpuPercent, sample.CpuMhz, t?.CpuTemp, sample.GpuPercent,
                     t?.CpuWatts, b.Charging ? null : battery.Watts, b.Percent, b.Charging, b.Charging ? null : battery.Remaining,
@@ -103,7 +102,20 @@ public sealed partial class ShellViewModel
             try { await Task.WhenAny(Task.Delay(level >= 3 ? 500 : 1000, ct), _overlayKick.Task); }
             catch (OperationCanceledException) { break; }
         }
-        if (_overlayCts is null || _overlayCts.Token == ct) window.Hide();
+        if (_overlayCts is null || _overlayCts.Token == ct) HidePerf();
+    }
+
+    /// <summary>전체 화면 게임 위에 뜨도록 오버레이 프로세스가 있으면 거기서, 없으면 앱 안 창으로.</summary>
+    private void ShowPerf(int level, PerfOverlayData data)
+    {
+        if (OverlayHost.Send(new OverlayMessage { Op = "perf", Level = level, Perf = data })) { _overlayWindow?.Hide(); return; }
+        (_overlayWindow ??= new PerfOverlayWindow()).Update(level, data);
+    }
+
+    private void HidePerf()
+    {
+        OverlayHost.Send(new OverlayMessage { Op = "perf.hide" });
+        _overlayWindow?.Hide();
     }
 
     private static readonly HashSet<string> ShellProcesses = new(StringComparer.OrdinalIgnoreCase)
