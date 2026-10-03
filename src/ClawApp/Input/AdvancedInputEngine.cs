@@ -27,6 +27,11 @@ public sealed class AdvancedInputEngine : IDisposable
         void Select(int index);
         /// <summary><paramref name="activated"/>: 칸을 골라 실행했으면 true (반짝이며 닫힘), 취소면 false.</summary>
         void Hide(bool activated);
+        /// <summary>
+        /// 원형 메뉴가 있는 프로필이 적용 중인지. true면 창을 투명하게 미리 띄워 둔다 — 전체 화면 게임 위에 창이 새로 생기고
+        /// 없어질 때마다 Windows가 게임 화면 내보내는 방식을 바꾸며 깜빡이므로, 열고 닫을 때는 투명도만 바꾼다.
+        /// </summary>
+        void Ready(bool ready);
     }
 
     public IRadialView? RadialView { get; set; }
@@ -61,6 +66,7 @@ public sealed class AdvancedInputEngine : IDisposable
         foreach (var a in profile?.Advanced?.Buttons.Values.AsEnumerable() ?? [])
             if (a.Radial is { Count: 8 } r && new[] { 1, 3, 5, 7 }.All(i => r[i].Keys.Count == 0))
                 a.Radial = [r[0], r[2], r[4], r[6]]; // 대각선 칸이 비었으면 상하좌우 4칸 메뉴 (고르기 쉽게)
+        RadialView?.Ready(profile?.Advanced is { Enabled: true } withRadial && withRadial.Buttons.Values.Any(b => b.Radial is { Count: > 0 }));
         // 고급 동작 버튼 + 시스템 동작(마이크 등) 버튼. 고급 입력이 꺼져 있으면 시스템 동작만 (누르면 실행)
         var buttons = profile?.EngineButtons().ToList() ?? [];
         if (profile is null || buttons.Count == 0)

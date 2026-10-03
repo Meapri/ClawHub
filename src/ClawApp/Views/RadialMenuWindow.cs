@@ -88,6 +88,28 @@ public sealed class RadialMenuWindow : Window, AdvancedInputEngine.IRadialView
     void AdvancedInputEngine.IRadialView.Show(IReadOnlyList<RadialSlice> slices, int size) => Dispatcher.BeginInvoke(() => Open(slices, size));
     void AdvancedInputEngine.IRadialView.Select(int index) => Dispatcher.BeginInvoke(() => Highlight(index));
     void AdvancedInputEngine.IRadialView.Hide(bool activated) => Dispatcher.BeginInvoke(() => Close2(activated));
+    void AdvancedInputEngine.IRadialView.Ready(bool ready) => Dispatcher.BeginInvoke(() => SetReady(ready));
+
+    /// <summary>원형 메뉴가 있는 프로필이 적용 중 — 창을 투명하게 띄워 둔다 (열고 닫을 때 게임 화면이 깜빡이지 않게).</summary>
+    private bool _ready;
+    private bool _open;
+
+    private void SetReady(bool ready)
+    {
+        _ready = ready;
+        if (ready)
+        {
+            if (IsVisible) return;
+            (_outer, _inner) = Sizes[1];
+            _size = 2 * (_outer + Pad);
+            Width = Height = _size;
+            BeginAnimation(OpacityProperty, null);
+            Opacity = 0;
+            Show();
+            CenterOnGame();
+        }
+        else if (!_open && IsVisible) Hide();
+    }
 
     // ── 그리기 (UI 스레드) ─────────────────────────────────
 
@@ -107,6 +129,7 @@ public sealed class RadialMenuWindow : Window, AdvancedInputEngine.IRadialView
         _canvas.Width = _canvas.Height = _size;
         _scale.CenterX = _scale.CenterY = _size / 2;
         Build();
+        _open = true;
         if (!IsVisible) Show();
         CenterOnGame();
 
@@ -151,7 +174,7 @@ public sealed class RadialMenuWindow : Window, AdvancedInputEngine.IRadialView
 
     private void Close2(bool activated)
     {
-        if (!IsVisible) return;
+        if (!IsVisible || !_open) return;
         if (activated && _selected >= 0 && _selected < _wedges.Count)
         {
             // 실행: 고른 칸이 한 번 밝아졌다가 전체가 살짝 커지며 사라진다
@@ -173,7 +196,12 @@ public sealed class RadialMenuWindow : Window, AdvancedInputEngine.IRadialView
 
     private void Fade(DoubleAnimation fade)
     {
-        fade.Completed += (_, _) => { if (Opacity < 0.01) Hide(); };
+        fade.Completed += (_, _) =>
+        {
+            if (Opacity >= 0.01) return; // 그사이 다시 열렸다
+            _open = false;
+            if (!_ready) Hide(); // 준비 중이면 투명한 채로 남겨 둔다
+        };
         BeginAnimation(OpacityProperty, fade);
     }
 
