@@ -50,6 +50,8 @@ public sealed class Request
 
     /// <summary>SetPowerPlanSetting: 바꿀 Windows 전원 설정. PowerSource 생략 = 지금 전원 상태 칸.</summary>
     public PowerPlanSetting? PowerSetting { get; set; }
+    /// <summary>SetPowerFeature: 켜고 끌 기능 (Enabled 값으로).</summary>
+    public PowerFeature? PowerFeature { get; set; }
     /// <summary>SetPowerPlanSetting: 새 값 (초 / % / 목록 값 — PowerPlanSettingState.Choices 참고).</summary>
     public int? Value { get; set; }
 }
@@ -236,6 +238,8 @@ public static class Ops
     public const string GetPowerPlan = "GetPowerPlan";
     /// <summary>Windows 전원 설정 하나 바꾸기 (PowerSetting, PowerSource, Value). 활성 구성표에 쓰고 바로 적용.</summary>
     public const string SetPowerPlanSetting = "SetPowerPlanSetting";
+    /// <summary>최대 절전 모드·빠른 시작 켜기/끄기 (PowerFeature + Enabled).</summary>
+    public const string SetPowerFeature = "SetPowerFeature";
     public const string AppCommand = "AppCommand";
     /// <summary>3단계 가상 패드: 실제 패드를 게임에서 숨기기/되돌리기 (Enabled). 앱 연결이 끊기면 서비스가 되돌린다.</summary>
     public const string SetPadHidden = "SetPadHidden";

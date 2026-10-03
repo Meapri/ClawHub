@@ -27,7 +27,10 @@ public sealed partial class PowerPlanViewModel : ObservableObject
         EnergySaverThreshold = new(this, PowerPlanSetting.EnergySaverThreshold, "절약 모드 자동 켜짐", "배터리가 이만큼 남으면 Windows 절약 모드를 켜요");
         EnergySaverBrightness = new(this, PowerPlanSetting.EnergySaverBrightness, "절약 모드 화면 밝기", "절약 모드일 때 평소 밝기의 몇 %로 낮출지");
         AdaptiveBrightness = new(this, PowerPlanSetting.AdaptiveBrightness, "밝기 자동 조절", "주변 밝기에 맞춰 화면 밝기를 바꿔요");
-        Rows = [DisplayOff, Sleep, Hibernate, PowerButton, EnergySaverThreshold, EnergySaverBrightness, AdaptiveBrightness];
+        StandbyNetwork = new(this, PowerPlanSetting.StandbyNetwork, "대기 중 네트워크",
+            "화면이 꺼져 대기하는 동안 Wi-Fi를 유지할지 — 끊으면 대기 중 배터리를 훨씬 덜 쓰고, 유지하면 메시지·다운로드가 계속돼요");
+        WakeTimers = new(this, PowerPlanSetting.WakeTimers, "절전 해제 타이머", "예약 작업(업데이트 등)이 절전 중인 기기를 깨울 수 있게 할지");
+        Rows = [DisplayOff, Sleep, Hibernate, PowerButton, EnergySaverThreshold, EnergySaverBrightness, AdaptiveBrightness, StandbyNetwork, WakeTimers];
         shell.PropertyChanged += OnShellChanged;
         Refresh();
     }
@@ -47,6 +50,39 @@ public sealed partial class PowerPlanViewModel : ObservableObject
     public PowerPlanRow EnergySaverThreshold { get; }
     public PowerPlanRow EnergySaverBrightness { get; }
     public PowerPlanRow AdaptiveBrightness { get; }
+    public PowerPlanRow StandbyNetwork { get; }
+    public PowerPlanRow WakeTimers { get; }
+
+    // ── 기기 전체 기능 (최대 절전 모드 · 빠른 시작) ──────────────
+
+    public bool HibernateFeature
+    {
+        get => Plan?.HibernateEnabled == true;
+        set => _ = SetFeatureAsync(PowerFeature.Hibernate, value);
+    }
+
+    public bool FastStartup
+    {
+        get => Plan?.FastStartupEnabled == true;
+        set => _ = SetFeatureAsync(PowerFeature.FastStartup, value);
+    }
+
+    public bool CanFastStartup => Available && Plan?.HibernateEnabled == true;
+
+    private async Task SetFeatureAsync(PowerFeature feature, bool on)
+    {
+        if (_busy || !Available) { OnPropertyChanged(string.Empty); return; }
+        _busy = true;
+        try
+        {
+            await _shell.SendAsync(new Request { Op = Ops.SetPowerFeature, PowerFeature = feature, Enabled = on });
+        }
+        finally
+        {
+            _busy = false;
+            Refresh(); // 실패하면 서비스 값으로 되돌림
+        }
+    }
     private IReadOnlyList<PowerPlanRow> Rows { get; }
 
     private PowerPlanState? Plan => _shell.Status?.PowerPlan;

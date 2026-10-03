@@ -21,6 +21,9 @@ public static class PowerPlanNative
     public static readonly Guid SubEnergySaver = new("de830923-a562-41af-a086-e3a2c6bad2da");
     public static readonly Guid EsBattThreshold = new("e69653ca-cf7f-4f05-aa73-cb833fa90ad4");
     public static readonly Guid EsBrightness = new("13d09884-f74e-474a-a852-b6bde8ad03a8");
+    public static readonly Guid SubNone = new("fea3413e-7e05-4911-9a71-700331f1c294");
+    public static readonly Guid ConnectivityInStandby = new("f15576e8-98b7-4186-b944-eafa664402d9");
+    public static readonly Guid RtcWake = new("bd3b718a-0680-4d9d-8ab2-e1d2b4ac806d");
 
     private const uint ErrorSuccess = 0;
 

@@ -17,6 +17,19 @@ public enum PowerPlanSetting
     EnergySaverBrightness,
     /// <summary>밝기 자동 조절 (목록: 0 끔, 1 켬). 조도 센서가 있을 때만. SUB_VIDEO/ADAPTBRIGHT.</summary>
     AdaptiveBrightness,
+    /// <summary>대기(모던 스탠바이) 중 네트워크 (목록: 0 끊기, 1 연결 유지, 2 Windows가 관리). 모던 스탠바이 기기만. SUB_NONE/CONNECTIVITYINSTANDBY.</summary>
+    StandbyNetwork,
+    /// <summary>절전 해제 타이머 (목록: 0 사용 안 함, 1 사용, 2 중요한 것만). SUB_SLEEP/RTCWAKE.</summary>
+    WakeTimers,
+}
+
+/// <summary>구성표가 아니라 기기 전체에 하나인 전원 기능 (SetPowerFeature).</summary>
+public enum PowerFeature
+{
+    /// <summary>최대 절전 모드 (powercfg /hibernate on|off). 끄면 최대 절전 전환·빠른 시작도 못 쓴다.</summary>
+    Hibernate,
+    /// <summary>빠른 시작 (종료할 때 커널을 최대 절전처럼 저장해 다음 부팅이 빠름). 최대 절전 모드가 켜져 있어야 한다.</summary>
+    FastStartup,
 }
 
 /// <summary>값의 단위. Choice면 Choices에 있는 값만 쓸 수 있다.</summary>
@@ -64,6 +77,8 @@ public sealed class PowerPlanState
     public bool ModernStandby { get; set; }
     /// <summary>최대 절전 모드를 쓸 수 있는지 (powercfg /h). 꺼져 있으면 Hibernate는 바꿀 수 없고 전원 단추에서 최대 절전이 빠진다.</summary>
     public bool HibernateEnabled { get; set; }
+    /// <summary>빠른 시작이 켜져 있는지 (HiberbootEnabled — 최대 절전이 꺼져 있으면 켜져 있어도 동작하지 않는다).</summary>
+    public bool FastStartupEnabled { get; set; }
     /// <summary>조도 센서가 있는지 (없으면 AdaptiveBrightness 항목을 보내지 않는다).</summary>
     public bool AmbientLightSensor { get; set; }
     /// <summary>이 기기에 있는 항목만 (없는 GUID는 빠짐).</summary>

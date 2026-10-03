@@ -39,6 +39,7 @@ public sealed class RequestHandler(ILogger<RequestHandler> log, ControllerManage
         if (req.EnduranceMode is { } egm && !Enum.IsDefined(egm)) throw new ArgumentException("잘못된 Endurance Gaming 모드");
         if (req.PowerSource is { } src && !Enum.IsDefined(src)) throw new ArgumentException("잘못된 전원 구분");
         if (req.PowerSetting is { } ps && !Enum.IsDefined(ps)) throw new ArgumentException("잘못된 전원 설정 항목");
+        if (req.PowerFeature is { } pf && !Enum.IsDefined(pf)) throw new ArgumentException("잘못된 전원 기능");
     }
 
     public Response Handle(Request req)
@@ -64,6 +65,10 @@ public sealed class RequestHandler(ILogger<RequestHandler> log, ControllerManage
                 case Ops.SetPowerPlanSetting:
                     powerPlan.Set(req.PowerSetting ?? throw new ArgumentException("PowerSetting 누락"), req.PowerSource,
                         req.Value ?? throw new ArgumentException("Value 누락"));
+                    break;
+                case Ops.SetPowerFeature:
+                    powerPlan.SetFeature(req.PowerFeature ?? throw new ArgumentException("PowerFeature 누락"),
+                        req.Enabled ?? throw new ArgumentException("Enabled 누락"));
                     break;
                 case Ops.ApplyTemporaryPerformance:
                     ec.ApplyTemporary(req.Performance ?? throw new ArgumentException("Performance 누락"));

@@ -27,6 +27,8 @@ public static class PowerPlanReader
         new(PowerPlanSetting.EnergySaverBrightness, PowerPlanNative.SubEnergySaver, PowerPlanNative.EsBrightness, PowerPlanUnit.Percent, false,
             [30, 50, 70, 100]),
         new(PowerPlanSetting.AdaptiveBrightness, PowerPlanNative.SubVideo, PowerPlanNative.AdaptBright, PowerPlanUnit.Choice, true, []),
+        new(PowerPlanSetting.StandbyNetwork, PowerPlanNative.SubNone, PowerPlanNative.ConnectivityInStandby, PowerPlanUnit.Choice, true, []),
+        new(PowerPlanSetting.WakeTimers, PowerPlanNative.SubSleep, PowerPlanNative.RtcWake, PowerPlanUnit.Choice, true, []),
     ];
 
     public static Definition Find(PowerPlanSetting setting) => Definitions.First(d => d.Setting == setting);
@@ -49,11 +51,13 @@ public static class PowerPlanReader
             state.SchemeName = PowerPlanNative.SchemeName(scheme);
             state.ModernStandby = caps?.ModernStandby ?? false;
             state.HibernateEnabled = PowerPlanNative.HibernateEnabled(caps);
+            state.FastStartupEnabled = FastStartupEnabled();
             state.AmbientLightSensor = PowerPlanNative.HasAmbientLightSensor();
 
             foreach (var d in Definitions)
             {
                 if (d.Setting == PowerPlanSetting.AdaptiveBrightness && !state.AmbientLightSensor) continue; // 센서 없으면 효과 없음
+                if (d.Setting == PowerPlanSetting.StandbyNetwork && !state.ModernStandby) continue; // S3 기기에는 없는 개념
                 if (PowerPlanNative.Read(scheme, d.Sub, d.Guid) is not { } v) continue; // 이 기기에 없음
                 var s = new PowerPlanSettingState
                 {
@@ -149,6 +153,8 @@ public static class PowerPlanReader
         PowerPlanSetting.EnergySaverThreshold => value switch { 0 => "끔", 100 => "항상", _ => $"{value}%" },
         PowerPlanSetting.EnergySaverBrightness => value >= 100 ? "그대로" : $"{value}%",
         PowerPlanSetting.AdaptiveBrightness => value == 0 ? "끔" : "켬",
+        PowerPlanSetting.StandbyNetwork => value switch { 0 => "끊기", 1 => "연결 유지", 2 => "Windows가 관리", _ => $"값 {value}" },
+        PowerPlanSetting.WakeTimers => value switch { 0 => "사용 안 함", 1 => "사용", 2 => "중요한 것만", _ => $"값 {value}" },
         _ => value.ToString(),
     };
 
@@ -160,6 +166,12 @@ public static class PowerPlanReader
         var m = seconds % Hour / Minute;
         return h == 0 ? $"{m}분" : m == 0 ? $"{h}시간" : $"{h}시간 {m}분";
     }
+
+    /// <summary>빠른 시작 (레지스트리 HiberbootEnabled — 일반 사용자도 읽을 수 있다).</summary>
+    public static bool FastStartupEnabled() =>
+        Microsoft.Win32.Registry.GetValue(FastStartupKey, "HiberbootEnabled", 0) is int v && v != 0;
+
+    public const string FastStartupKey = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Session Manager\Power";
 
     private static int Clamp(uint v) => v > int.MaxValue ? int.MaxValue : (int)v;
 }

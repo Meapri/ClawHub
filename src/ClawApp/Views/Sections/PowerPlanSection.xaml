@@ -28,5 +28,28 @@
         <s:PowerPlanRowView DataContext="{Binding EnergySaverThreshold}" IconText="{DynamicResource Icon.BatteryLow}"/>
         <s:PowerPlanRowView DataContext="{Binding EnergySaverBrightness}" IconText="{DynamicResource Icon.Sun}"/>
         <s:PowerPlanRowView DataContext="{Binding AdaptiveBrightness}" IconText="{DynamicResource Icon.Sun}"/>
+
+        <!-- 대기(모던 스탠바이)·시작 -->
+        <TextBlock Text="대기·시작" Style="{DynamicResource Section}" Margin="2,16,0,8"/>
+        <s:PowerPlanRowView DataContext="{Binding StandbyNetwork}" IconText="{DynamicResource Icon.Wifi}"/>
+        <s:PowerPlanRowView DataContext="{Binding WakeTimers}" IconText="{DynamicResource Icon.Clock}"/>
+        <ToggleButton Style="{DynamicResource Switch}" IsChecked="{Binding HibernateFeature}" IsEnabled="{Binding Available}">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="{DynamicResource Icon.Moon}" Style="{DynamicResource Icon}" Margin="0,0,14,0"/>
+                <StackPanel>
+                    <TextBlock Text="최대 절전 모드 사용"/>
+                    <TextBlock Text="오래 대기하면 메모리를 저장하고 꺼져 배터리를 거의 쓰지 않아요 ('최대 절전 전환' 시간이 이때부터 동작)" Style="{DynamicResource Caption}" TextWrapping="Wrap"/>
+                </StackPanel>
+            </StackPanel>
+        </ToggleButton>
+        <ToggleButton Style="{DynamicResource Switch}" IsChecked="{Binding FastStartup}" IsEnabled="{Binding CanFastStartup}">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="{DynamicResource Icon.Zap}" Style="{DynamicResource Icon}" Margin="0,0,14,0"/>
+                <StackPanel>
+                    <TextBlock Text="빠른 시작"/>
+                    <TextBlock Text="종료 후 켤 때 빨라져요. 드라이버·업데이트 문제가 있으면 끄는 게 좋아요 (다시 시작은 영향 없음). 최대 절전 모드가 필요해요" Style="{DynamicResource Caption}" TextWrapping="Wrap"/>
+                </StackPanel>
+            </StackPanel>
+        </ToggleButton>
     </StackPanel>
 </UserControl>

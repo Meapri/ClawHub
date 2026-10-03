@@ -67,6 +67,50 @@ public sealed class PowerPlanManager(ILogger<PowerPlanManager> log, PowerManager
     }
 
     /// <summary>
+    /// 기기 전체에 하나인 기능 켜기/끄기: 최대 절전 모드(powercfg /hibernate — 관리자 권한, 서비스가 가짐),
+    /// 빠른 시작(레지스트리 HiberbootEnabled). 빠른 시작은 최대 절전 모드가 켜져 있어야 동작한다.
+    /// </summary>
+    public void SetFeature(PowerFeature feature, bool on)
+    {
+        lock (_lock)
+        {
+            switch (feature)
+            {
+                case PowerFeature.Hibernate:
+                    RunPowercfg(on ? "/hibernate on" : "/hibernate off");
+                    break;
+                case PowerFeature.FastStartup:
+                    if (on && !_stateOrRead().HibernateEnabled)
+                        throw new InvalidOperationException("빠른 시작은 최대 절전 모드가 켜져 있어야 해요");
+                    Microsoft.Win32.Registry.SetValue(PowerPlanReader.FastStartupKey, "HiberbootEnabled", on ? 1 : 0, Microsoft.Win32.RegistryValueKind.DWord);
+                    break;
+                default:
+                    throw new ArgumentException("알 수 없는 전원 기능");
+            }
+            log.LogInformation("전원 기능 변경: {Feature} = {On}", feature, on);
+            ReadLocked();
+        }
+    }
+
+    private PowerPlanState _stateOrRead()
+    {
+        ReadLocked();
+        return _state!;
+    }
+
+    private static void RunPowercfg(string args)
+    {
+        var psi = new System.Diagnostics.ProcessStartInfo("powercfg.exe", args)
+        {
+            UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true,
+        };
+        using var p = System.Diagnostics.Process.Start(psi)!;
+        var output = p.StandardOutput.ReadToEnd() + p.StandardError.ReadToEnd();
+        if (!p.WaitForExit(15_000)) throw new TimeoutException("powercfg 응답 없음");
+        if (p.ExitCode != 0) throw new InvalidOperationException($"powercfg 실패: {output.Trim()}");
+    }
+
+    /// <summary>
     /// Windows 설정 앱과 같은 규칙: 절전을 화면 끄기보다 짧게 하면 화면 끄기도 같이 줄이고,
     /// 화면 끄기를 절전보다 길게(또는 사용 안 함으로) 하면 절전도 같이 늘린다.
     /// </summary>
