@@ -31,8 +31,32 @@ public sealed class AdvancedButton
     public List<string> Layer { get; set; } = [];
     /// <summary>원형 메뉴 (null = 아님): 누르고 있으면 메뉴가 뜨고 스틱으로 고른 뒤 떼면 그 칸의 키. 칸 수 = 목록 길이 (4·6·8·12).</summary>
     public List<RadialSlice>? Radial { get; set; }
-    /// <summary>원형 메뉴를 고르는 스틱: false = 오른쪽(기본), true = 왼쪽.</summary>
-    public bool RadialLeftStick { get; set; }
+    /// <summary>원형 메뉴를 고르는 스틱. Auto = 여는 버튼 쪽 (L3·LB·LT·방향 버튼 → 왼쪽, 나머지 → 오른쪽).</summary>
+    public RadialStick RadialStick { get; set; }
+
+    /// <summary>예전 저장값 읽기용 (true였으면 왼쪽). 더는 쓰지 않는다.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool RadialLeftStick
+    {
+        get => false;
+        set { if (value) RadialStick = RadialStick.Left; }
+    }
+
+    /// <summary>이 버튼으로 연 원형 메뉴를 왼쪽 스틱으로 고르는지.</summary>
+    public bool UsesLeftStick(ClawButton button) => RadialStick switch
+    {
+        RadialStick.Left => true,
+        RadialStick.Right => false,
+        _ => button is ClawButton.L3 or ClawButton.LB or ClawButton.LT
+            or ClawButton.DpadUp or ClawButton.DpadDown or ClawButton.DpadLeft or ClawButton.DpadRight,
+    };
+
+    /// <summary>
+    /// 고르는 스틱을 눌러 연 메뉴 (L3 + 왼쪽 스틱 등): 누른 채로 같은 스틱을 기울이기 어려우므로
+    /// 한 번 누르면 열린 채 있고, 기울였다 놓으면 그 칸 실행 · 다시 누르면 취소.
+    /// </summary>
+    public bool RadialClickToOpen(ClawButton button) =>
+        button == ClawButton.L3 && UsesLeftStick(button) || button == ClawButton.R3 && !UsesLeftStick(button);
     /// <summary>원형 메뉴 크기: 0 작게 · 1 보통 · 2 크게.</summary>
     public int RadialSize { get; set; } = 1;
     /// <summary>고른 칸이 바뀔 때 짧은 진동.</summary>
@@ -47,7 +71,7 @@ public sealed class AdvancedButton
         Long = [.. Long], LongMs = LongMs, Double = [.. Double], DoubleMs = DoubleMs, TurboMs = TurboMs, Toggle = Toggle,
         LayerShift = LayerShift, Layer = [.. Layer],
         Radial = Radial?.Select(s => new RadialSlice { Label = s.Label, Keys = [.. s.Keys] }).ToList(),
-        RadialLeftStick = RadialLeftStick, RadialSize = RadialSize, RadialHaptics = RadialHaptics,
+        RadialStick = RadialStick, RadialSize = RadialSize, RadialHaptics = RadialHaptics,
     };
 }
 
@@ -59,6 +83,9 @@ public sealed class AdvancedButton
 /// </summary>
 /// <summary>가상 패드에서 스틱 하나를 무엇으로 낼지.</summary>
 public enum StickOutput { Stick, Wasd, Arrows, Mouse }
+
+/// <summary>원형 메뉴를 고르는 스틱 (Auto = 여는 버튼 쪽).</summary>
+public enum RadialStick { Auto, Left, Right }
 
 public sealed class AdvancedInput
 {

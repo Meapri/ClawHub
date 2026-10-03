@@ -304,7 +304,14 @@ public sealed partial class MappingEditorViewModel
     private static readonly int[] RadialCounts = [4, 6, 8, 12];
 
     public string RadialCountText => $"{EditingRadialCount}칸";
-    public string RadialStickText => EditingRow is { } r && Adv(r.Button)?.RadialLeftStick == true ? "왼쪽 스틱으로 고르기" : "오른쪽 스틱으로 고르기";
+    public string RadialStickText => EditingRow is { } r && Adv(r.Button) is { } a
+        ? a.RadialStick switch
+        {
+            ClawCore.Mapping.RadialStick.Left => "왼쪽 스틱으로 고르기",
+            ClawCore.Mapping.RadialStick.Right => "오른쪽 스틱으로 고르기",
+            _ => a.UsesLeftStick(r.Button) ? "자동: 왼쪽 스틱으로 고르기" : "자동: 오른쪽 스틱으로 고르기",
+        }
+        : "";
     public string RadialSizeText => (EditingRow is { } r ? Adv(r.Button)?.RadialSize : 1) switch { 0 => "크기 작게", 2 => "크기 크게", _ => "크기 보통" };
     public bool RadialHaptics => EditingRow is { } r && Adv(r.Button)?.RadialHaptics != false;
 
@@ -347,7 +354,7 @@ public sealed partial class MappingEditorViewModel
     {
         if (EditingRow is not { } row || Adv(row.Button) is not { Radial: not null } a) return;
         Remember();
-        a.RadialLeftStick = !a.RadialLeftStick;
+        a.RadialStick = (ClawCore.Mapping.RadialStick)(((int)a.RadialStick + 1) % 3); // 자동 → 왼쪽 → 오른쪽
         Save();
         NotifyRadialOptions();
     }

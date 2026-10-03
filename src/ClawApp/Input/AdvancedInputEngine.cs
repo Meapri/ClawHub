@@ -295,6 +295,16 @@ public sealed class AdvancedInputEngine : IDisposable
         }
         if (a.Radial is { Count: > 0 } slices)
         {
+            // 스틱을 눌러 연 메뉴가 열려 있는데 다시 누름 → 고른 칸 실행 (안 골랐으면 취소)
+            if (s.Phase == Phase.Radial && _radialButton == b && _radialClick)
+            {
+                FinishRadial(a, s);
+                return;
+            }
+            _radialClick = a.RadialClickToOpen(b);
+            _radialReleased = false;
+            _radialTilted = false;
+            _radialOpenedAt = now;
             _radialButton = b;
             _radialPick = -1;
             s.Phase = Phase.Radial;
@@ -353,11 +363,13 @@ public sealed class AdvancedInputEngine : IDisposable
                 s.Phase = Phase.Idle;
                 break;
             case Phase.Radial:
-                var chosen = _radialPick >= 0 && a.Radial is { } slices && _radialPick < slices.Count ? slices[_radialPick] : null;
-                RadialView?.Hide(activated: chosen is { Keys.Count: > 0 });
-                if (chosen is not null) Tap(Sendable(chosen.Keys));
-                _radialButton = null;
-                s.Phase = Phase.Idle;
+                // 스틱을 눌러 연 메뉴: 누른 채 이미 골랐으면 바로 실행, 아니면 열린 채로 (기울였다 놓으면 실행)
+                if (_radialClick && _radialPick < 0)
+                {
+                    _radialReleased = true;
+                    break;
+                }
+                FinishRadial(a, s);
                 break;
             case Phase.Holding:
                 SoftInput.Up(s.Keys);
@@ -423,14 +435,37 @@ public sealed class AdvancedInputEngine : IDisposable
 
         if (_radialButton is { } rb && cfg.Buttons.TryGetValue(rb, out var ra) && ra.Radial is { Count: > 0 } sl)
         {
-            var pick = RadialPick(sl.Count, ra.RadialLeftStick);
+            var pick = RadialPick(sl.Count, ra.UsesLeftStick(rb));
             if (pick >= 0 && pick != _radialPick)
             {
                 _radialPick = pick;
                 RadialView?.Select(pick);
                 if (ra.RadialHaptics) HapticTick(now);
             }
+            if (_radialClick && _radialReleased)
+            {
+                // 버튼을 뗀 뒤: 기울였다가 가운데로 돌아오면 고른 칸 실행 · 아무것도 안 고르고 5초면 닫기
+                if (pick >= 0) _radialTilted = true;
+                else if (_radialTilted && _radialPick >= 0) FinishRadial(ra, S(rb));
+                else if (_radialPick < 0 && now - _radialOpenedAt > RadialIdleCloseMs) FinishRadial(ra, S(rb));
+            }
         }
+    }
+
+    private const int RadialIdleCloseMs = 5000;
+    private bool _radialClick, _radialReleased, _radialTilted;
+    private long _radialOpenedAt;
+
+    /// <summary>원형 메뉴를 닫고, 고른 칸이 있으면 그 키를 낸다.</summary>
+    private void FinishRadial(AdvancedButton a, State s)
+    {
+        var chosen = _radialPick >= 0 && a.Radial is { } slices && _radialPick < slices.Count ? slices[_radialPick] : null;
+        RadialView?.Hide(activated: chosen is { Keys.Count: > 0 });
+        if (chosen is not null) Tap(Sendable(chosen.Keys));
+        _radialButton = null;
+        _radialPick = -1;
+        _radialClick = false;
+        s.Phase = Phase.Idle;
     }
 
     private void Tap(IReadOnlyList<string> keys)
@@ -453,6 +488,7 @@ public sealed class AdvancedInputEngine : IDisposable
         _states.Clear();
         _layer = false;
         if (_radialButton is not null) RadialView?.Hide(activated: false);
+        _radialClick = false;
         _radialButton = null;
         if (_rumbleOffAt is not null) Rumble(0);
     }
