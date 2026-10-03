@@ -34,12 +34,18 @@ public sealed partial class HomeViewModel : ObservableObject, INavPage
     {
         get
         {
+            // 판은 세로 칸 수를 정하면 가로로 채워 나간다. 예전에는 칸 수의 제곱근으로 정사각형에 가깝게 잡아
+            // 작은 타일 몇 개만 있어도 4줄이 되어 한 열로 쌓이고 오른쪽·아래가 텅 비었다.
+            // 이제 2줄(가로로 길게)을 기본으로, 큰 타일이 있거나 한 줄에 다 안 들어갈 만큼 많을 때만 늘린다.
             var cells = FolderTiles.Sum(t => t.Span * t.Span);
-            var side = Math.Clamp((int)Math.Ceiling(Math.Sqrt(Math.Max(cells, 1))), FolderTiles.Any(t => t.IsLarge) ? 4 : 2, 4);
-            side += side % 2; // 보통 타일은 2칸 격자에 맞춘다
-            return side * Views.StartPanel.Unit - Views.StartPanel.Gap;
+            var rows = FolderTiles.Any(t => t.IsLarge) || cells > 2 * MaxFolderColumns ? 4 : 2;
+            if (cells > 4 * MaxFolderColumns) rows = 6;
+            return rows * Views.StartPanel.Unit - Views.StartPanel.Gap;
         }
     }
+
+    /// <summary>폴더 창 한 줄에 들어가는 작은 칸 수 (이보다 많으면 줄을 늘린다 — 화면 폭 1280 기준).</summary>
+    private const int MaxFolderColumns = 12;
 
     [ObservableProperty] private bool _isEditing;
     [ObservableProperty] private StartTileViewModel? _selected;

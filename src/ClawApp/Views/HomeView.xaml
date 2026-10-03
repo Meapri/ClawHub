@@ -284,6 +284,17 @@
     <Grid>
     <ScrollViewer x:Name="Scroller" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
                   PanningMode="HorizontalOnly" Background="Transparent">
+        <!-- 폴더 창이 열리면 뒤 타일을 흐리게 (예전엔 반투명 창 너머로 뒤 타일 글자가 비쳐 지저분했다). 열려 있는 동안 한 번만 그린다 -->
+        <ScrollViewer.Style>
+            <Style TargetType="ScrollViewer" BasedOn="{StaticResource {x:Type ScrollViewer}}">
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding OpenFolder, Converter={x:Static local:HasValue.Instance}}" Value="True">
+                        <Setter Property="Effect"><Setter.Value><BlurEffect Radius="18" KernelType="Gaussian" RenderingBias="Performance"/></Setter.Value></Setter>
+                        <Setter Property="CacheMode"><Setter.Value><BitmapCache RenderAtScale="0.5"/></Setter.Value></Setter>
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+        </ScrollViewer.Style>
         <StackPanel Orientation="Horizontal" Margin="48,24,48,0" VerticalAlignment="Top" m:Entrance.Stagger="Tiles">
 
             <!-- ── 지금 플레이 중 (게임 실행 중일 때만) ───────── -->
@@ -405,7 +416,7 @@
         <!-- 덮개는 제자리에서 페이드 인 (Offset 0), 카드는 미끄러져 들어온다 -->
         <Border x:Name="FolderScrim" Background="{DynamicResource Scrim}" m:Entrance.Stagger="Self" m:Entrance.Offset="0"/>
         <Border x:Name="FolderCard" Background="{DynamicResource FolderCardFill}" BorderBrush="{DynamicResource Stroke}" BorderThickness="1"
-                HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="1200" Padding="28,22,28,26"
+                HorizontalAlignment="Center" VerticalAlignment="Center" MinWidth="460" MaxWidth="1200" Padding="28,22,28,26"
                 KeyboardNavigation.DirectionalNavigation="Contained" m:Entrance.Stagger="Self" m:Entrance.Offset="24">
             <DockPanel>
                 <DockPanel DockPanel.Dock="Top" Margin="0,0,0,18">
@@ -420,13 +431,17 @@
                             <TextBlock Text="이름 바꾸기" Style="{StaticResource StatusText}" FontSize="14"/>
                         </StackPanel>
                     </Button>
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="{StaticResource Icon.Folder}" Style="{StaticResource Icon}" FontSize="26" Margin="0,0,12,0" Foreground="{DynamicResource Accent}"/>
-                        <TextBlock Text="{Binding OpenFolder.Title}" Style="{StaticResource H1}" FontSize="28"/>
-                        <TextBlock Style="{StaticResource Caption}" FontSize="15" VerticalAlignment="Bottom" Margin="12,0,0,5">
-                            <Run Text="{Binding OpenFolder.CountText, Mode=OneWay}"/><Run Text="개"/>
-                        </TextBlock>
-                    </StackPanel>
+                    <!-- 제목 · 아래에 개수 (예전엔 제목 옆 아래쪽에 붙어 좁은 폴더에서 '이름 바꾸기'와 겹쳤다) -->
+                    <DockPanel Margin="0,0,12,0">
+                        <TextBlock DockPanel.Dock="Left" Text="{StaticResource Icon.Folder}" Style="{StaticResource Icon}" FontSize="26" Margin="0,4,12,0"
+                                   VerticalAlignment="Top" Foreground="{DynamicResource Accent}"/>
+                        <StackPanel>
+                            <TextBlock Text="{Binding OpenFolder.Title}" Style="{StaticResource H1}" FontSize="28" TextTrimming="CharacterEllipsis"/>
+                            <TextBlock Style="{StaticResource Caption}" FontSize="14" Margin="1,0,0,0">
+                                <Run Text="타일 "/><Run Text="{Binding OpenFolder.CountText, Mode=OneWay}"/><Run Text="개"/>
+                            </TextBlock>
+                        </StackPanel>
+                    </DockPanel>
                 </DockPanel>
                 <ScrollViewer x:Name="FolderScroller" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" PanningMode="HorizontalOnly">
                     <ItemsControl x:Name="FolderBoard" ItemsSource="{Binding FolderTiles}" ItemTemplate="{StaticResource StartTile}" Focusable="False"
