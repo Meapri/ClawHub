@@ -317,6 +317,12 @@
                             <RadioButton Style="{StaticResource ChipRadio}" GroupName="limit" Content="60%" IsChecked="{Binding Limit60}"/>
                         </WrapPanel>
                         <s:SleepQuickSection DataContext="{Binding PowerPlan}" Margin="0,16,0,0"/>
+                        <Button Style="{StaticResource NavButton}" Command="{Binding SystemInfo.LockNowCommand}" HorizontalContentAlignment="Stretch" Margin="0,8,0,0">
+                            <DockPanel>
+                                <TextBlock Text="{StaticResource Icon.Lock}" Style="{StaticResource Icon}" Width="30"/>
+                                <TextBlock Text="지금 잠그기" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                            </DockPanel>
+                        </Button>
                     </StackPanel>
 
                     <!-- ══ 캡처 ══ -->

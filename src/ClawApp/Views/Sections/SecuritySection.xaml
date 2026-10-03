@@ -1,0 +1,59 @@
+<!-- 잠금·보안·알림. DataContext = SystemInfoViewModel (ShellViewModel.SystemInfo) -->
+<UserControl x:Class="ClawApp.Views.Sections.SecuritySection"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:v="clr-namespace:ClawApp.Views">
+    <UserControl.Resources>
+        <ItemsPanelTemplate x:Key="ChipWrap"><WrapPanel/></ItemsPanelTemplate>
+    </UserControl.Resources>
+    <StackPanel>
+        <TextBlock Text="잠금" Style="{DynamicResource Section}" Margin="2,0,0,8"/>
+        <Border Style="{DynamicResource CardPanel}">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                    <TextBlock Text="{DynamicResource Icon.Lock}" Style="{DynamicResource Icon}" Margin="0,0,12,0"/>
+                    <StackPanel>
+                        <TextBlock Text="다시 로그인 요구"/>
+                        <TextBlock Text="절전에서 깨어나거나 자리를 비웠다 돌아오면 PIN·얼굴 인식을 다시 물어요" Style="{DynamicResource Caption}" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </StackPanel>
+                <ItemsControl ItemsSource="{Binding RelockChoices}" ItemsPanel="{StaticResource ChipWrap}" Focusable="False">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <v:ChoiceChip Style="{DynamicResource Chip}" Content="{Binding Label}" IsChecked="{Binding IsSelected, Mode=OneWay}"
+                                          Command="{Binding DataContext.PickRelockCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <Button Style="{DynamicResource NavButton}" Command="{Binding LockNowCommand}" HorizontalContentAlignment="Stretch" Margin="0,8,0,0">
+                    <DockPanel>
+                        <TextBlock Text="{DynamicResource Icon.Lock}" Style="{DynamicResource Icon}" Width="30"/>
+                        <TextBlock Text="지금 잠그기" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                    </DockPanel>
+                </Button>
+                <Button Style="{DynamicResource NavButton}" Command="{Binding OpenSignInOptionsCommand}" HorizontalContentAlignment="Stretch" Margin="0,4,0,0">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Right" Text="{DynamicResource Icon.ExternalLink}" Style="{DynamicResource Icon}" FontSize="16" Opacity="0.6"/>
+                        <TextBlock Text="{DynamicResource Icon.ShieldCheck}" Style="{DynamicResource Icon}" Width="30"/>
+                        <TextBlock Text="PIN · 얼굴 · 지문 로그인 (Windows 설정)" VerticalAlignment="Center"/>
+                    </DockPanel>
+                </Button>
+            </StackPanel>
+        </Border>
+
+        <TextBlock Text="알림" Style="{DynamicResource Section}" Margin="2,20,0,8"/>
+        <Border Style="{DynamicResource CardPanel}">
+            <StackPanel>
+                <TextBlock TextWrapping="Wrap" Style="{DynamicResource Caption}" Margin="2,0,0,8"
+                           Text="게임 중 알림 배너를 막으려면 Windows의 '자동으로 방해 금지 켜기 → 게임을 할 때'를 켜 두세요. Windows는 다른 앱이 방해 금지를 직접 켜지 못하게 막아 두어서, ClawHub는 그 설정 화면을 바로 열어 드려요."/>
+                <Button Style="{DynamicResource NavButton}" Command="{Binding OpenNotificationsCommand}" HorizontalContentAlignment="Stretch">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Right" Text="{DynamicResource Icon.ExternalLink}" Style="{DynamicResource Icon}" FontSize="16" Opacity="0.6"/>
+                        <TextBlock Text="{DynamicResource Icon.BellOff}" Style="{DynamicResource Icon}" Width="30"/>
+                        <TextBlock Text="방해 금지 · 알림 (Windows 설정)" VerticalAlignment="Center"/>
+                    </DockPanel>
+                </Button>
+            </StackPanel>
+        </Border>
+    </StackPanel>
+</UserControl>

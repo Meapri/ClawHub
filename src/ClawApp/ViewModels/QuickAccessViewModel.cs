@@ -165,6 +165,7 @@ public sealed partial class QuickAccessViewModel : ObservableObject
     public SoundViewModel Sound => _shell.Sound;
     public ConnectivityViewModel Connections => _shell.Connections;
     public NightModeViewModel Night => _shell.Night;
+    public SystemInfoViewModel SystemInfo => _shell.SystemInfo;
 
     public string? TargetTitle => _shell.RunningGame?.Title ?? _shell.ForegroundApp?.Name;
     public string ProfileText => _shell.RunningGame is { } g

@@ -98,7 +98,7 @@ public sealed class CategoryIconConverter : IValueConverter
     private static readonly Dictionary<string, string> Map = new(StringComparer.OrdinalIgnoreCase)
     {
         ["general"] = "Settings", ["home"] = "LayoutGrid", ["controller"] = "Gamepad2", ["light"] = "Lightbulb", ["performance"] = "Zap",
-        ["display"] = "Monitor", ["network"] = "Wifi", ["battery"] = "Battery", ["windows"] = "AppWindow", ["library"] = "Library", ["about"] = "Info",
+        ["display"] = "Monitor", ["network"] = "Wifi", ["security"] = "Lock", ["storage"] = "HardDrive", ["battery"] = "Battery", ["windows"] = "AppWindow", ["library"] = "Library", ["about"] = "Info",
     };
 
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>

@@ -428,6 +428,20 @@
                 </StackPanel>
                 </DataTemplate></v:LazyContent>
 
+                <!-- ── 잠금·알림 ────────────────────────── -->
+                <v:LazyContent Visibility="{Binding Selected.Key, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=security}"><DataTemplate>
+                <StackPanel m:Entrance.Stagger="Items">
+                    <s:SecuritySection DataContext="{Binding SystemInfo}"/>
+                </StackPanel>
+                </DataTemplate></v:LazyContent>
+
+                <!-- ── 저장소·시스템 ────────────────────── -->
+                <v:LazyContent Visibility="{Binding Selected.Key, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=storage}"><DataTemplate>
+                <StackPanel m:Entrance.Stagger="Items">
+                    <s:StorageSection DataContext="{Binding SystemInfo}"/>
+                </StackPanel>
+                </DataTemplate></v:LazyContent>
+
                 <!-- ── 배터리 ────────────────────────────── -->
                 <v:LazyContent Visibility="{Binding Selected.Key, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=battery}"><DataTemplate>
                 <StackPanel m:Entrance.Stagger="Items">

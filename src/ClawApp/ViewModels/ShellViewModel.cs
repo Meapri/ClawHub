@@ -34,6 +34,9 @@ public sealed partial class ShellViewModel : ObservableObject
     /// <summary>Wi-Fi·블루투스·비행기 모드 (설정 화면·빠른 설정이 함께 쓴다).</summary>
     public ConnectivityViewModel Connections => _connections ??= new ConnectivityViewModel(this);
     private ConnectivityViewModel? _connections;
+    /// <summary>저장소·시스템 정보, 잠금·보안 (설정 화면).</summary>
+    public SystemInfoViewModel SystemInfo => _systemInfo ??= new SystemInfoViewModel(this);
+    private SystemInfoViewModel? _systemInfo;
     /// <summary>야간 모드 (앱이 켜져 있는 동안 예약도 지킨다).</summary>
     public NightModeViewModel Night { get; private set; } = null!;
     public HomeViewModel Home { get; }
