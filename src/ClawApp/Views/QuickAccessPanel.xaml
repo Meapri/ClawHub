@@ -236,6 +236,19 @@
                                 <TextBlock Text="{Binding MicText}" VerticalAlignment="Center" FontWeight="SemiBold"/>
                             </DockPanel>
                         </Button>
+                        <!-- 야간 모드 (켜면 강도 슬라이더) — 예약은 설정 화면에서 -->
+                        <Button Style="{StaticResource NavButton}" Command="{Binding Night.ToggleCommand}" HorizontalContentAlignment="Stretch" Margin="0,4,0,0">
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding Night.StatusText}" Style="{StaticResource Caption}" VerticalAlignment="Center" MaxWidth="220" TextTrimming="CharacterEllipsis"/>
+                                <TextBlock Text="{StaticResource Icon.Moon}" Style="{StaticResource Icon}" Width="30"/>
+                                <TextBlock Text="야간 모드" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                            </DockPanel>
+                        </Button>
+                        <DockPanel Margin="0,4,0,0" Visibility="{Binding Night.Active, Converter={StaticResource Vis}}">
+                            <TextBlock Text="{StaticResource Icon.SunMoon}" Style="{StaticResource Icon}" Width="30"/>
+                            <TextBlock DockPanel.Dock="Right" Text="{Binding Night.Strength}" Width="40" TextAlignment="Right" VerticalAlignment="Center"/>
+                            <Slider Minimum="0" Maximum="100" SmallChange="5" Value="{Binding Night.Strength}"/>
+                        </DockPanel>
                     </StackPanel>
 
                     <!-- ══ 연결: Wi-Fi · 블루투스 · 비행기 모드 ══ -->

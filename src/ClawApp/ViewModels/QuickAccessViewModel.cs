@@ -164,6 +164,7 @@ public sealed partial class QuickAccessViewModel : ObservableObject
     /// <summary>출력 장치 바꾸기 (헤드폰·스피커 — 설정의 사운드와 같은 인스턴스).</summary>
     public SoundViewModel Sound => _shell.Sound;
     public ConnectivityViewModel Connections => _shell.Connections;
+    public NightModeViewModel Night => _shell.Night;
 
     public string? TargetTitle => _shell.RunningGame?.Title ?? _shell.ForegroundApp?.Name;
     public string ProfileText => _shell.RunningGame is { } g

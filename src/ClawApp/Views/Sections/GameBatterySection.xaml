@@ -28,6 +28,7 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
             <!-- 머리글: 전원 연결 | 배터리 (지금 쓰는 쪽에 "지금") -->
@@ -86,6 +87,17 @@
                     <StackPanel>
                         <TextBlock Text="FPS 제한" Style="{StaticResource Caption}" TextWrapping="NoWrap"/>
                         <TextBlock Text="{Binding FpsOnBatteryText}" FontSize="18" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+                </DockPanel>
+            </Button>
+            <!-- 화면 주사율 (전원과 상관없이 하나) -->
+            <Button Grid.Row="3" Grid.ColumnSpan="3" Style="{StaticResource ValueCell}" Command="{Binding CycleRefreshCommand}">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Right" Text="{StaticResource Icon.ChevronRight}" Style="{StaticResource Icon}" FontSize="16"
+                               Foreground="{DynamicResource TextDim}" Margin="8,0,0,0"/>
+                    <StackPanel>
+                        <TextBlock Text="화면 주사율 (게임 중에만, 끝나면 원래대로)" Style="{StaticResource Caption}" TextWrapping="NoWrap"/>
+                        <TextBlock Text="{Binding RefreshText}" FontSize="18" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
                     </StackPanel>
                 </DockPanel>
             </Button>

@@ -37,6 +37,10 @@ public sealed partial class ShellViewModel
             case "OVERLAY":
                 CycleOverlayLevel();
                 break;
+            case "NIGHT":
+                Night.ToggleCommand.Execute(null);
+                Notify("Icon.Moon", Night.Active ? "야간 모드 켜짐" : "야간 모드 꺼짐");
+                break;
             case "XBOXMODE":
                 ToggleXboxModeCommand.Execute(null);
                 break;

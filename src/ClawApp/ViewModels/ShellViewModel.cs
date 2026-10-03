@@ -34,6 +34,8 @@ public sealed partial class ShellViewModel : ObservableObject
     /// <summary>Wi-Fi·블루투스·비행기 모드 (설정 화면·빠른 설정이 함께 쓴다).</summary>
     public ConnectivityViewModel Connections => _connections ??= new ConnectivityViewModel(this);
     private ConnectivityViewModel? _connections;
+    /// <summary>야간 모드 (앱이 켜져 있는 동안 예약도 지킨다).</summary>
+    public NightModeViewModel Night { get; private set; } = null!;
     public HomeViewModel Home { get; }
     /// <summary>시작 화면 배치 (고정·순서·크기·폴더).</summary>
     public StartScreen Start { get; }
@@ -130,6 +132,7 @@ public sealed partial class ShellViewModel : ObservableObject
         OnPropertyChanged(nameof(RunningGameTitle));
         UpdateHints(); // 홈 힌트에 "B 게임으로"가 붙었다 떨어진다
         _ = PushAppStateAsync();
+        ApplyGameRefresh(); // 게임별 주사율 (끝나면 되돌림)
     }
 
     // ── Game Bar 위젯 연동 (서비스가 중계) ─────────────────
@@ -276,6 +279,7 @@ public sealed partial class ShellViewModel : ObservableObject
         Service.Start();
         InitPower();
         InitOverlay();
+        Night = new NightModeViewModel(this);
 
         _clockTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(10) };
         _clockTimer.Tick += (_, _) => UpdateClock();

@@ -6,4 +6,5 @@ public sealed partial class SettingsViewModel
     public PowerPlanViewModel PowerPlan => _shell.QuickAccess.PowerPlan;
     public SoundViewModel Sound => _shell.Sound;
     public ConnectivityViewModel Connections => _shell.Connections;
+    public NightModeViewModel Night => _shell.Night;
 }

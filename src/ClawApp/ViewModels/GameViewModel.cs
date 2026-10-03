@@ -182,6 +182,22 @@ public sealed partial class GameViewModel(ShellViewModel shell, GameTileViewMode
         if (IsRunning) await shell.SyncControllerAsync();
     }
 
+    public string RefreshText => Tile.Game.RefreshHz is { } hz ? $"{hz}Hz" : "바꾸지 않음";
+
+    /// <summary>바꾸지 않음 → 이 화면이 지원하는 주사율(낮은 것부터) → 바꾸지 않음. 실행 중이면 바로 적용.</summary>
+    [RelayCommand]
+    private void CycleRefresh()
+    {
+        var size = Services.DisplayControls.Current();
+        int?[] order = [null, .. Services.DisplayControls.Modes()
+            .Where(m => size is not { } s || (m.Width == s.Width && m.Height == s.Height))
+            .Select(m => m.Hz).Distinct().Order().Select(h => (int?)h)];
+        var i = Array.IndexOf(order, Tile.Game.RefreshHz);
+        shell.Library.SetRefreshHz(Tile.Game, order[(i + 1) % order.Length]);
+        OnPropertyChanged(nameof(RefreshText));
+        if (IsRunning) shell.ApplyGameRefresh();
+    }
+
     public bool GpuAvailable => ClawCore.Gpu.IntelGraphics.Available;
 
     // ── 배터리 전용 값 (없으면 전원 연결 값 사용) ─────────────

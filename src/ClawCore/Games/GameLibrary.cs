@@ -28,6 +28,8 @@ public sealed class GameLibrary
         public string? PerformanceModeOnBattery { get; set; }
         /// <summary>배터리 전용. -1 = 따로 안 씀.</summary>
         public int? FpsLimitOnBattery { get; set; }
+        /// <summary>게임 중 주사율. -1 = 바꾸지 않음.</summary>
+        public int? RefreshHz { get; set; }
         /// <summary>게임이 아닌 프로그램으로 분류.</summary>
         public bool? IsApp { get; set; }
     }
@@ -68,6 +70,7 @@ public sealed class GameLibrary
             g.LaunchArgs = o.LaunchArgs ?? g.LaunchArgs;
             g.PerformanceModeOnBattery = Enum.TryParse<Ec.PerformanceMode>(o.PerformanceModeOnBattery, out var pmb) ? pmb : null;
             g.FpsLimitOnBattery = o.FpsLimitOnBattery is >= 0 ? o.FpsLimitOnBattery : null;
+            g.RefreshHz = o.RefreshHz is > 0 ? o.RefreshHz : null;
         }
 
         _autoArt.Clear();
@@ -103,6 +106,8 @@ public sealed class GameLibrary
 
     public void SetFpsLimitOnBattery(GameEntry game, int? fps) =>
         Update(game, o => o.FpsLimitOnBattery = (game.FpsLimitOnBattery = fps) ?? -1);
+
+    public void SetRefreshHz(GameEntry game, int? hz) => Update(game, o => o.RefreshHz = (game.RefreshHz = hz) ?? -1);
 
     public void Rename(GameEntry game, string title) => Update(game, o => o.Title = game.Title = title);
 

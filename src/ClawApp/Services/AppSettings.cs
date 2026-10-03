@@ -20,6 +20,21 @@ public enum LibrarySort { Recent, Name, Added }
 /// </summary>
 public enum BackdropMode { GameArt, Image, Plain, TilePicture }
 
+/// <summary>야간 모드 (ClawHub가 화면 색 온도를 낮춘다).</summary>
+public sealed class NightModeSettings
+{
+    /// <summary>지금 켬 (예약과 상관없이).</summary>
+    public bool On { get; set; }
+    /// <summary>색 온도 K (낮을수록 따뜻함).</summary>
+    public int Kelvin { get; set; } = 4000;
+    /// <summary>예약: <see cref="StartHour"/>시부터 <see cref="EndHour"/>시까지 자동으로 켠다.</summary>
+    public bool Scheduled { get; set; }
+    public int StartHour { get; set; } = 21;
+    public int EndHour { get; set; } = 7;
+    /// <summary>ClawHub가 화면 색을 바꿔 둔 상태 (앱이 비정상 종료됐으면 다음 시작 때 되돌리려고).</summary>
+    public bool Applied { get; set; }
+}
+
 public sealed class HomeSettings
 {
     public BackdropMode BackdropMode { get; set; } = BackdropMode.GameArt;
@@ -74,6 +89,8 @@ public sealed class AppSettings
 
     /// <summary>성능 오버레이 단계: 0 끔 · 1 FPS · 2 한 줄 · 3 자세히 (SteamOS와 같은 4단계).</summary>
     public int PerfOverlayLevel { get; set; }
+
+    public NightModeSettings NightMode { get; set; } = new();
 
     /// <summary>SteamGridDB API 키 (아트 고르기에서 사용, 없으면 Steam 검색만).</summary>
     public string? SteamGridDbKey { get; set; }

@@ -38,6 +38,8 @@ public sealed class GameEntry
     public Ec.PerformanceMode? PerformanceModeOnBattery { get; set; }
     /// <summary>배터리로 돌 때만 쓸 FPS 제한 (null = 배터리여도 <see cref="FpsLimit"/>, 0 = 끔).</summary>
     public int? FpsLimitOnBattery { get; set; }
+    /// <summary>게임 중 화면 주사율 (Hz, null = 바꾸지 않음). 게임이 끝나면 원래 주사율로.</summary>
+    public int? RefreshHz { get; set; }
     public bool Hidden { get; set; }
 
     /// <summary>직접 추가한 시각 (라이브러리 "최근 추가순" 정렬). 감지된 게임·예전에 추가한 항목은 null.</summary>
