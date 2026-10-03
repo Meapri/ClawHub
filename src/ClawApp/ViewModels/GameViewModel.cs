@@ -58,6 +58,83 @@ public sealed partial class GameViewModel(ShellViewModel shell, GameTileViewMode
         shell.Navigate(new MappingEditorViewModel(shell, shell.ProfileForEditing(Tile.Game)));
     }
 
+    // ── 추천 배치 (Steam 스토어 공개 정보 · ClawHub 내장 프리셋 — 키·계정 없음) ──────────
+
+    [ObservableProperty] private PresetAdvice? _advice;
+    [ObservableProperty] private bool _isAdvising;
+
+    public bool HasAdvice => Advice is not null;
+    public string ApplyText => Advice?.PresetId is null ? "게임패드 그대로 쓰기" : $"'{PresetAdvisor.Label(Advice.PresetId)}' 적용";
+    public string? AlternativeText => Advice?.Alternative is { } alt ? $"대신 '{PresetAdvisor.Label(alt)}'" : null;
+    public string FindPresetText => IsAdvising ? "찾는 중…" : HasAdvice ? "추천 다시 찾기" : "추천 배치 찾기";
+
+    partial void OnAdviceChanged(PresetAdvice? value)
+    {
+        OnPropertyChanged(nameof(HasAdvice));
+        OnPropertyChanged(nameof(ApplyText));
+        OnPropertyChanged(nameof(AlternativeText));
+        OnPropertyChanged(nameof(FindPresetText));
+    }
+
+    partial void OnIsAdvisingChanged(bool value) => OnPropertyChanged(nameof(FindPresetText));
+
+    [RelayCommand]
+    private async Task FindPreset()
+    {
+        if (IsAdvising) return;
+        IsAdvising = true;
+        try
+        {
+            Advice = await Task.Run(() => PresetAdvisor.AdviseAsync(Tile.Game));
+        }
+        catch (Exception ex) when (ex is System.Net.Http.HttpRequestException or TaskCanceledException or System.Text.Json.JsonException)
+        {
+            shell.ShowToast("추천 정보를 받지 못했어요 — 인터넷 연결을 확인해 주세요");
+        }
+        finally
+        {
+            IsAdvising = false;
+        }
+    }
+
+    /// <summary>
+    /// 추천(main) 또는 두 번째 안(alt) 적용. 게임패드 그대로 = 이 게임은 매핑 안 함.
+    /// 템플릿은 이 게임 전용 프로필로 복사해서 지정한다 (편집해도 템플릿은 그대로).
+    /// </summary>
+    [RelayCommand]
+    private async Task ApplyAdvice(string which)
+    {
+        if (Advice is not { } advice) return;
+        var game = Tile.Game;
+        var presetId = which == "alt" ? advice.Alternative : advice.PresetId;
+        if (presetId is null)
+        {
+            shell.Library.SetProfile(game, MappingProfile.NoneId);
+            shell.ShowToast($"{game.Title}: 게임패드 그대로 (버튼을 바꾸지 않아요)");
+        }
+        else if (MappingPresets.All.FirstOrDefault(p => p.Id == presetId) is { } preset)
+        {
+            var id = "rec-" + string.Concat(game.Id.Select(c => char.IsLetterOrDigit(c) ? c : '_'));
+            if (shell.Profiles.Find(id) is not null
+                && !await shell.ConfirmAsync("추천 프로필을 다시 만들까요?", $"전에 만든 '{game.Title}' 추천 프로필을 '{preset.Name}' 배치로 덮어써요.", "덮어쓰기"))
+                return;
+            var profile = new MappingProfile
+            {
+                Id = id,
+                Name = $"{game.Title} (추천)",
+                Mode = preset.Mode,
+                Bindings = preset.Bindings.ToDictionary(kv => kv.Key, kv => kv.Value.ToList()),
+            };
+            shell.Profiles.Upsert(profile);
+            shell.Library.SetProfile(game, profile.Id);
+            shell.ShowToast($"{game.Title}: '{preset.Name}' 배치를 적용했어요 — Y로 다듬을 수 있어요");
+        }
+        OnPropertyChanged(nameof(Profile));
+        OnPropertyChanged(nameof(ProfileText));
+        RefreshApplied();
+        if (IsRunning) await shell.SyncControllerAsync();
+    }
+
     private static string ModeName(PerformanceMode m) => m switch
     {
         PerformanceMode.Battery => "절전",

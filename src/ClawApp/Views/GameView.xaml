@@ -108,6 +108,29 @@
                                 <TextBlock Text="버튼 → 키 매핑 편집" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Button>
+                        <!-- 추천 배치: Steam 스토어 공개 정보(컨트롤러 지원·장르)와 ClawHub 내장 프리셋으로 고른다 -->
+                        <Button Style="{StaticResource NavButton}" Command="{Binding FindPresetCommand}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{StaticResource Icon.WandSparkles}" Style="{StaticResource Icon}" FontSize="18" Margin="0,0,12,0"/>
+                                <TextBlock Text="{Binding FindPresetText}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <Border Style="{StaticResource CardPanel}" Margin="0,0,0,4" m:Reveal.IsShown="{Binding HasAdvice}" m:Reveal.Kind="Inline">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource Caption}" TextTrimming="CharacterEllipsis">
+                                    <Run Text="추천 · "/><Run Text="{Binding Advice.Source, Mode=OneWay}"/>
+                                </TextBlock>
+                                <TextBlock Text="{Binding Advice.Headline}" FontSize="18" FontWeight="SemiBold" Margin="0,2,0,2" TextWrapping="Wrap"/>
+                                <TextBlock Text="{Binding Advice.Reason}" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,0,0,10"/>
+                                <WrapPanel>
+                                    <Button Style="{StaticResource PrimaryButton}" Command="{Binding ApplyAdviceCommand}" CommandParameter="main"
+                                            Content="{Binding ApplyText}" Padding="16,9" Margin="0,0,8,0"/>
+                                    <Button Style="{StaticResource NavButton}" Command="{Binding ApplyAdviceCommand}" CommandParameter="alt"
+                                            Content="{Binding AlternativeText}" Padding="16,9" Margin="0"
+                                            Visibility="{Binding AlternativeText, Converter={StaticResource NullVis}}"/>
+                                </WrapPanel>
+                            </StackPanel>
+                        </Border>
                         <TextBlock Style="{StaticResource Caption}" Margin="2,6,0,0"
                                    Text="게임을 켜면 컨트롤러에 적용되고, 메뉴를 열거나 게임을 끄면 원래 버튼으로 돌아와요."/>
                     </StackPanel>

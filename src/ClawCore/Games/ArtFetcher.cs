@@ -60,7 +60,7 @@ public sealed class ArtFetcher
         if (File.Exists(miss) && DateTime.UtcNow - File.GetLastWriteTimeUtc(miss) < RetryMissAfter) return false;
         Directory.CreateDirectory(dir);
 
-        var appId = g.SteamAppId ?? await SearchSteamAsync(g.SearchName ?? g.Title, ct);
+        var appId = g.SteamAppId ?? await SteamStore.FindAppIdAsync(g.SearchName ?? g.Title, ct);
         if (appId is null)
         {
             await File.WriteAllTextAsync(miss, g.SearchName ?? g.Title, ct);
@@ -92,27 +92,5 @@ public sealed class ArtFetcher
                 return true;
             }
         return false;
-    }
-
-    /// <summary>이름이 정규화 후 정확히 같은 첫 항목. "MapleStory"는 맞추되 "MapleStory M"은 고르지 않는다.</summary>
-    private static async Task<int?> SearchSteamAsync(string name, CancellationToken ct)
-    {
-        var url = $"https://store.steampowered.com/api/storesearch/?term={Uri.EscapeDataString(name)}&l=english&cc=US";
-        var result = await Http.GetFromJsonAsync<SearchResult>(url, ct);
-        var key = Normalize(name);
-        return result?.Items?.FirstOrDefault(i => Normalize(i.Name) == key)?.Id;
-    }
-
-    private static string Normalize(string s) => string.Concat(s.Where(char.IsLetterOrDigit)).ToLowerInvariant();
-
-    private sealed class SearchResult
-    {
-        [JsonPropertyName("items")] public List<SearchItem>? Items { get; set; }
-    }
-
-    private sealed class SearchItem
-    {
-        [JsonPropertyName("id")] public int Id { get; set; }
-        [JsonPropertyName("name")] public string Name { get; set; } = "";
     }
 }
