@@ -288,6 +288,16 @@ public sealed partial class HomeViewModel : ObservableObject, INavPage
         _shell.UpdateHints();
     }
 
+    private async Task ConfirmUnpinAsync(StartTileViewModel tile)
+    {
+        var where = tile.IsInFolder ? "폴더" : "시작 화면";
+        var hint = tile.Kind == ClawApp.Services.StartTileKind.Action
+            ? "설정 → 홈 화면에서 다시 고정할 수 있어요."
+            : "라이브러리에서 다시 고정할 수 있어요.";
+        if (!await _shell.ConfirmAsync($"'{tile.Title}' 타일을 {where}에서 뺄까요?", hint, "빼기", danger: true)) return; // 처음 포커스 = 취소
+        Unpin(tile);
+    }
+
     [RelayCommand]
     private void Unpin(StartTileViewModel tile)
     {
@@ -396,9 +406,27 @@ public sealed partial class HomeViewModel : ObservableObject, INavPage
     /// <summary>잡은 타일을 그 방향에서 가장 가까운 타일의 자리로 (다른 구역으로도). 오른쪽 끝이면 새 구역.</summary>
     private void MoveGrabbed(NavAction dir)
     {
-        if (Grabbed is not { } g || Locate?.Invoke(g) is not { } from) return;
-        double cx = from.X + from.Width / 2, cy = from.Y + from.Height / 2;
-        var target = Surface.Where(t => t != g)
+        if (Grabbed is not { } g) return;
+        var target = Nearest(g, dir);
+        if (target is null)
+        {
+            if (dir == NavAction.Right && OpenFolder is null) ToNewGroup(g);
+            return;
+        }
+        _shell.Start.Move(g.Def, target.Def, IsAfter(target, g));
+        FocusTile?.Invoke(g);
+    }
+
+    /// <summary>
+    /// 그 방향에서 가장 가까운 타일 (지금 판 — 구역들 또는 폴더 창). 없으면 null.
+    /// 편집 중 선택 이동에도 쓴다: WPF 기본 방향 이동은 타일 대신 위쪽 구역 제목(이름 바꾸기 버튼)으로 가곤 해서
+    /// 오른쪽으로 한 칸 가려면 세 번 눌러야 했다.
+    /// </summary>
+    private StartTileViewModel? Nearest(StartTileViewModel from, NavAction dir)
+    {
+        if (Locate?.Invoke(from) is not { } r) return null;
+        double cx = r.X + r.Width / 2, cy = r.Y + r.Height / 2;
+        return Surface.Where(t => t != from)
             .Select(t => (t, r: Locate(t)))
             .Where(x => x.r is not null)
             .Select(x => (x.t, dx: x.r!.Value.X + x.r.Value.Width / 2 - cx, dy: x.r.Value.Y + x.r.Value.Height / 2 - cy))
@@ -411,13 +439,6 @@ public sealed partial class HomeViewModel : ObservableObject, INavPage
             })
             .OrderBy(x => dir is NavAction.Left or NavAction.Right ? Math.Abs(x.dx) + 2 * Math.Abs(x.dy) : Math.Abs(x.dy) + 2 * Math.Abs(x.dx))
             .Select(x => x.t).FirstOrDefault();
-        if (target is null)
-        {
-            if (dir == NavAction.Right && OpenFolder is null) ToNewGroup(g);
-            return;
-        }
-        _shell.Start.Move(g.Def, target.Def, IsAfter(target, g));
-        FocusTile?.Invoke(g);
     }
 
     /// <summary>a가 b보다 뒤에 있는지 (화면 순서).</summary>
@@ -525,11 +546,19 @@ public sealed partial class HomeViewModel : ObservableObject, INavPage
             case NavAction.Up or NavAction.Down or NavAction.Left or NavAction.Right when Grabbed is not null:
                 MoveGrabbed(action);
                 return true;
+            case NavAction.Up or NavAction.Down or NavAction.Left or NavAction.Right
+                when Selected is { } from && System.Windows.Input.Keyboard.FocusedElement is FrameworkElement { DataContext: StartTileViewModel }:
+                // 타일 → 타일. 그 방향에 타일이 없을 때만 기본 이동 (위쪽 끝에서 ↑ = 구역 제목 이름 바꾸기 등)
+                if (Nearest(from, action) is not { } next) return false;
+                Select(next);
+                FocusTile?.Invoke(next);
+                return true;
             case NavAction.Secondary when Selected is { } s:
                 Resize(s);
                 return true;
             case NavAction.Options when Selected is { } s:
-                Unpin(s);
+                // 패드 Y는 편집에 들어갈 때도 쓰는 버튼이라, 편집을 끝내려고 한 번 더 누르면 고른 타일이 바로 빠졌다 → 확인을 받는다
+                _ = ConfirmUnpinAsync(s);
                 return true;
             case NavAction.TabPrev when Selected is { } s:
                 MergeWithPrevious(s);

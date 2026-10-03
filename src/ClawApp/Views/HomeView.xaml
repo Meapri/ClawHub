@@ -40,7 +40,7 @@
             </Style.Triggers>
         </Style>
 
-        <ScaleTransform x:Key="DimScale" ScaleX="0.9" ScaleY="0.9"/>
+        <ScaleTransform x:Key="DimScale" ScaleX="0.95" ScaleY="0.95"/>
         <ScaleTransform x:Key="LiftScale" ScaleX="1.06" ScaleY="1.06"/>
 
         <!-- 끌거나 고른 타일이 이웃 위로 -->
@@ -255,7 +255,7 @@
                 </DataTrigger>
                 <!-- 편집: 고르지 않은 타일은 작고 흐리게, 고른 타일은 모서리 버튼 -->
                 <DataTrigger Binding="{Binding IsDimmed}" Value="True">
-                    <Setter TargetName="Root" Property="Opacity" Value="0.6"/>
+                    <Setter TargetName="Root" Property="Opacity" Value="0.82"/> <!-- 사진 배경 위에서도 알아보게 (0.6이면 거의 사라졌다) -->
                     <Setter TargetName="Root" Property="RenderTransform" Value="{StaticResource DimScale}"/>
                 </DataTrigger>
                 <MultiDataTrigger>

@@ -45,9 +45,11 @@ public partial class App : Application
         };
         TaskScheduler.UnobservedTaskException += (_, ev) => ev.SetObserved();
 
-        // 패드로 포커스가 이동하면 스크롤 영역 안에서 자동으로 보이게
+        // 패드로 포커스가 이동하면 스크롤 영역 안에서 자동으로 보이게. GotKeyboardFocus는 위로 올라가는(bubbling) 이벤트라
+        // 포커스를 받은 요소에서만 한다 — 예전에는 상위 요소마다 자기 전체를 보이게 하려 해서, 홈 편집 중(새 구역 칸까지 넓어진 판)
+        // 포커스가 옮겨질 때마다 판 전체가 오른쪽 끝으로 24px씩 밀렸다.
         EventManager.RegisterClassHandler(typeof(FrameworkElement), UIElement.GotKeyboardFocusEvent,
-            new KeyboardFocusChangedEventHandler((s, _) => ((FrameworkElement)s).BringIntoView()));
+            new KeyboardFocusChangedEventHandler((s, e) => { if (ReferenceEquals(s, e.NewFocus)) ((FrameworkElement)s).BringIntoView(); }));
 
         // 실행 옵션으로 시작 방식 강제: --shell / --companion (바로가기·테스트용)
         if (e.Args.Contains("--shell")) StartupOverride = Services.StartupMode.Shell;
