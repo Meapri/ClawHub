@@ -246,6 +246,7 @@ public sealed class RadialMenuWindow : Window, AdvancedInputEngine.IRadialView
             {
                 Data = WedgeGeometry(mid - _sweep / 2 + gap, mid + _sweep / 2 - gap, _inner, _outer),
                 Fill = empty ? WedgeEmpty : Wedge, Stroke = WedgeLine, StrokeThickness = 1, RenderTransform = lift,
+                Opacity = 0, // 차례로 나타나는 애니메이션이 시작되기 전(대기 시간)에 원래 값(1)으로 번쩍 보이지 않게
             };
             var label = new TextBlock
             {
