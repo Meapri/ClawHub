@@ -44,7 +44,7 @@ public static class XboxIntegration
         error = null;
         try
         {
-            Process.Start(new ProcessStartInfo("explorer.exe", AppSettings.XboxAppId))?.Dispose();
+            ClawCore.ShellLauncher.Start(AppSettings.XboxAppId);
             return true;
         }
         catch (Exception ex)

@@ -165,7 +165,7 @@ public static class SystemControls
 
     /// <summary>Windows 설정 앱의 특정 페이지 열기 (예: "network-wifi", "bluetooth").</summary>
     public static void OpenWindowsSettings(string page) =>
-        Process.Start(new ProcessStartInfo($"ms-settings:{page}") { UseShellExecute = true });
+        ClawCore.ShellLauncher.Start($"ms-settings:{page}");
 
     /// <summary>
     /// Windows 터치 키보드 토글 (한글 입력 가능). 문서화되지 않은 ITipInvocation이라 실패하면 osk로 대체.
@@ -180,7 +180,7 @@ public static class SystemControls
         }
         catch (Exception)
         {
-            try { Process.Start(new ProcessStartInfo("osk.exe") { UseShellExecute = true }); }
+            try { ClawCore.ShellLauncher.Start("osk.exe"); }
             catch (Exception) { /* 키보드 없음 */ }
         }
     }

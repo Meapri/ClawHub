@@ -13,9 +13,10 @@
       <supportedOS Id="{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}"/>
     </application>
   </compatibility>
-  <!-- ClawOverlay.exe 전용 (scripts/install.ps1이 ClawApp.exe를 복사해 mt.exe로 이 매니페스트를 넣고 서명한다): UIAccess —
-       원형 메뉴·알림·성능 오버레이 창이 전체 화면 게임 위에 뜬다 (화상 키보드·돋보기와 같은 창 층). Windows는 서명된 실행 파일이
-       보안 위치(Program Files)에 있을 때만 허용한다. 패키지 식별(msix)은 넣지 않는다 — 오버레이는 Xbox 모드 홈 앱이 아니다. -->
+  <!-- ClawHub.exe 전용 (scripts/install.ps1이 ClawApp.exe를 복사해 mt.exe로 이 매니페스트를 넣고 서명한다): UIAccess —
+       관리자 권한 게임이 앞에 있어도 버튼 입력을 받고 키를 보내며, 원형 메뉴·알림·성능 오버레이가 전체 화면 게임 위에 뜬다
+       (화상 키보드·돋보기와 같은 권한·창 층). Windows는 서명된 실행 파일이 보안 위치(Program Files)에 있을 때만 허용한다.
+       패키지 식별(msix)은 넣지 않는다 — Xbox 모드 홈 앱은 ClawApp.exe이고, 그것이 이 본체를 셸로 띄운다. -->
   <trustInfo xmlns="urn:schemas-microsoft-com:asm.v2">
     <security>
       <requestedPrivileges>

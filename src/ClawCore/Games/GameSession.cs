@@ -40,11 +40,9 @@ public sealed class GameSession : IDisposable
         var session = new GameSession(game);
         try
         {
-            using var _ = Process.Start(new ProcessStartInfo(game.LaunchTarget, game.LaunchArgs ?? "")
-            {
-                UseShellExecute = true,
-                WorkingDirectory = File.Exists(game.LaunchTarget) ? Path.GetDirectoryName(game.LaunchTarget)! : "",
-            });
+            // 일반 권한으로 (ClawHub 본체가 UIAccess로 높은 무결성이어도 게임은 사용자가 직접 연 것처럼)
+            ShellLauncher.Start(game.LaunchTarget, game.LaunchArgs,
+                File.Exists(game.LaunchTarget) ? Path.GetDirectoryName(game.LaunchTarget)! : "");
         }
         catch
         {

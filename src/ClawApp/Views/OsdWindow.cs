@@ -63,8 +63,6 @@ public sealed class OsdWindow : Window
     /// <summary>알림을 띄운다 (UI 스레드). <paramref name="iconKey"/> = Icon.* 리소스 이름.</summary>
     public static void Show(string iconKey, string text, bool warn = false)
     {
-        // 전체 화면 게임 위에 뜨도록 오버레이 프로세스가 있으면 거기서 (없으면 여기서)
-        if (Services.OverlayHost.Send(new Services.OverlayMessage { Op = "osd", Icon = iconKey, Text = text, Warn = warn })) return;
         var w = _instance ??= new OsdWindow();
         w._icon.Text = Application.Current.TryFindResource(iconKey) as string ?? "";
         w._icon.Foreground = warn ? new SolidColorBrush(Color.FromRgb(0xFF, 0x9F, 0x43))

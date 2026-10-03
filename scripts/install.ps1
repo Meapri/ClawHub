@@ -17,7 +17,7 @@ if ($existing -and $existing.Status -ne 'Stopped') {
     Write-Host 'Stopping existing ClawHub service (controller mapping is restored on stop)...'
     Stop-Service ClawHub
 }
-Get-Process ClawApp, ClawOverlay -ErrorAction SilentlyContinue | Stop-Process -Force
+Get-Process ClawApp, ClawHub, ClawOverlay -ErrorAction SilentlyContinue | Stop-Process -Force
 
 Write-Host 'Publishing...'
 dotnet publish "$root\src\ClawService" -c Release -o "$InstallDir\service" --nologo -v q
@@ -25,21 +25,22 @@ if ($LASTEXITCODE) { throw 'ClawService publish failed' }
 dotnet publish "$root\src\ClawApp" -c Release -o "$InstallDir\app" --nologo -v q
 if ($LASTEXITCODE) { throw 'ClawApp publish failed' }
 
-# Overlays above fullscreen games: Windows only lets signed UIAccess programs draw there. A UIAccess exe cannot be
-# started through package activation (Xbox mode home app), and a UIAccess build cannot run from bin, so ClawApp.exe
-# stays a normal app and a copy of it with the UIAccess manifest embedded and signed becomes ClawOverlay.exe
-# (same ClawApp.dll). ClawApp starts it ("--overlay-host") and hands it the radial menu, notifications and
-# performance overlay. Needs the ClawHub Dev code-signing cert (created by src\ClawWidget\build.ps1 -CreateCert;
-# not a CA, so it can only vouch for files it signs itself), trusted machine-wide below.
+# ClawHub.exe = the real app with UIAccess: needed so input mapping, the radial menu and other overlays work
+# while an elevated game (anti-cheat) or a fullscreen game is in front. Windows only grants UIAccess to signed
+# programs in Program Files, and never through package activation (Xbox mode home app) or CreateProcess, so
+# ClawApp.exe stays a normal launcher that hands off to ClawHub.exe (a copy with the UIAccess manifest embedded
+# and signed). Needs the ClawHub Dev code-signing cert (created by srcClawWidgetuild.ps1 -CreateCert; not a
+# CA, so it can only vouch for files it signs itself), trusted machine-wide below.
 $cert = Get-ChildItem Cert:\CurrentUser\My | Where-Object { $_.Subject -eq 'CN=ClawHub Dev' -and $_.HasPrivateKey -and $_.NotAfter -gt (Get-Date) } |
     Sort-Object NotAfter -Descending | Select-Object -First 1
 $kit = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin\*\x64" -Directory -ErrorAction SilentlyContinue |
     Where-Object { (Test-Path "$($_.FullName)\signtool.exe") -and (Test-Path "$($_.FullName)\mt.exe") } |
     Sort-Object FullName -Descending | Select-Object -First 1 -ExpandProperty FullName
-$overlayExe = "$InstallDir\app\ClawOverlay.exe"
+$uiExe = "$InstallDir\app\ClawHub.exe"
+Remove-Item "$InstallDir\app\ClawOverlay.exe" -Force -ErrorAction SilentlyContinue # earlier overlay-only helper
 if ($cert -and $kit) {
-    Copy-Item "$InstallDir\app\ClawApp.exe" $overlayExe -Force
-    & "$kit\mt.exe" -nologo -manifest "$root\src\ClawApp\app.uiaccess.manifest" "-outputresource:$overlayExe;#1"
+    Copy-Item "$InstallDir\app\ClawApp.exe" $uiExe -Force
+    & "$kit\mt.exe" -nologo -manifest "$root\src\ClawApp\app.uiaccess.manifest" "-outputresource:$uiExe;#1"
     if ($LASTEXITCODE) { throw 'Embedding the UIAccess manifest failed' }
 
     foreach ($storeName in 'Root', 'TrustedPublisher') {
@@ -51,13 +52,13 @@ if ($cert -and $kit) {
         }
         $store.Close()
     }
-    & "$kit\signtool.exe" sign /sha1 $cert.Thumbprint /s My /fd SHA256 /q $overlayExe
-    if ($LASTEXITCODE) { throw 'Signing ClawOverlay.exe failed' }
-    Write-Host 'ClawOverlay.exe signed (UIAccess: overlays show above fullscreen games)'
+    & "$kit\signtool.exe" sign /sha1 $cert.Thumbprint /s My /fd SHA256 /q $uiExe
+    if ($LASTEXITCODE) { throw 'Signing ClawHub.exe failed' }
+    Write-Host 'ClawHub.exe signed (UIAccess: works over elevated and fullscreen games)'
 }
 else {
-    Write-Warning 'No ClawHub Dev signing cert or Windows SDK (mt/signtool): overlays will not show over fullscreen games.'
-    if (Test-Path $overlayExe) { Remove-Item $overlayExe -Force }
+    Write-Warning 'No ClawHub Dev signing cert or Windows SDK (mt/signtool): ClawApp runs without UIAccess (no input or overlays over elevated or fullscreen games).'
+    if (Test-Path $uiExe) { Remove-Item $uiExe -Force }
 }
 
 # Service data (controller baseline, EC state): SYSTEM/Administrators full, Users read-only

@@ -3,7 +3,7 @@
 param([string]$InstallDir = "$env:ProgramFiles\ClawHub")
 $ErrorActionPreference = 'Stop'
 
-Get-Process ClawApp, ClawOverlay -ErrorAction SilentlyContinue | Stop-Process -Force
+Get-Process ClawApp, ClawHub, ClawOverlay -ErrorAction SilentlyContinue | Stop-Process -Force
 if (Get-Service ClawHub -ErrorAction SilentlyContinue) {
     Stop-Service ClawHub -ErrorAction SilentlyContinue   # restores the controller baseline mapping
     sc.exe delete ClawHub | Out-Null

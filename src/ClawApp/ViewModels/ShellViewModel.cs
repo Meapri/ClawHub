@@ -486,7 +486,7 @@ public sealed partial class ShellViewModel : ObservableObject
 
     private static readonly HashSet<string> NotApps = new(StringComparer.OrdinalIgnoreCase)
     {
-        "ClawApp", "explorer", "XboxPcApp", "ApplicationFrameHost", "ShellExperienceHost", "SearchHost",
+        "ClawApp", "ClawHub", "explorer", "XboxPcApp", "ApplicationFrameHost", "ShellExperienceHost", "SearchHost",
         "StartMenuExperienceHost", "TextInputHost", "LockApp", "GameBar", "Idle",
         // 항상 떠 있는 런처·메신저 — 게임 대신 이것에 프로필이 붙으면 게임처럼 추적·종료된다
         "steam", "steamwebhelper", "Discord", "EpicGamesLauncher", "EpicWebHelper", "Battle.net", "NexonPlay", "NGM", "NGM64",
@@ -882,11 +882,8 @@ public sealed partial class ShellViewModel : ObservableObject
     {
         try
         {
-            using var _ = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(app.LaunchTarget, app.LaunchArgs ?? "")
-            {
-                UseShellExecute = true,
-                WorkingDirectory = File.Exists(app.LaunchTarget) ? Path.GetDirectoryName(app.LaunchTarget)! : "",
-            });
+            ClawCore.ShellLauncher.Start(app.LaunchTarget, app.LaunchArgs,
+                File.Exists(app.LaunchTarget) ? Path.GetDirectoryName(app.LaunchTarget)! : "");
         }
         catch (Exception ex)
         {
