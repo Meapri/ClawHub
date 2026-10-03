@@ -92,6 +92,9 @@ public sealed class AppSettings
 
     public NightModeSettings NightMode { get; set; } = new();
 
+    /// <summary>패드로 메뉴를 움직일 때 짧은 진동: 0 끔, 1 약하게, 2 강하게.</summary>
+    public int MenuHaptics { get; set; } = 1;
+
     /// <summary>SteamGridDB API 키 (아트 고르기에서 사용, 없으면 Steam 검색만).</summary>
     public string? SteamGridDbKey { get; set; }
 

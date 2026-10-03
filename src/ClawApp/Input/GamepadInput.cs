@@ -35,6 +35,19 @@ public sealed class GamepadInput
 
     public event Action<NavAction>? Action;
 
+    /// <summary>마지막으로 읽은 패드 상태 (입력 테스트 화면용). 연결이 없으면 null.</summary>
+    public PadSnapshot? Latest { get; private set; }
+
+    /// <summary>지금 창의 패드 입력 (입력 테스트가 잠깐 입력을 가져갈 때 씀).</summary>
+    public static GamepadInput? Current { get; private set; }
+
+    /// <summary>메뉴를 움직일 때 짧은 진동 (SteamOS처럼): 0 끔, 1 약하게, 2 강하게.</summary>
+    public static int MenuHaptics { get; set; } = 1;
+
+    /// <summary>true면 상태(<see cref="Latest"/>)만 읽고 화면 이동은 하나도 보내지 않는다 (입력 테스트).</summary>
+    public bool SwallowAll { get; set; }
+    private DateTime? _rumbleOffAt;
+
     /// <summary>
     /// 설정되어 있으면 새로 누른 물리 버튼을 먼저 받는다 (매핑 편집의 "눌러서 찾기"). true를 돌려주면 그 틱의
     /// 화면 이동 동작은 보내지 않는다 — 찾으려고 누른 A가 동시에 "선택"이 되지 않게.
@@ -80,6 +93,7 @@ public sealed class GamepadInput
 
     public GamepadInput()
     {
+        Current = this;
         _timer = new DispatcherTimer(DispatcherPriority.Input) { Interval = TimeSpan.FromMilliseconds(16) };
         _timer.Tick += (_, _) => Poll();
     }
@@ -104,6 +118,7 @@ public sealed class GamepadInput
         }
         else
         {
+            if (_rumbleOffAt is not null) Rumble(0); // 멈추기 전에 진동을 끈다
             _timer.Stop();
         }
     }
@@ -121,13 +136,20 @@ public sealed class GamepadInput
         }
 
         Connected = _slot is not null;
+        if (!Connected) Latest = null;
         if (!Connected || !Enabled)
         {
+            if (_rumbleOffAt is not null) Rumble(0); // 진동이 켜진 채 남지 않게
             _prevButtons = 0;
             _heldDir = null;
             _ltDown = _rtDown = true; // 게임에서 누른 채로 돌아와도 바로 발동하지 않게 (한 번 놓아야 함)
             return;
         }
+
+        Latest = new PadSnapshot(state.Gamepad.Buttons, state.Gamepad.LeftTrigger, state.Gamepad.RightTrigger,
+            state.Gamepad.ThumbLX, state.Gamepad.ThumbLY, state.Gamepad.ThumbRX, state.Gamepad.ThumbRY);
+        if (_rumbleOffAt is { } off && DateTime.UtcNow >= off) Rumble(0);
+        if (SwallowAll) { _prevButtons = state.Gamepad.Buttons; _heldDir = null; return; }
 
         var b = state.Gamepad.Buttons;
         var pressed = (ushort)(b & ~_prevButtons);
@@ -150,7 +172,9 @@ public sealed class GamepadInput
 
         void Fire(ushort mask, NavAction a)
         {
-            if ((pressed & mask) != 0) Action?.Invoke(a);
+            if ((pressed & mask) == 0) return;
+            if (a is NavAction.Accept or NavAction.TabPrev or NavAction.TabNext) Tick(strong: a == NavAction.Accept);
+            Action?.Invoke(a);
         }
         Fire(0x1000, NavAction.Accept);    // A
         Fire(0x2000, NavAction.Back);      // B
@@ -170,13 +194,31 @@ public sealed class GamepadInput
         if (dir != _heldDir)
         {
             _heldDir = dir;
-            if (dir is { } d) { Action?.Invoke(d); _nextRepeat = now + RepeatDelay; }
+            if (dir is { } d) { Tick(); Action?.Invoke(d); _nextRepeat = now + RepeatDelay; }
         }
         else if (dir is { } d && now >= _nextRepeat)
         {
+            Tick();
             Action?.Invoke(d);
             _nextRepeat = now + RepeatRate;
         }
+    }
+
+    /// <summary>메뉴 이동 진동: 오른쪽(가벼운) 모터를 아주 짧게. 다음 폴(16ms 뒤)에 끈다.</summary>
+    private void Tick(bool strong = false)
+    {
+        if (MenuHaptics <= 0) return;
+        var level = (MenuHaptics >= 2 ? 22000 : 9000) * (strong ? 1.4 : 1.0);
+        Rumble((ushort)Math.Min(65535, level));
+        _rumbleOffAt = DateTime.UtcNow.AddMilliseconds(14);
+    }
+
+    private void Rumble(ushort strength)
+    {
+        if (strength == 0) _rumbleOffAt = null;
+        if (_slot is not { } s) return;
+        var v = new XInputVibration { Left = 0, Right = strength };
+        XInputSetState(s, ref v);
     }
 
     private bool _ltDown, _rtDown;
@@ -224,6 +266,18 @@ public sealed class GamepadInput
         public XInputGamepad Gamepad;
     }
 
+    [StructLayout(LayoutKind.Sequential)]
+    private struct XInputVibration
+    {
+        public ushort Left, Right;
+    }
+
+    [DllImport("xinput1_4.dll")]
+    private static extern int XInputSetState(int userIndex, ref XInputVibration vibration);
+
     [DllImport("xinput1_4.dll")]
     private static extern int XInputGetState(int userIndex, ref XInputState state);
 }
+
+/// <summary>패드 원시 상태 한 번 (XInput).</summary>
+public readonly record struct PadSnapshot(ushort Buttons, byte LeftTrigger, byte RightTrigger, short LX, short LY, short RX, short RY);

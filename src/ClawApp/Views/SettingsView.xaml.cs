@@ -16,6 +16,9 @@ public partial class SettingsView : UserControl
             if (e.OldValue is SettingsViewModel old) old.PropertyChanged -= OnVmChanged;
             if (e.NewValue is SettingsViewModel vm) vm.PropertyChanged += OnVmChanged;
         };
+        // 화면을 떠나면 입력 테스트를 끝낸다 (패드 입력을 계속 가져가지 않게)
+        IsVisibleChanged += (_, e) => { if (e.NewValue is false && DataContext is SettingsViewModel vm) vm.StopInputTest(); };
+        Unloaded += (_, _) => (DataContext as SettingsViewModel)?.StopInputTest();
     }
 
     /// <summary>
@@ -25,6 +28,7 @@ public partial class SettingsView : UserControl
     private void OnVmChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
         if (e.PropertyName != nameof(SettingsViewModel.Selected) || sender is not SettingsViewModel vm) return;
+        vm.StopInputTest();
         if (Keyboard.FocusedElement is not DependencyObject focused || !CategoryList.IsAncestorOf(focused)) return;
         Dispatcher.BeginInvoke(() =>
         {

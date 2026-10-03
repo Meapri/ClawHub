@@ -261,6 +261,49 @@
                             <TextBlock Text="격투·퍼즐 게임에서 오입력 방지" Style="{StaticResource Caption}"/>
                         </StackPanel>
                     </ToggleButton>
+
+                    <!-- 메뉴 진동 (SteamOS처럼 패드로 메뉴를 움직이면 톡) -->
+                    <TextBlock Text="메뉴 진동" Style="{StaticResource Section}"/>
+                    <Border Style="{StaticResource CardPanel}">
+                        <StackPanel>
+                            <TextBlock Text="ClawHub 화면을 패드로 움직일 때 짧게 진동해요 (게임 진동과는 따로)" Style="{StaticResource Caption}" Margin="0,0,0,8"/>
+                            <ItemsControl ItemsSource="{Binding HapticChoices}" Focusable="False">
+                                <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <v:ChoiceChip Style="{StaticResource Chip}" Content="{Binding Label}" IsChecked="{Binding IsSelected, Mode=OneWay}"
+                                                      Command="{Binding DataContext.PickHapticsCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- 입력 테스트: 버튼·스틱·트리거가 제대로 읽히는지 -->
+                    <TextBlock Text="입력 테스트" Style="{StaticResource Section}"/>
+                    <Border Style="{StaticResource CardPanel}">
+                        <StackPanel>
+                            <Button Style="{StaticResource NavButton}" Command="{Binding ToggleInputTestCommand}" HorizontalContentAlignment="Stretch">
+                                <DockPanel>
+                                    <TextBlock Text="{StaticResource Icon.Gamepad2}" Style="{StaticResource Icon}" Width="30"/>
+                                    <StackPanel>
+                                        <TextBlock FontWeight="SemiBold">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Text" Value="입력 테스트 시작"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding InputTesting}" Value="True"><Setter Property="Text" Value="입력 테스트 끝내기"/></DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                        <TextBlock Text="{Binding InputTestHint}" Style="{StaticResource Caption}"/>
+                                    </StackPanel>
+                                </DockPanel>
+                            </Button>
+                            <v:PadTestView State="{Binding PadState}" Margin="0,12,0,0" Visibility="{Binding InputTesting, Converter={StaticResource Vis}}"/>
+                        </StackPanel>
+                    </Border>
                     <TextBlock Text="초기화" Style="{StaticResource Section}"/>
                     <Button Style="{StaticResource NavButton}" Command="{Binding ResetControllerCommand}">
                         <StackPanel Orientation="Horizontal"><TextBlock Text="{StaticResource Icon.RotateCcw}" Style="{StaticResource Icon}" Margin="0,0,14,0"/><TextBlock Text="컨트롤러 설정 원래대로"/></StackPanel>

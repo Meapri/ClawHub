@@ -283,6 +283,7 @@ public sealed partial class ShellViewModel : ObservableObject
         InitPower();
         InitOverlay();
         Night = new NightModeViewModel(this);
+        Input.GamepadInput.MenuHaptics = Settings.MenuHaptics;
 
         _clockTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(10) };
         _clockTimer.Tick += (_, _) => UpdateClock();
