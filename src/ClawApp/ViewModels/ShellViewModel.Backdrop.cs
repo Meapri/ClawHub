@@ -30,12 +30,21 @@ public sealed partial class ShellViewModel
     public double BackdropBlur => Math.Clamp(Settings.Home.BackdropBlur, 0, 80);
     public double BackdropDim => Math.Clamp(Settings.Home.BackdropDim, 0, 100) / 100.0;
 
+    private bool? _customBackdropFull;
+
+    /// <summary>
+    /// 사용자 배경 그림. 선명하게 보일 때(흐림 약함 · 타일 그림)만 화면 해상도로 읽고, 많이 흐리게 깔 때는
+    /// 타일 크기(600px)로 읽는다 — 흐림이 세부를 지워 보이는 결과는 같고, 메모리 ~9MB와 디코딩 시간을 아낀다.
+    /// </summary>
     private ImageSource? CustomBackdrop()
     {
-        if (_customBackdropPath != Settings.Home.BackdropImage)
+        var home = Settings.Home;
+        var full = home.BackdropMode == BackdropMode.TilePicture || home.BackdropBlur < 24;
+        if (_customBackdropPath != home.BackdropImage || _customBackdropFull != full)
         {
-            _customBackdropPath = Settings.Home.BackdropImage;
-            _customBackdrop = ArtCache.LoadFullScreen(_customBackdropPath); // 화면 전체·타일 그림 — 원본 해상도로
+            _customBackdropPath = home.BackdropImage;
+            _customBackdropFull = full;
+            _customBackdrop = full ? ArtCache.LoadFullScreen(_customBackdropPath) : ArtCache.LoadImage(_customBackdropPath);
         }
         return _customBackdrop;
     }

@@ -53,8 +53,10 @@ public static class StartupPrewarm
         if (home.AccentFromImage) _ = Task.Run(() => AccentFromImage.FromFile(picture, light));
         try
         {
-            ArtCache.Prewarm([], picture, fullScreenWidth);
-            ArtCache.Prewarm([picture], null, 0); // 설정 → 홈 화면의 미리보기 (600px) — 설정을 열 때 멈칫하지 않게
+            // 600px판은 설정 미리보기이자, 많이 흐리게 까는 배경 그 자체 (ShellViewModel.CustomBackdrop과 같은 기준)
+            ArtCache.Prewarm([picture], null, 0);
+            if (home.BackdropMode == BackdropMode.TilePicture || home.BackdropBlur < 24)
+                ArtCache.Prewarm([], picture, fullScreenWidth); // 선명하게 보일 때만 화면 해상도로
         }
         catch (Exception) { /* UI 스레드가 직접 읽는다 */ }
     }

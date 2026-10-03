@@ -118,6 +118,20 @@
             <Setter Property="Padding" Value="12,10"/>
             <Setter Property="Margin" Value="0,0,8,8"/>
         </Style>
+                    <ItemsPanelTemplate x:Key="ChipWrap"><WrapPanel/></ItemsPanelTemplate>
+                    <!-- 값 슬라이더 한 줄: 이름 · 막대 · 값 -->
+                    <Style x:Key="TuneLabel" TargetType="TextBlock">
+                        <Setter Property="Width" Value="96"/>
+                        <Setter Property="VerticalAlignment" Value="Center"/>
+                        <Setter Property="Foreground" Value="{DynamicResource TextDim}"/>
+                    </Style>
+                    <Style x:Key="TuneValue" TargetType="TextBlock">
+                        <Setter Property="DockPanel.Dock" Value="Right"/>
+                        <Setter Property="Width" Value="44"/>
+                        <Setter Property="TextAlignment" Value="Right"/>
+                        <Setter Property="VerticalAlignment" Value="Center"/>
+                        <Setter Property="FontWeight" Value="SemiBold"/>
+                    </Style>
         </ResourceDictionary>
     </UserControl.Resources>
 
@@ -251,22 +265,8 @@
                     KeyboardNavigation.DirectionalNavigation="Contained" DataContext="{Binding Tuning}"
                     m:Reveal.IsShown="{Binding DataContext.IsTuningOpen, RelativeSource={RelativeSource AncestorType=UserControl}}"
                     m:Reveal.ExitX="48" m:Entrance.Stagger="Self" m:Entrance.Offset="48">
-                <Border.Resources>
-                    <ItemsPanelTemplate x:Key="ChipWrap"><WrapPanel/></ItemsPanelTemplate>
-                    <!-- 값 슬라이더 한 줄: 이름 · 막대 · 값 -->
-                    <Style x:Key="TuneLabel" TargetType="TextBlock">
-                        <Setter Property="Width" Value="96"/>
-                        <Setter Property="VerticalAlignment" Value="Center"/>
-                        <Setter Property="Foreground" Value="{DynamicResource TextDim}"/>
-                    </Style>
-                    <Style x:Key="TuneValue" TargetType="TextBlock">
-                        <Setter Property="DockPanel.Dock" Value="Right"/>
-                        <Setter Property="Width" Value="44"/>
-                        <Setter Property="TextAlignment" Value="Right"/>
-                        <Setter Property="VerticalAlignment" Value="Center"/>
-                        <Setter Property="FontWeight" Value="SemiBold"/>
-                    </Style>
-                </Border.Resources>
+                <!-- 처음 열 때 만든다 (편집기 열기를 가볍게) -->
+                <v:LazyContent><DataTemplate>
                 <ScrollViewer Padding="16,12,16,6">
                     <StackPanel Margin="6"> <!-- 포커스 테두리(바깥 4px)가 스크롤 가장자리에서 잘리지 않게 -->
                         <TextBlock Text="스틱·트리거·자이로" Style="{StaticResource H2}" Margin="0,0,0,4"/>
@@ -380,6 +380,7 @@
                                    Text="바깥 값을 낮추면 조금만 당겨도 끝까지 당긴 것이 돼요 (사격 게임에서 빠르게)."/>
                     </StackPanel>
                 </ScrollViewer>
+                </DataTemplate></v:LazyContent>
             </Border>
 
             <!-- ══ 프로필 옵션 (오른쪽에서 미끄러져 나오는 패널) ══ -->
@@ -387,6 +388,8 @@
                     Background="{DynamicResource Bg0}" BorderBrush="{DynamicResource Accent}" BorderThickness="3,0,0,0"
                     KeyboardNavigation.DirectionalNavigation="Contained"
                     m:Reveal.IsShown="{Binding IsOptionsOpen}" m:Reveal.ExitX="48" m:Entrance.Stagger="Self" m:Entrance.Offset="48">
+                <!-- 처음 열 때 만든다 (편집기 열기를 가볍게) -->
+                <v:LazyContent><DataTemplate>
                 <ScrollViewer Padding="16,12,16,6">
                     <StackPanel Margin="6">
                         <TextBlock Text="프로필 옵션" Style="{StaticResource H2}" Margin="0,0,0,14"/>
@@ -484,11 +487,14 @@
                                    Text="스틱은 펌웨어에서 키로 바꿀 수 없어요 — 이동은 방향 버튼을 쓰세요. 매핑은 컨트롤러 펌웨어가 처리해서 게임에는 진짜 키보드 입력으로 보여요."/>
                     </StackPanel>
                 </ScrollViewer>
+                </DataTemplate></v:LazyContent>
             </Border>
         </Grid>
 
         <!-- ══ 키 선택판 ══════════════════════════════════════ -->
-        <DockPanel x:Name="Picker" Visibility="{Binding IsPickerOpen, Converter={StaticResource Vis}}" Margin="6,4,6,0" m:Entrance.Stagger="Self" m:Entrance.Offset="24">
+        <!-- 처음 열 때 만든다 (키보드 판 ~110개 키 — 편집기를 열 때마다 미리 만들어 0.4초 늦었다) -->
+        <v:LazyContent x:Name="Picker" Visibility="{Binding IsPickerOpen, Converter={StaticResource Vis}}" Margin="6,4,6,0" m:Entrance.Stagger="Self" m:Entrance.Offset="24"><DataTemplate>
+        <DockPanel>
             <!-- 머리: 어떤 버튼 → 지금 무엇 + 모드·지우기 -->
             <Border DockPanel.Dock="Top" Style="{StaticResource CardPanel}" Padding="18,12" Margin="0,0,0,12">
                 <DockPanel>
@@ -589,7 +595,8 @@
 
             <Grid x:Name="PickerContent">
                 <!-- 키보드 -->
-                <DockPanel Visibility="{Binding CategoryIndex, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=0}">
+                <v:LazyContent Visibility="{Binding CategoryIndex, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=0}"><DataTemplate>
+                <DockPanel>
                     <DockPanel DockPanel.Dock="Top" Margin="0,0,0,12">
                         <TextBlock Text="함께 누를 키" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,14,0"/>
                         <ItemsControl ItemsSource="{Binding Modifiers}" Focusable="False" ItemsPanel="{StaticResource Row}">
@@ -616,17 +623,21 @@
                         </ItemsControl>
                     </ScrollViewer>
                 </DockPanel>
+                </DataTemplate></v:LazyContent>
 
                 <!-- 마우스 -->
-                <StackPanel Visibility="{Binding CategoryIndex, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=1}">
+                <v:LazyContent Visibility="{Binding CategoryIndex, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=1}"><DataTemplate>
+                <StackPanel>
                     <ItemsControl ItemsSource="{Binding MouseKeys}" Focusable="False" ItemsPanel="{StaticResource Wrap}" ItemTemplate="{StaticResource KeyTile}"
                                   m:Entrance.Stagger="Items" m:Entrance.Offset="24"/>
                     <TextBlock Style="{StaticResource Caption}" Margin="2,8,0,0"
                                Text="스틱으로 마우스 커서를 움직이려면 이 프로필의 '게임 중 컨트롤러 모드'를 데스크톱으로 바꾸세요."/>
                 </StackPanel>
+                </DataTemplate></v:LazyContent>
 
                 <!-- 조합·미디어 -->
-                <ScrollViewer Margin="-6" Visibility="{Binding CategoryIndex, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=2}">
+                <v:LazyContent Visibility="{Binding CategoryIndex, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=2}"><DataTemplate>
+                <ScrollViewer Margin="-6">
                     <StackPanel Margin="6">
                         <TextBlock Text="자주 쓰는 조합" Style="{StaticResource Section}" Margin="2,0,0,10"/>
                         <ItemsControl ItemsSource="{Binding ComboPresets}" Focusable="False" ItemsPanel="{StaticResource Wrap}">
@@ -644,23 +655,29 @@
                         <ItemsControl ItemsSource="{Binding MediaKeys}" Focusable="False" ItemsPanel="{StaticResource Wrap}" ItemTemplate="{StaticResource KeyTile}"/>
                     </StackPanel>
                 </ScrollViewer>
+                </DataTemplate></v:LazyContent>
 
                 <!-- 게임패드 -->
-                <StackPanel Visibility="{Binding CategoryIndex, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=3}">
+                <v:LazyContent Visibility="{Binding CategoryIndex, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=3}"><DataTemplate>
+                <StackPanel>
                     <TextBlock Style="{StaticResource Caption}" Margin="2,0,0,10"
                                Text="다른 패드 버튼처럼 동작하게 해요. 예: 뒷면 M1 = A (엄지를 떼지 않고 점프)."/>
                     <ItemsControl ItemsSource="{Binding GamepadKeys}" Focusable="False" ItemsPanel="{StaticResource Wrap}" ItemTemplate="{StaticResource KeyTile}"
                                   m:Entrance.Stagger="Items" m:Entrance.Offset="24"/>
                 </StackPanel>
+                </DataTemplate></v:LazyContent>
 
                 <!-- 시스템 동작 (ClawHub가 처리 — 게임 입력이 아니라 안티치트와 상관없음) -->
-                <StackPanel Visibility="{Binding CategoryIndex, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=4}">
+                <v:LazyContent Visibility="{Binding CategoryIndex, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=4}"><DataTemplate>
+                <StackPanel>
                     <TextBlock Style="{StaticResource Caption}" Margin="2,0,0,10" TextWrapping="Wrap"
                                Text="게임 중에도 버튼 하나로 마이크를 끄거나 스크린샷을 찍어요. 누르면 화면 위에 결과가 잠깐 떠요."/>
                     <ItemsControl ItemsSource="{Binding SystemKeys}" Focusable="False" ItemsPanel="{StaticResource Wrap}" ItemTemplate="{StaticResource KeyTile}"
                                   m:Entrance.Stagger="Items" m:Entrance.Offset="24"/>
                 </StackPanel>
+                </DataTemplate></v:LazyContent>
             </Grid>
         </DockPanel>
+        </DataTemplate></v:LazyContent>
     </Grid>
 </UserControl>

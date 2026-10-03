@@ -89,7 +89,7 @@ public partial class MappingEditorView : UserControl
         var target = open ? Find(panel, e => e is System.Windows.Controls.Primitives.ButtonBase) : opener;
         if (target is not null) Keyboard.Focus(target);
         // 포커스를 따라 내려간 스크롤을 맨 위로 (패널 제목부터 보이게)
-        if (open && panel.Child is ScrollViewer sv)
+        if (open && FindVisual<ScrollViewer>(panel) is { } sv) // 패널 내용은 처음 열 때 만들어진다 (LazyContent 안)
             Dispatcher.BeginInvoke(() => Motion.SmoothScroll.ScrollTo(sv, 0, 0), DispatcherPriority.ContextIdle); // 부드러운 스크롤의 목표도 함께
     }
 
@@ -161,9 +161,11 @@ public partial class MappingEditorView : UserControl
         UIElement? target;
         if (_vm.IsPickerOpen)
         {
-            target = Find(PickerContent, e => e is Button { DataContext: KeySlotViewModel { IsSelected: true } })
-                     ?? Find(PickerContent, e => e is Button { DataContext: KeyComboViewModel { IsSelected: true } })
-                     ?? Find(PickerContent, e => e is Button);
+            // 선택판은 처음 열 때 만들어진다 (LazyContent) — 그 안의 키 영역을 이름으로 찾는다
+            if (Picker.Content is not DependencyObject pickerRoot || LogicalTreeHelper.FindLogicalNode(pickerRoot, "PickerContent") is not DependencyObject keys) return;
+            target = Find(keys, e => e is Button { DataContext: KeySlotViewModel { IsSelected: true } })
+                     ?? Find(keys, e => e is Button { DataContext: KeyComboViewModel { IsSelected: true } })
+                     ?? Find(keys, e => e is Button);
         }
         else
         {
@@ -171,6 +173,14 @@ public partial class MappingEditorView : UserControl
             target = row is null ? null : Find(Board, e => e is Button { DataContext: ButtonRowViewModel r } && r == row);
         }
         if (target is not null) Keyboard.Focus(target);
+    }
+
+    private static T? FindVisual<T>(DependencyObject root) where T : DependencyObject
+    {
+        if (root is T hit) return hit;
+        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
+            if (FindVisual<T>(VisualTreeHelper.GetChild(root, i)) is { } found) return found;
+        return null;
     }
 
     /// <summary>보이는 포커스 가능 요소 중 조건에 맞는 첫 번째 (화면 순서).</summary>

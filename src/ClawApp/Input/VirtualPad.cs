@@ -108,9 +108,8 @@ public sealed class VirtualPad : IDisposable
     private void Loop()
     {
         timeBeginPeriod(1);
-        uint lastPacket = uint.MaxValue;
-        ushort lastOverlay = 0;
-        bool lastLt = false, lastRt = false, lastPaused = false;
+        // 마지막으로 보낸 보고 — 바뀐 값이 있을 때만 드라이버에 보낸다 (스틱 → 키·마우스 중에도 매 1ms 보내지 않게)
+        (ushort Buttons, byte Lt, byte Rt, short Lx, short Ly, short Rx, short Ry)? last = null;
         while (_run)
         {
             XInputState st = default;
@@ -140,26 +139,23 @@ public sealed class VirtualPad : IDisposable
             if (!paused && Convert(cfg.RightStick, _rightKeys, rx, ry, cfg.MouseSpeed)) rx = ry = 0;
             else if (paused) _rightKeys.Release();
 
-            var changed = st.PacketNumber != lastPacket || overlay != lastOverlay || lt != lastLt || rt != lastRt || paused != lastPaused
-                          || cfg.LeftStick != StickOutput.Stick || cfg.RightStick != StickOutput.Stick;
-            if (changed)
+            if (paused) { g = default; overlay = 0; lt = rt = false; lx = ly = rx = ry = 0; } // 게임에는 손을 뗀 패드
+            var report = ((ushort)(g.Buttons | overlay), lt ? (byte)255 : g.LeftTrigger, rt ? (byte)255 : g.RightTrigger, lx, ly, rx, ry);
+            if (report != last)
             {
-                if (paused) { g = default; overlay = 0; lt = rt = false; lx = ly = rx = ry = 0; } // 게임에는 손을 뗀 패드
-                {
-                    _pad.SetButtonsFull((ushort)(g.Buttons | overlay));
-                    _pad.SetSliderValue(Nefarius.ViGEm.Client.Targets.Xbox360.Xbox360Slider.LeftTrigger, lt ? (byte)255 : g.LeftTrigger);
-                    _pad.SetSliderValue(Nefarius.ViGEm.Client.Targets.Xbox360.Xbox360Slider.RightTrigger, rt ? (byte)255 : g.RightTrigger);
-                    _pad.SetAxisValue(Nefarius.ViGEm.Client.Targets.Xbox360.Xbox360Axis.LeftThumbX, lx);
-                    _pad.SetAxisValue(Nefarius.ViGEm.Client.Targets.Xbox360.Xbox360Axis.LeftThumbY, ly);
-                    _pad.SetAxisValue(Nefarius.ViGEm.Client.Targets.Xbox360.Xbox360Axis.RightThumbX, rx);
-                    _pad.SetAxisValue(Nefarius.ViGEm.Client.Targets.Xbox360.Xbox360Axis.RightThumbY, ry);
-                }
-                try { _pad.SubmitReport(); }
-                catch (Exception) { /* 버스가 잠깐 바쁘면 다음 틱에 */ }
-                lastPacket = st.PacketNumber; lastOverlay = overlay; lastLt = lt; lastRt = rt; lastPaused = paused;
+                _pad.SetButtonsFull(report.Item1);
+                _pad.SetSliderValue(Nefarius.ViGEm.Client.Targets.Xbox360.Xbox360Slider.LeftTrigger, report.Item2);
+                _pad.SetSliderValue(Nefarius.ViGEm.Client.Targets.Xbox360.Xbox360Slider.RightTrigger, report.Item3);
+                _pad.SetAxisValue(Nefarius.ViGEm.Client.Targets.Xbox360.Xbox360Axis.LeftThumbX, lx);
+                _pad.SetAxisValue(Nefarius.ViGEm.Client.Targets.Xbox360.Xbox360Axis.LeftThumbY, ly);
+                _pad.SetAxisValue(Nefarius.ViGEm.Client.Targets.Xbox360.Xbox360Axis.RightThumbX, rx);
+                _pad.SetAxisValue(Nefarius.ViGEm.Client.Targets.Xbox360.Xbox360Axis.RightThumbY, ry);
+                try { _pad.SubmitReport(); last = report; }
+                catch (Exception) { /* 버스가 잠깐 바쁘면 다음 틱에 다시 */ }
             }
-            Thread.Sleep(1);
+            Thread.Sleep(paused ? 8 : 1); // 허브가 앞에 있는 동안은 게임에 손 뗀 패드만 보이면 되므로 천천히
         }
+        timeEndPeriod(1);
         _leftKeys.Release();
         _rightKeys.Release();
     }
@@ -275,4 +271,5 @@ public sealed class VirtualPad : IDisposable
     [DllImport("xinput1_4.dll", EntryPoint = "#100")] private static extern int XInputGetStateEx(int index, ref XInputState state);
     [DllImport("xinput1_4.dll")] private static extern int XInputSetState(int index, ref XInputVibration vibration);
     [DllImport("winmm.dll")] private static extern uint timeBeginPeriod(uint ms);
+    [DllImport("winmm.dll")] private static extern uint timeEndPeriod(uint ms);
 }

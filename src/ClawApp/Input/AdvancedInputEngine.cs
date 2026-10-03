@@ -31,6 +31,9 @@ public sealed class AdvancedInputEngine : IDisposable
 
     private sealed record Config(MappingProfile Profile, Dictionary<ClawButton, AdvancedButton> Buttons, Dictionary<int, ClawButton> ByVk);
 
+    /// <summary>작업 스레드를 깨우기만 하는 가짜 이벤트 (어느 버튼에도 해당하지 않는다).</summary>
+    private const ClawButton Wake = (ClawButton)(-1);
+
     private volatile Config? _config;
     private MappingProfile? _source;
     private readonly BlockingCollection<(ClawButton Button, bool Down)> _events = new();
@@ -61,12 +64,13 @@ public sealed class AdvancedInputEngine : IDisposable
         {
             if (_config is null) return;
             _config = null;
-            _events.Add((default, false)); // 작업 스레드가 깨어나 정리하게
+            _events.Add((Wake, false)); // 작업 스레드가 깨어나 정리하게
             return;
         }
         var adv = profile.Advanced is { Enabled: true } enabled ? enabled : null;
         _config = new Config(profile, buttons.ToDictionary(b => b, b => adv?.Buttons.GetValueOrDefault(b) ?? new AdvancedButton()),
             buttons.ToDictionary(b => (int)AdvancedInput.CarrierLetter[b], b => b));
+        _events.Add((Wake, false)); // 자고 있던 작업 스레드가 새 프로필로 바로 정리하게
         EnsureThreads();
     }
 
@@ -179,9 +183,13 @@ public sealed class AdvancedInputEngine : IDisposable
     private long Now => _clock.ElapsedMilliseconds;
     private const int TapMs = 30;
 
+    /// <summary>
+    /// 버튼 이벤트가 오거나 시간이 걸린 동작(연사·길게·두 번·탭 떼기·원형 메뉴)의 다음 시각이 될 때만 깨어난다.
+    /// 예전에는 엔진이 켜져 있는 내내 2ms마다 깨어나고(초당 500번) Windows 타이머를 1ms로 붙잡아 두어
+    /// 게임하는 동안 배터리를 더 썼다. 이제 정밀 타이머는 시간이 걸린 동작이 남아 있는 동안만 켠다.
+    /// </summary>
     private void WorkerLoop()
     {
-        timeBeginPeriod(1); // 2ms 주기가 실제로 2ms이게
         while (true)
         {
             var cfg = _config;
@@ -190,13 +198,49 @@ public sealed class AdvancedInputEngine : IDisposable
                 ReleaseAll(); // 프로필이 바뀌거나 멈춤 → 누르던 것 정리
                 Volatile.Write(ref _lastConfig, cfg);
             }
-            if (_events.TryTake(out var e, cfg is null ? 200 : 2) && cfg is not null && cfg.Buttons.ContainsKey(e.Button))
+            var due = cfg is null ? null : NextDue(cfg);
+            FineTimer(due is not null);
+            var wait = due is { } d ? (int)Math.Clamp(d - Now, 0, 1000) : Timeout.Infinite;
+            if (_events.TryTake(out var e, wait) && cfg is not null && cfg.Buttons.ContainsKey(e.Button))
             {
                 if (e.Down) OnDown(cfg, e.Button);
                 else OnUp(cfg, e.Button);
             }
             if (cfg is not null) Tick(cfg);
         }
+    }
+
+    private const int RadialPollMs = 8; // 원형 메뉴가 떠 있는 동안 오른쪽 스틱 읽기 (≈120Hz)
+
+    /// <summary>다음에 처리할 시각 (없으면 null = 버튼 이벤트가 올 때까지 잔다).</summary>
+    private long? NextDue(Config cfg)
+    {
+        long? due = null;
+        void At(long t) => due = due is { } d ? Math.Min(d, t) : t;
+        foreach (var (at, _) in _pendingUps) At(at);
+        foreach (var (b, s) in _states)
+        {
+            if (!cfg.Buttons.TryGetValue(b, out var a)) continue;
+            switch (s.Phase)
+            {
+                case Phase.Waiting when a.Long.Count > 0: At(s.Since + Math.Clamp(a.LongMs, 150, 2000)); break;
+                case Phase.PendingDouble:
+                case Phase.Turbo: At(s.Next); break;
+            }
+        }
+        if (_radialButton is not null) At(Now + RadialPollMs);
+        return due;
+    }
+
+    private bool _fine;
+
+    /// <summary>1ms 정밀 타이머는 시간이 걸린 동작이 있을 때만 (연사 간격이 정확하게).</summary>
+    private void FineTimer(bool on)
+    {
+        if (on == _fine) return;
+        _fine = on;
+        if (on) timeBeginPeriod(1);
+        else timeEndPeriod(1);
     }
 
     private State S(ClawButton b) => _states.TryGetValue(b, out var s) ? s : _states[b] = new State();
@@ -456,5 +500,6 @@ public sealed class AdvancedInputEngine : IDisposable
     [DllImport("kernel32.dll")] private static extern IntPtr GetModuleHandle(string? name);
     [DllImport("kernel32.dll")] private static extern uint GetCurrentThreadId();
     [DllImport("winmm.dll")] private static extern uint timeBeginPeriod(uint ms);
+    [DllImport("winmm.dll")] private static extern uint timeEndPeriod(uint ms);
     [DllImport("xinput1_4.dll")] private static extern int XInputGetState(int index, ref XInputState state);
 }
