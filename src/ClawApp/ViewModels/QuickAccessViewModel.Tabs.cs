@@ -24,6 +24,7 @@ public sealed partial class QuickAccessViewModel
     [
         new("perf", "성능", "Gauge"),
         new("display", "화면·소리", "Sun"),
+        new("net", "연결", "Wifi"),
         new("power", "전원", "BatteryFull"),
         new("tools", "캡처", "Camera"),
     ];
@@ -43,6 +44,7 @@ public sealed partial class QuickAccessViewModel
         foreach (var t in Tabs) t.IsSelected = t.Key == value;
         OnPropertyChanged(nameof(TabTitle));
         TabChanged?.Invoke();
+        if (value == "net") _ = _shell.Connections.RefreshAsync();
     }
 
     /// <summary>탭이 바뀌면 뷰가 맨 위로 스크롤하고 그 탭의 첫 항목에 포커스.</summary>
@@ -63,6 +65,7 @@ public sealed partial class QuickAccessViewModel
         else if (Tabs.All(t => t.Key != SelectedTab)) SelectedTab = _lastFixedTab;
         foreach (var t in Tabs) t.IsSelected = t.Key == SelectedTab;
         OnPropertyChanged(nameof(TabTitle));
+        if (opening && SelectedTab == "net") _ = _shell.Connections.RefreshAsync();
     }
 
     [RelayCommand]

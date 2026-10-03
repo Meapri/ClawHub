@@ -238,6 +238,62 @@
                         </Button>
                     </StackPanel>
 
+                    <!-- ══ 연결: Wi-Fi · 블루투스 · 비행기 모드 ══ -->
+                    <StackPanel Visibility="{Binding SelectedTab, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=net}"
+                                m:Entrance.Stagger="Items" m:Entrance.Offset="32">
+                        <WrapPanel>
+                            <ToggleButton Style="{StaticResource QuickTile}" Tag="{StaticResource Icon.Wifi}" Content="Wi-Fi" IsChecked="{Binding Connections.WifiOn}"
+                                          IsEnabled="{Binding Connections.HasWifi}" local:Nav.InitialFocus="True"/>
+                            <ToggleButton Style="{StaticResource QuickTile}" Tag="{StaticResource Icon.Bluetooth}" Content="블루투스" IsChecked="{Binding Connections.BluetoothOn}"
+                                          IsEnabled="{Binding Connections.HasBluetooth}"/>
+                            <ToggleButton Style="{StaticResource QuickTile}" Tag="{StaticResource Icon.Plane}" Content="비행기 모드" IsChecked="{Binding Connections.AirplaneOn}"
+                                          IsEnabled="{Binding Connections.HasAirplane}"/>
+                        </WrapPanel>
+                        <Button Style="{StaticResource NavButton}" Command="{Binding Connections.OpenWifiSettingsCommand}" HorizontalContentAlignment="Stretch" Margin="0,4,0,0">
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Right" Text="{StaticResource Icon.ExternalLink}" Style="{StaticResource Icon}" FontSize="16" Opacity="0.6"/>
+                                <TextBlock Text="{StaticResource Icon.Wifi}" Style="{StaticResource Icon}" Width="30"/>
+                                <StackPanel>
+                                    <TextBlock Text="{Binding Connections.NetworkText}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Text="다른 네트워크 고르기 (Windows 설정)" Style="{StaticResource Caption}"/>
+                                </StackPanel>
+                            </DockPanel>
+                        </Button>
+
+                        <TextBlock Text="블루투스 기기" Style="{StaticResource Section}" Margin="2,16,0,8"/>
+                        <TextBlock Text="페어링된 기기가 없어요" Style="{StaticResource Caption}" Margin="2,0,0,6"
+                                   Visibility="{Binding Connections.HasDevices, Converter={StaticResource NotVis}}"/>
+                        <ItemsControl ItemsSource="{Binding Connections.Devices}" Focusable="False">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <DockPanel Margin="4,4,4,4">
+                                        <TextBlock DockPanel.Dock="Right" Text="{Binding StatusText}" VerticalAlignment="Center">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource Caption}">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Connected}" Value="True">
+                                                            <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
+                                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                        <TextBlock Text="{Binding Icon}" Style="{StaticResource Icon}" Width="30"/>
+                                        <TextBlock Text="{Binding Name}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                    </DockPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Button Style="{StaticResource NavButton}" Command="{Binding Connections.OpenBluetoothSettingsCommand}" HorizontalContentAlignment="Stretch" Margin="0,6,0,0">
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Right" Text="{StaticResource Icon.ExternalLink}" Style="{StaticResource Icon}" FontSize="16" Opacity="0.6"/>
+                                <TextBlock Text="{StaticResource Icon.Bluetooth}" Style="{StaticResource Icon}" Width="30"/>
+                                <TextBlock Text="기기 연결·관리 (Windows 설정)" VerticalAlignment="Center"/>
+                            </DockPanel>
+                        </Button>
+                    </StackPanel>
+
                     <!-- ══ 전원 ══ -->
                     <StackPanel Visibility="{Binding SelectedTab, Converter={x:Static local:EqualsToVisibility.Instance}, ConverterParameter=power}"
                                 m:Entrance.Stagger="Items" m:Entrance.Offset="32">

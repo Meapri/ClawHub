@@ -163,6 +163,7 @@ public sealed partial class QuickAccessViewModel : ObservableObject
     /// <summary>매핑 대상: 실행 중 게임, 없으면 본체 버튼으로 런처를 띄우기 직전에 앞에 있던 앱.</summary>
     /// <summary>출력 장치 바꾸기 (헤드폰·스피커 — 설정의 사운드와 같은 인스턴스).</summary>
     public SoundViewModel Sound => _shell.Sound;
+    public ConnectivityViewModel Connections => _shell.Connections;
 
     public string? TargetTitle => _shell.RunningGame?.Title ?? _shell.ForegroundApp?.Name;
     public string ProfileText => _shell.RunningGame is { } g

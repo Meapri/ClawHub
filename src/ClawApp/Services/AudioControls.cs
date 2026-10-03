@@ -45,7 +45,7 @@ public static class AudioControls
     /// 표시용 이름: 이모지·기호·보이지 않는 문자(블루투스 기기 이름에 흔하다 — 글꼴에 없어 "≣"처럼 깨져 보였다)를 빼고
     /// 겹친 공백을 하나로, 너무 길면 줄인다.
     /// </summary>
-    private static string Clean(string name)
+    internal static string Clean(string name)
     {
         var kept = name.Where(c => char.GetUnicodeCategory(c) is not (
             System.Globalization.UnicodeCategory.OtherSymbol or System.Globalization.UnicodeCategory.MathSymbol
