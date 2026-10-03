@@ -414,7 +414,9 @@
     <!-- ── 폴더 창: 바깥을 누르거나 B로 닫힘 ─────────────────── -->
     <Grid x:Name="FolderLayer" Visibility="{Binding OpenFolder, Converter={StaticResource NullVis}}">
         <!-- 덮개는 제자리에서 페이드 인 (Offset 0), 카드는 미끄러져 들어온다 -->
-        <Border x:Name="FolderScrim" Background="{DynamicResource Scrim}" m:Entrance.Stagger="Self" m:Entrance.Offset="0"/>
+        <!-- 화면 전체(제목·상태 표시줄까지)를 덮는다 — 예전엔 페이지 영역만 어두워져 제목 줄 아래에 가로 경계선이 생겼다.
+             카드와 같은 톤의 반투명 막이라 사진 배경도 함께 가라앉아, 흐린 타일만 따로 번져 보이지 않는다 -->
+        <Border x:Name="FolderScrim" Background="{DynamicResource FolderVeil}" Margin="-160,-200,-160,-160" m:Entrance.Stagger="Self" m:Entrance.Offset="0"/>
         <Border x:Name="FolderCard" Background="{DynamicResource FolderCardFill}" BorderBrush="{DynamicResource Stroke}" BorderThickness="1"
                 HorizontalAlignment="Center" VerticalAlignment="Center" MinWidth="460" MaxWidth="1200" Padding="28,22,28,26"
                 KeyboardNavigation.DirectionalNavigation="Contained" m:Entrance.Stagger="Self" m:Entrance.Offset="24">

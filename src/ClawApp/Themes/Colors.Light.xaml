@@ -39,6 +39,8 @@
     <!-- 배경 덮개 (불투명도는 설정 → 홈 화면 → 어둡기/밝기로) -->
     <!-- 홈 폴더 창 바탕: 반투명 타일이 잘 보이게 카드보다 한 톤 진하게 -->
     <SolidColorBrush x:Key="FolderCardFill" Color="#F0DEE1E7"/>
+    <!-- 폴더 창 뒤 화면 전체를 덮는 반투명 막 (카드와 같은 톤 — 사진 배경도 함께 가라앉힌다) -->
+    <SolidColorBrush x:Key="FolderVeil" Color="#A6E6E8EC"/>
     <SolidColorBrush x:Key="BackdropTintSolid" Color="#F3F3F3"/>
     <LinearGradientBrush x:Key="BackdropShade" StartPoint="0,0" EndPoint="0,1">
         <GradientStop Color="#80F3F3F3" Offset="0"/>
