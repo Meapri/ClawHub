@@ -29,8 +29,14 @@ public sealed class AdvancedButton
     public bool LayerShift { get; set; }
     /// <summary>레이어 버튼을 누르고 있는 동안 이 버튼이 내는 키.</summary>
     public List<string> Layer { get; set; } = [];
-    /// <summary>원형 메뉴 (null = 아님): 누르고 있으면 메뉴가 뜨고 오른쪽 스틱으로 고른 뒤 떼면 그 칸의 키.</summary>
+    /// <summary>원형 메뉴 (null = 아님): 누르고 있으면 메뉴가 뜨고 스틱으로 고른 뒤 떼면 그 칸의 키. 칸 수 = 목록 길이 (4·6·8·12).</summary>
     public List<RadialSlice>? Radial { get; set; }
+    /// <summary>원형 메뉴를 고르는 스틱: false = 오른쪽(기본), true = 왼쪽.</summary>
+    public bool RadialLeftStick { get; set; }
+    /// <summary>원형 메뉴 크기: 0 작게 · 1 보통 · 2 크게.</summary>
+    public int RadialSize { get; set; } = 1;
+    /// <summary>고른 칸이 바뀔 때 짧은 진동.</summary>
+    public bool RadialHaptics { get; set; } = true;
 
     /// <summary>소프트웨어 처리가 필요한지 (아니면 펌웨어가 그대로 처리).</summary>
     [JsonIgnore]
@@ -41,6 +47,7 @@ public sealed class AdvancedButton
         Long = [.. Long], LongMs = LongMs, Double = [.. Double], DoubleMs = DoubleMs, TurboMs = TurboMs, Toggle = Toggle,
         LayerShift = LayerShift, Layer = [.. Layer],
         Radial = Radial?.Select(s => new RadialSlice { Label = s.Label, Keys = [.. s.Keys] }).ToList(),
+        RadialLeftStick = RadialLeftStick, RadialSize = RadialSize, RadialHaptics = RadialHaptics,
     };
 }
 

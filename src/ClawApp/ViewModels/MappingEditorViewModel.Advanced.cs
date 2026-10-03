@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using ClawApp.Input;
 using ClawCore.Controller;
 using ClawCore.Mapping;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -85,7 +86,7 @@ public sealed partial class MappingEditorViewModel
             default:
                 var i = RadialIndex(EditingSlot);
                 a.Radial ??= NewRadial();
-                if (i >= 0 && i < a.Radial.Count) a.Radial[i] = new RadialSlice { Keys = list };
+                if (i >= 0 && i < a.Radial.Count) a.Radial[i].Keys = list; // 칸 이름은 그대로
                 break;
         }
         Prune(b);
@@ -110,7 +111,17 @@ public sealed partial class MappingEditorViewModel
         return true;
     }
 
-    private static List<RadialSlice> NewRadial() => [.. RadialArrows.Select(_ => new RadialSlice())];
+    private static List<RadialSlice> NewRadial(int count = 8) => [.. Enumerable.Range(0, count).Select(_ => new RadialSlice())];
+
+    /// <summary>칸 이름: 4·8칸은 방향 화살표, 그 밖(6·12칸)은 위에서부터 시계 방향 번호.</summary>
+    private static string SliceName(int i, int count) => count switch
+    {
+        8 => RadialArrows[i % 8],
+        4 => RadialArrows[i % 4 * 2],
+        _ => (i + 1).ToString(),
+    };
+
+    private int EditingRadialCount => EditingRow is { } r && Adv(r.Button)?.Radial is { } sl ? sl.Count : 8;
 
     // ── 칩 ─────────────────────────────────────────────────
 
@@ -122,9 +133,9 @@ public sealed partial class MappingEditorViewModel
         var a = Adv(row.Button);
         if (a?.Radial is { } radial)
         {
-            for (var i = 0; i < RadialArrows.Length; i++)
-                Slots.Add(new SlotChoiceViewModel($"r{i}", RadialArrows[i]) { Keys = Describe(i < radial.Count ? radial[i].Keys : []) });
-            if (RadialIndex(EditingSlot) < 0) EditingSlot = "r0";
+            for (var i = 0; i < radial.Count; i++)
+                Slots.Add(new SlotChoiceViewModel($"r{i}", SliceName(i, radial.Count)) { Keys = Describe(radial[i].Keys) });
+            if (RadialIndex(EditingSlot) is var at && (at < 0 || at >= radial.Count)) EditingSlot = "r0";
         }
         else if (a?.LayerShift == true)
         {
@@ -154,6 +165,8 @@ public sealed partial class MappingEditorViewModel
         PrimeModifiers(SlotKeys(row.Button));
         MarkKeys();
         OnPropertyChanged(nameof(EditingSlotCaption));
+        OnPropertyChanged(nameof(EditingSliceLabel));
+        OnPropertyChanged(nameof(IsRadialSlot));
     }
 
     /// <summary>선택판 머리: "A 버튼을 길게 누르면".</summary>
@@ -168,7 +181,7 @@ public sealed partial class MappingEditorViewModel
                 "long" => $"{name} 버튼을 길게 누르면",
                 "double" => $"{name} 버튼을 두 번 누르면",
                 "layer" => $"레이어 버튼을 누른 채 {name}을(를) 누르면",
-                _ when RadialIndex(EditingSlot) is var i and >= 0 => $"원형 메뉴에서 {RadialArrows[i]} 칸을 고르면",
+                _ when RadialIndex(EditingSlot) is var i and >= 0 => $"원형 메뉴에서 {SliceName(i, EditingRadialCount)} 칸을 고르면",
                 _ when Adv(EditingRow?.Button ?? default)?.LayerShift == true => $"{name} = 레이어 버튼 (누르는 동안 다른 버튼이 '레이어 중' 키)",
                 _ => $"{name} 버튼을 누르면",
             };
@@ -181,7 +194,7 @@ public sealed partial class MappingEditorViewModel
         "long" => " 길게",
         "double" => " 두 번",
         "layer" => " 레이어 중",
-        _ when RadialIndex(EditingSlot) is var i and >= 0 => $" 원형 {RadialArrows[i]}",
+        _ when RadialIndex(EditingSlot) is var i and >= 0 => $" 원형 {SliceName(i, EditingRadialCount)}",
         _ => "",
     };
 
@@ -203,6 +216,7 @@ public sealed partial class MappingEditorViewModel
         OnPropertyChanged(nameof(EditingLayerShift));
         OnPropertyChanged(nameof(EditingRadial));
         OnPropertyChanged(nameof(EditingSlotCaption));
+        NotifyRadialOptions();
     }
 
     /// <summary>바꾼 뒤 공통: 저장 · 칩 · 선택판 표시.</summary>
@@ -283,6 +297,121 @@ public sealed partial class MappingEditorViewModel
             EditingSlot = "press";
         }
         AfterBehavior(row.Button);
+    }
+
+    // ── 원형 메뉴 옵션 (칸 수 · 스틱 · 크기 · 진동 · 칸 이름 · 미리 보기) ──────────
+
+    private static readonly int[] RadialCounts = [4, 6, 8, 12];
+
+    public string RadialCountText => $"{EditingRadialCount}칸";
+    public string RadialStickText => EditingRow is { } r && Adv(r.Button)?.RadialLeftStick == true ? "왼쪽 스틱으로 고르기" : "오른쪽 스틱으로 고르기";
+    public string RadialSizeText => (EditingRow is { } r ? Adv(r.Button)?.RadialSize : 1) switch { 0 => "크기 작게", 2 => "크기 크게", _ => "크기 보통" };
+    public bool RadialHaptics => EditingRow is { } r && Adv(r.Button)?.RadialHaptics != false;
+
+    private void NotifyRadialOptions()
+    {
+        OnPropertyChanged(nameof(RadialCountText));
+        OnPropertyChanged(nameof(RadialStickText));
+        OnPropertyChanged(nameof(RadialSizeText));
+        OnPropertyChanged(nameof(RadialHaptics));
+        OnPropertyChanged(nameof(EditingSliceLabel));
+        OnPropertyChanged(nameof(IsRadialSlot));
+    }
+
+    /// <summary>
+    /// 칸 수 바꾸기 (4 → 6 → 8 → 12). 이미 넣은 칸은 방향(각도)이 가장 가까운 새 칸으로 옮긴다
+    /// (8 → 4면 ↑→↓← 칸이 그대로 남는다).
+    /// </summary>
+    [RelayCommand]
+    private void CycleRadialCount()
+    {
+        if (EditingRow is not { } row || Adv(row.Button)?.Radial is not { } old) return;
+        Remember();
+        var n = old.Count;
+        var m = RadialCounts[(Array.IndexOf(RadialCounts, n) + 1) % RadialCounts.Length];
+        var next = NewRadial(m);
+        for (var i = 0; i < n; i++)
+        {
+            if (old[i].Keys.Count == 0 && string.IsNullOrWhiteSpace(old[i].Label)) continue;
+            var target = (int)Math.Round(i * (double)m / n) % m;
+            if (next[target].Keys.Count == 0 && string.IsNullOrWhiteSpace(next[target].Label)) next[target] = old[i];
+        }
+        AdvFor(row.Button).Radial = next;
+        EditingSlot = "r0";
+        AfterBehavior(row.Button);
+        NotifyRadialOptions();
+    }
+
+    [RelayCommand]
+    private void ToggleRadialStick()
+    {
+        if (EditingRow is not { } row || Adv(row.Button) is not { Radial: not null } a) return;
+        Remember();
+        a.RadialLeftStick = !a.RadialLeftStick;
+        Save();
+        NotifyRadialOptions();
+    }
+
+    [RelayCommand]
+    private void CycleRadialSize()
+    {
+        if (EditingRow is not { } row || Adv(row.Button) is not { Radial: not null } a) return;
+        Remember();
+        a.RadialSize = (a.RadialSize + 1) % 3;
+        Save();
+        NotifyRadialOptions();
+    }
+
+    [RelayCommand]
+    private void ToggleRadialHaptics()
+    {
+        if (EditingRow is not { } row || Adv(row.Button) is not { Radial: not null } a) return;
+        Remember();
+        a.RadialHaptics = !a.RadialHaptics;
+        Save();
+        NotifyRadialOptions();
+    }
+
+    public bool IsRadialSlot => RadialIndex(EditingSlot) >= 0 && EditingRadial;
+
+    /// <summary>지금 고른 원형 메뉴 칸의 이름 (비우면 키 이름이 보인다).</summary>
+    public string EditingSliceLabel
+    {
+        get => EditingRow is { } r && Adv(r.Button)?.Radial is { } sl && RadialIndex(EditingSlot) is var i && i >= 0 && i < sl.Count ? sl[i].Label : "";
+        set
+        {
+            if (EditingRow is not { } r || Adv(r.Button)?.Radial is not { } sl || RadialIndex(EditingSlot) is not (var i and >= 0) || i >= sl.Count) return;
+            var text = (value ?? "").Trim();
+            if (text == sl[i].Label) return;
+            RememberOnce("slice-label");
+            sl[i].Label = text;
+            Save();
+            RefreshSlots();
+            OnPropertyChanged();
+        }
+    }
+
+    private System.Windows.Threading.DispatcherTimer? _previewTimer;
+
+    /// <summary>원형 메뉴 미리 보기: 실제 메뉴를 띄워 칸을 한 바퀴 돌며 보여 준 뒤 실행 모션으로 닫는다 (키는 누르지 않는다).</summary>
+    [RelayCommand]
+    private void PreviewRadial()
+    {
+        if (EditingRow is not { } row || Adv(row.Button) is not { Radial: { Count: > 0 } slices } a) return;
+        if (AdvancedInputEngine.Instance.RadialView is not { } view) return;
+        _previewTimer?.Stop();
+        view.Show(slices, a.RadialSize);
+        var order = Enumerable.Range(0, slices.Count).Where(i => slices[i].Keys.Count > 0).ToList();
+        if (order.Count == 0) order = [.. Enumerable.Range(0, slices.Count)];
+        var step = 0;
+        _previewTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(380) };
+        _previewTimer.Tick += (_, _) =>
+        {
+            if (step < order.Count) { view.Select(order[step++]); return; }
+            _previewTimer!.Stop();
+            view.Hide(activated: true);
+        };
+        _previewTimer.Start();
     }
 
     // ── 프로필 단위 켜기 ───────────────────────────────────

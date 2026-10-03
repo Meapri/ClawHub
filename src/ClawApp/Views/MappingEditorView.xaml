@@ -560,6 +560,26 @@
                 </ItemsControl>
             </DockPanel>
 
+            <!-- 원형 메뉴 옵션: 칸 수 · 고르는 스틱 · 크기 · 진동 · 미리 보기, 고른 칸의 이름 -->
+            <DockPanel DockPanel.Dock="Top" Margin="0,-6,0,14" m:Reveal.IsShown="{Binding EditingRadial}" m:Reveal.Kind="Inline">
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    <v:ChoiceChip Style="{StaticResource Chip}" IsChecked="False" Command="{Binding CycleRadialCountCommand}" Content="{Binding RadialCountText}" Margin="0,0,6,0"/>
+                    <v:ChoiceChip Style="{StaticResource Chip}" IsChecked="False" Command="{Binding ToggleRadialStickCommand}" Content="{Binding RadialStickText}" Margin="0,0,6,0"/>
+                    <v:ChoiceChip Style="{StaticResource Chip}" IsChecked="False" Command="{Binding CycleRadialSizeCommand}" Content="{Binding RadialSizeText}" Margin="0,0,6,0"/>
+                    <v:ChoiceChip Style="{StaticResource Chip}" IsChecked="{Binding RadialHaptics, Mode=OneWay}" Command="{Binding ToggleRadialHapticsCommand}" Content="진동" Margin="0,0,6,0"/>
+                    <Button Style="{StaticResource SmallAction}" Command="{Binding PreviewRadialCommand}" Margin="0" Padding="12,8">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{StaticResource Icon.Eye}" Style="{StaticResource Icon}" FontSize="16" Margin="0,0,8,0"/>
+                            <TextBlock Text="미리 보기" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Visibility="{Binding IsRadialSlot, Converter={StaticResource Vis}}">
+                    <TextBlock Text="칸 이름" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="2,0,10,0"/>
+                    <v:InlineEdit Text="{Binding EditingSliceLabel}" Width="240" FontSize="15" InnerPadding="12,6" Placeholder="비우면 키 이름"/>
+                </StackPanel>
+            </DockPanel>
+
             <!-- 탭 (LB/RB) -->
             <DockPanel DockPanel.Dock="Top" Margin="0,0,0,14">
                 <v:ButtonGlyph DockPanel.Dock="Left" Key="LB" Width="28" Height="28" Margin="0,0,14,0" VerticalAlignment="Center"/>
@@ -613,7 +633,7 @@
                         <TextBlock Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="12,0,0,0"
                                    Text="켜 두고 아래에서 키를 고르면 Ctrl + Q처럼 조합돼요. 작은 글자는 이미 그 키를 쓰는 버튼이에요."/>
                     </DockPanel>
-                    <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Margin="-6">
+                    <ScrollViewer HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden" Margin="-6"> <!-- 막대는 숨기고 스크롤만 (패드 포커스·터치) -->
                         <ItemsControl ItemsSource="{Binding KeyboardRows}" Focusable="False" Margin="6" m:Entrance.Stagger="Items" m:Entrance.Offset="24">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>

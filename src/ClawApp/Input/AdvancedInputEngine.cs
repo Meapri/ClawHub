@@ -22,9 +22,11 @@ public sealed class AdvancedInputEngine : IDisposable
     /// <summary>원형 메뉴를 보여 줄 곳 (UI 스레드에서 그린다). 엔진 스레드에서 부르므로 받는 쪽이 Dispatcher로 넘긴다.</summary>
     public interface IRadialView
     {
-        void Show(IReadOnlyList<RadialSlice> slices);
+        /// <summary><paramref name="size"/>: 0 작게 · 1 보통 · 2 크게.</summary>
+        void Show(IReadOnlyList<RadialSlice> slices, int size);
         void Select(int index);
-        void Hide();
+        /// <summary><paramref name="activated"/>: 칸을 골라 실행했으면 true (반짝이며 닫힘), 취소면 false.</summary>
+        void Hide(bool activated);
     }
 
     public IRadialView? RadialView { get; set; }
@@ -229,6 +231,7 @@ public sealed class AdvancedInputEngine : IDisposable
             }
         }
         if (_radialButton is not null) At(Now + RadialPollMs);
+        if (_rumbleOffAt is { } off) At(off);
         return due;
     }
 
@@ -267,7 +270,7 @@ public sealed class AdvancedInputEngine : IDisposable
             _radialButton = b;
             _radialPick = -1;
             s.Phase = Phase.Radial;
-            RadialView?.Show(slices);
+            RadialView?.Show(slices, a.RadialSize);
             return;
         }
         // 레이어 버튼을 누르고 있으면 "레이어 중" 키 (단순히 누르는 동안)
@@ -321,8 +324,9 @@ public sealed class AdvancedInputEngine : IDisposable
                 s.Phase = Phase.Idle;
                 break;
             case Phase.Radial:
-                RadialView?.Hide();
-                if (_radialPick >= 0 && a.Radial is { } slices && _radialPick < slices.Count) Tap(Sendable(slices[_radialPick].Keys));
+                var chosen = _radialPick >= 0 && a.Radial is { } slices && _radialPick < slices.Count ? slices[_radialPick] : null;
+                RadialView?.Hide(activated: chosen is { Keys.Count: > 0 });
+                if (chosen is not null) Tap(Sendable(chosen.Keys));
                 _radialButton = null;
                 s.Phase = Phase.Idle;
                 break;
@@ -386,13 +390,16 @@ public sealed class AdvancedInputEngine : IDisposable
             }
         }
 
+        if (_rumbleOffAt is { } rumbleOff && now >= rumbleOff) Rumble(0);
+
         if (_radialButton is { } rb && cfg.Buttons.TryGetValue(rb, out var ra) && ra.Radial is { Count: > 0 } sl)
         {
-            var pick = RadialPick(sl.Count);
+            var pick = RadialPick(sl.Count, ra.RadialLeftStick);
             if (pick >= 0 && pick != _radialPick)
             {
                 _radialPick = pick;
                 RadialView?.Select(pick);
+                if (ra.RadialHaptics) HapticTick(now);
             }
         }
     }
@@ -416,15 +423,34 @@ public sealed class AdvancedInputEngine : IDisposable
         _pendingUps.Clear();
         _states.Clear();
         _layer = false;
-        if (_radialButton is not null) RadialView?.Hide();
+        if (_radialButton is not null) RadialView?.Hide(activated: false);
         _radialButton = null;
+        if (_rumbleOffAt is not null) Rumble(0);
     }
 
     // ── 원형 메뉴: 오른쪽 스틱 방향으로 고른다 (XInput — 스틱은 펌웨어 매핑과 상관없이 늘 나온다) ──
 
     private int _padSlot = -1;
 
-    private int RadialPick(int count)
+    // ── 진동 틱: 고른 칸이 바뀔 때 아주 짧게 (Steam의 햅틱 틱처럼 — 거슬리지 않게 약하게 18ms) ──
+
+    private long? _rumbleOffAt;
+
+    private void HapticTick(long now)
+    {
+        Rumble(9000);
+        _rumbleOffAt = now + 18;
+    }
+
+    private void Rumble(ushort strength)
+    {
+        if (strength == 0) _rumbleOffAt = null;
+        if (_padSlot < 0) return;
+        var v = new XInputVibration { Left = 0, Right = strength };
+        XInputSetState(_padSlot, ref v);
+    }
+
+    private int RadialPick(int count, bool leftStick)
     {
         XInputState st = default;
         if (_padSlot < 0 || _padSlot == VirtualPad.VirtualSlot || XInputGetState(_padSlot, ref st) != 0)
@@ -434,12 +460,18 @@ public sealed class AdvancedInputEngine : IDisposable
                 if (i != VirtualPad.VirtualSlot && XInputGetState(i, ref st) == 0) { _padSlot = i; break; }
             if (_padSlot < 0) return -1;
         }
-        double x = st.Gamepad.ThumbRX, y = st.Gamepad.ThumbRY;
+        double x = leftStick ? st.Gamepad.ThumbLX : st.Gamepad.ThumbRX, y = leftStick ? st.Gamepad.ThumbLY : st.Gamepad.ThumbRY;
         if (Math.Sqrt(x * x + y * y) < 16000) return -1; // 가운데 = 지금 고른 칸 그대로
         // 위(0)부터 시계 방향
         var angle = Math.Atan2(x, y); // 위 = 0, 오른쪽 = +π/2
         if (angle < 0) angle += 2 * Math.PI;
         var sector = 2 * Math.PI / count;
+        // 경계에서 왔다 갔다 하지 않게: 지금 칸에서 경계를 6° 넘어야 옮긴다
+        if (_radialPick >= 0 && _radialPick < count)
+        {
+            var diff = Math.Abs(((angle - _radialPick * sector) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI);
+            if (diff < sector / 2 + 6 * Math.PI / 180) return _radialPick;
+        }
         return (int)Math.Floor((angle + sector / 2) / sector) % count;
     }
 
@@ -484,6 +516,12 @@ public sealed class AdvancedInputEngine : IDisposable
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    private struct XInputVibration
+    {
+        public ushort Left, Right;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     private struct XInputState
     {
         public uint PacketNumber;
@@ -502,4 +540,5 @@ public sealed class AdvancedInputEngine : IDisposable
     [DllImport("winmm.dll")] private static extern uint timeBeginPeriod(uint ms);
     [DllImport("winmm.dll")] private static extern uint timeEndPeriod(uint ms);
     [DllImport("xinput1_4.dll")] private static extern int XInputGetState(int index, ref XInputState state);
+    [DllImport("xinput1_4.dll")] private static extern int XInputSetState(int index, ref XInputVibration vibration);
 }
