@@ -53,6 +53,10 @@ public sealed partial class ShellViewModel
 
         if (want is null) VirtualPad.Stop();
         else if (VirtualPad.Active is { } pad) pad.Paused = applied is null;
+
+        // 가상 패드 없이 스틱 → 마우스·키 (XInput 모드 프로필, 게임이 앞에 있는 동안만)
+        StickConverter.Use(want is null && applied is not null && game is { Mode: ClawCore.Controller.GamepadMode.XInput, Advanced: { ConvertsSticks: true } sticks }
+            ? sticks : null);
     }
 
     /// <summary>앱을 끌 때: 실제 패드를 되돌리고 가상 패드를 뗀다.</summary>
@@ -65,5 +69,6 @@ public sealed partial class ShellViewModel
             _padHidden = false;
         }
         VirtualPad.Stop();
+        StickConverter.Use(null);
     }
 }

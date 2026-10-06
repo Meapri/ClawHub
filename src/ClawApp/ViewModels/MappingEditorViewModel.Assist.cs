@@ -131,6 +131,7 @@ public sealed partial class MappingEditorViewModel : IPadButtonListener
         RefreshAdvanced();
         MarkKeys();
         OnPropertyChanged(nameof(ModeText));
+        OnPropertyChanged(nameof(IsXInputMode));
         Tuning.Reload();
         NotifyUndo();
         _shell.ShowToast(_undo.Count > 0 ? $"되돌렸어요 · {_undo.Count}번 더 되돌릴 수 있어요" : "되돌렸어요");

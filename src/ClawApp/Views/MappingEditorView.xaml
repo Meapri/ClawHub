@@ -417,12 +417,16 @@
                             <StackPanel>
                                 <TextBlock Text="가상 패드" TextWrapping="Wrap"/>
                                 <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,2,0,0"
-                                           Text="게임에는 ClawHub가 만든 Xbox 패드를 보여 줘요. 고급 동작에서 게임패드 버튼을 내고, 스틱을 키·마우스로 바꿀 수 있어요."/>
+                                           Text="게임에는 ClawHub가 만든 Xbox 패드를 보여 줘요. 고급 동작에서 게임패드 버튼을 내고, 아래 스틱 바꾸기에서 실제 스틱 움직임을 게임에서 숨겨요."/>
                                 <TextBlock Style="{StaticResource Caption}" Foreground="{DynamicResource Warn}" Margin="0,2,0,0" Text="드라이버(ViGEmBus·HidHide)가 설치돼 있지 않아요"
                                            Visibility="{Binding VirtualPadDrivers, Converter={StaticResource NotVis}}"/>
                             </StackPanel>
                         </v:ChoiceChip>
-                        <StackPanel m:Reveal.IsShown="{Binding VirtualPadOn}" m:Reveal.Kind="Inline" Margin="0,8,0,0">
+
+                        <!-- 스틱 → 키·마우스: XInput 모드 프로필이면 가상 패드 없이도 (게임도 실제 스틱을 같이 본다) -->
+                        <StackPanel Visibility="{Binding IsXInputMode, Converter={StaticResource Vis}}">
+                            <TextBlock Text="스틱" Style="{StaticResource Section}" Margin="2,14,0,2"/>
+                            <TextBlock Text="{Binding StickNote}" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="2,0,0,8"/>
                             <TextBlock Text="왼쪽 스틱" Style="{StaticResource Caption}" Margin="2,0,0,6"/>
                             <ItemsControl ItemsSource="{Binding LeftStickChoices}" Focusable="False">
                                 <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>

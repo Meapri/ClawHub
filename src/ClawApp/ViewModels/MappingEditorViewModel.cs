@@ -421,6 +421,7 @@ public sealed partial class MappingEditorViewModel : ObservableObject, INavPage
         Profile.Mode = preset.Mode;
         Save();
         OnPropertyChanged(nameof(ModeText));
+        OnPropertyChanged(nameof(IsXInputMode));
         _shell.ShowToast($"'{preset.Name}' 배치를 불러왔어요");
     }
 
@@ -433,6 +434,7 @@ public sealed partial class MappingEditorViewModel : ObservableObject, INavPage
         Profile.Mode = Profile.Mode == GamepadMode.XInput ? GamepadMode.Desktop : GamepadMode.XInput;
         Save();
         OnPropertyChanged(nameof(ModeText));
+        OnPropertyChanged(nameof(IsXInputMode));
     }
 
     [RelayCommand]

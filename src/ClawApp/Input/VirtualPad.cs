@@ -102,8 +102,7 @@ public sealed class VirtualPad : IDisposable
 
     // ── 1ms 루프 ────────────────────────────────────────────
 
-    private readonly StickKeys _leftKeys = new(), _rightKeys = new();
-    private double _mouseRemX, _mouseRemY;
+    private readonly StickMapper _leftStick = new(), _rightStick = new();
 
     private void Loop()
     {
@@ -134,10 +133,10 @@ public sealed class VirtualPad : IDisposable
 
             // 스틱 → 키·마우스 (멈춰 있으면 모두 뗀다)
             var lx = g.ThumbLX; var ly = g.ThumbLY; var rx = g.ThumbRX; var ry = g.ThumbRY;
-            if (!paused && Convert(cfg.LeftStick, _leftKeys, lx, ly, cfg.MouseSpeed)) lx = ly = 0;
-            else if (paused) _leftKeys.Release();
-            if (!paused && Convert(cfg.RightStick, _rightKeys, rx, ry, cfg.MouseSpeed)) rx = ry = 0;
-            else if (paused) _rightKeys.Release();
+            if (!paused && _leftStick.Convert(cfg.LeftStick, lx, ly, cfg.MouseSpeed, 1)) lx = ly = 0;
+            else if (paused) _leftStick.Release();
+            if (!paused && _rightStick.Convert(cfg.RightStick, rx, ry, cfg.MouseSpeed, 1)) rx = ry = 0;
+            else if (paused) _rightStick.Release();
 
             if (paused) { g = default; overlay = 0; lt = rt = false; lx = ly = rx = ry = 0; } // 게임에는 손을 뗀 패드
             var report = ((ushort)(g.Buttons | overlay), lt ? (byte)255 : g.LeftTrigger, rt ? (byte)255 : g.RightTrigger, lx, ly, rx, ry);
@@ -156,8 +155,8 @@ public sealed class VirtualPad : IDisposable
             Thread.Sleep(paused ? 8 : 1); // 허브가 앞에 있는 동안은 게임에 손 뗀 패드만 보이면 되므로 천천히
         }
         timeEndPeriod(1);
-        _leftKeys.Release();
-        _rightKeys.Release();
+        _leftStick.Release();
+        _rightStick.Release();
     }
 
     /// <summary>실제 패드 번호를 다시 찾는다 (패드 다시 시작 후 번호가 바뀔 수 있다). 가상 패드 번호는 절대 읽지 않는다.</summary>
@@ -175,65 +174,6 @@ public sealed class VirtualPad : IDisposable
         XInputState st = default;
         for (var i = 0; i < 4; i++) if (XInputGetStateEx(i, ref st) == 0) list.Add(i);
         return list;
-    }
-
-    /// <summary>스틱을 키·마우스로. 바꿨으면(게임에 스틱은 0) true.</summary>
-    private bool Convert(StickOutput output, StickKeys keys, short x, short y, int speed)
-    {
-        switch (output)
-        {
-            case StickOutput.Wasd: keys.Update(x, y, "KB_W", "KB_S", "KB_A", "KB_D"); return true;
-            case StickOutput.Arrows: keys.Update(x, y, "KB_UP", "KB_DOWN", "KB_LEFT", "KB_RIGHT"); return true;
-            case StickOutput.Mouse:
-                keys.Release();
-                // 데드존 15% 뒤 제곱 곡선 — 작게 기울이면 정밀하게, 끝까지 기울이면 빠르게
-                double fx = x / 32767.0, fy = -y / 32767.0;
-                var mag = Math.Sqrt(fx * fx + fy * fy);
-                if (mag < 0.15) return true;
-                var scaled = Math.Pow((Math.Min(mag, 1) - 0.15) / 0.85, 2) * Math.Clamp(speed, 1, 100) * 0.04; // 1ms당 픽셀 (40 → 끝까지 기울이면 초당 약 1600)
-                _mouseRemX += fx / mag * scaled;
-                _mouseRemY += fy / mag * scaled;
-                int dx = (int)_mouseRemX, dy = (int)_mouseRemY;
-                _mouseRemX -= dx; _mouseRemY -= dy;
-                if (dx != 0 || dy != 0) SoftInput.MoveMouse(dx, dy);
-                return true;
-            default:
-                keys.Release();
-                return false;
-        }
-    }
-
-    /// <summary>스틱 방향 → 키 (8방향, 켜짐 50% / 꺼짐 40%로 떨림 없이).</summary>
-    private sealed class StickKeys
-    {
-        private readonly bool[] _on = new bool[4];
-        private readonly string[] _ids = ["", "", "", ""];
-
-        public void Update(short x, short y, string up, string down, string left, string right)
-        {
-            double fx = x / 32767.0, fy = y / 32767.0;
-            Set(0, up, fy);
-            Set(1, down, -fy);
-            Set(2, left, -fx);
-            Set(3, right, fx);
-        }
-
-        private void Set(int i, string id, double amount)
-        {
-            if (_ids[i] != id && _on[i]) { SoftInput.Up([_ids[i]]); _on[i] = false; } // 설정이 바뀌면 이전 키를 뗀다
-            _ids[i] = id;
-            var want = _on[i] ? amount > 0.4 : amount > 0.5;
-            if (want == _on[i]) return;
-            _on[i] = want;
-            if (want) SoftInput.Down([id]);
-            else SoftInput.Up([id]);
-        }
-
-        public void Release()
-        {
-            for (var i = 0; i < 4; i++)
-                if (_on[i]) { SoftInput.Up([_ids[i]]); _on[i] = false; }
-        }
     }
 
     public void Dispose()

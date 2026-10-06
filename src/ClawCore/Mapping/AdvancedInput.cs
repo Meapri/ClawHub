@@ -106,6 +106,10 @@ public sealed class AdvancedInput
     [JsonIgnore]
     public bool UsesVirtualPad => Enabled && VirtualPad;
 
+    /// <summary>스틱 하나라도 키·마우스로 바꾸는지 (가상 패드 없이도 XInput 모드에서 동작 — 게임도 스틱을 그대로 본다).</summary>
+    [JsonIgnore]
+    public bool ConvertsSticks => LeftStick != StickOutput.Stick || RightStick != StickOutput.Stick;
+
     /// <summary>운반 키의 머리 (펌웨어 코드 F23 = 156).</summary>
     public const string CarrierPrefix = "KB_F23";
 

@@ -465,7 +465,14 @@ public sealed partial class MappingEditorViewModel
         }
     }
 
-    public bool UsesStickMouse => Profile.Advanced is { UsesVirtualPad: true } a && (a.LeftStick == StickOutput.Mouse || a.RightStick == StickOutput.Mouse);
+    public bool UsesStickMouse => Profile.Advanced is { } a && (a.LeftStick == StickOutput.Mouse || a.RightStick == StickOutput.Mouse);
+
+    /// <summary>스틱 바꾸기는 XInput 모드 프로필에서 (데스크톱 모드는 펌웨어가 이미 스틱 = 마우스).</summary>
+    public bool IsXInputMode => Profile.Mode == GamepadMode.XInput;
+
+    public string StickNote => VirtualPadOn
+        ? "가상 패드가 켜져 있어 게임에는 바꾼 입력만 보여요"
+        : "게임에도 실제 스틱 움직임이 같이 가요 — 스틱을 안 쓰는 게임(메이플 등)에 알맞아요. 게임에서 숨기려면 가상 패드를 켜세요";
 
     [RelayCommand(AllowConcurrentExecutions = true)]
     private async Task ToggleVirtualPad()
@@ -502,7 +509,7 @@ public sealed partial class MappingEditorViewModel
 
     private void PickStick(TuningChoice<StickOutput> c, bool left)
     {
-        if (Profile.Advanced is not { } a) return;
+        var a = Profile.Advanced ??= new AdvancedInput(); // 고급 입력을 켜지 않아도 스틱 바꾸기는 동작
         Remember();
         if (left) a.LeftStick = c.Value;
         else a.RightStick = c.Value;
@@ -516,6 +523,8 @@ public sealed partial class MappingEditorViewModel
         foreach (var c in LeftStickChoices) c.IsSelected = c.Value == (a?.LeftStick ?? StickOutput.Stick);
         foreach (var c in RightStickChoices) c.IsSelected = c.Value == (a?.RightStick ?? StickOutput.Stick);
         OnPropertyChanged(nameof(UsesStickMouse));
+        OnPropertyChanged(nameof(StickNote));
+        OnPropertyChanged(nameof(IsXInputMode));
         OnPropertyChanged(nameof(MouseSpeed));
     }
 
