@@ -196,7 +196,7 @@ public sealed class AdvancedInputEngine : IDisposable
 
     // ── 작업 스레드: 동작 판정 ──────────────────────────────
 
-    private enum Phase { Idle, Holding, Waiting, LongHolding, PendingDouble, Turbo, Radial, Layer }
+    private enum Phase { Idle, Holding, Waiting, LongHolding, PendingDouble, Turbo, Radial, Layer, Sequence }
 
     private sealed class State
     {
@@ -206,6 +206,8 @@ public sealed class AdvancedInputEngine : IDisposable
         public IReadOnlyList<string> Keys = [];
         public bool Toggled;
         public IReadOnlyList<string> ToggleKeys = [];
+        public int Index;             // 차례로 누르기: 지금 누르고 있는 키 번호
+        public int Gap;               // 차례로 누르기: 키 사이 간격 (ms)
     }
 
     private readonly Dictionary<ClawButton, State> _states = [];
@@ -261,7 +263,8 @@ public sealed class AdvancedInputEngine : IDisposable
             {
                 case Phase.Waiting when a.Long.Count > 0: At(s.Since + Math.Clamp(a.LongMs, 150, 2000)); break;
                 case Phase.PendingDouble:
-                case Phase.Turbo: At(s.Next); break;
+                case Phase.Turbo:
+                case Phase.Sequence: At(s.Next); break;
             }
         }
         if (_radialButton is not null) At(Now + RadialPollMs);
@@ -327,6 +330,18 @@ public sealed class AdvancedInputEngine : IDisposable
             return;
         }
         var press = PressKeys(cfg, b);
+        // 여러 키를 차례로: 첫 키를 누른 채 간격만큼 → 떼고 다음 키 … (다시 누르면 처음부터)
+        if (!a.NeedsEngine && press.Count > 1 && cfg.Profile.SequenceGap(b) is > 0 and var gap)
+        {
+            if (s.Phase == Phase.Sequence && s.Index < s.Keys.Count) SoftInput.Up([s.Keys[s.Index]]);
+            s.Phase = Phase.Sequence;
+            s.Keys = press;
+            s.Index = 0;
+            s.Gap = Math.Clamp(gap, 30, 5000);
+            s.Next = now + s.Gap;
+            SoftInput.Down([press[0]]);
+            return;
+        }
         if (a.Toggle)
         {
             if (s.Toggled) SoftInput.Up(s.ToggleKeys);
@@ -434,6 +449,15 @@ public sealed class AdvancedInputEngine : IDisposable
                     _pendingUps.Add((now + hold, s.Keys));
                     s.Next = now + Math.Clamp(a.TurboMs, 20, 2000);
                     break;
+                case Phase.Sequence when now >= s.Next:
+                    SoftInput.Up([s.Keys[s.Index]]);
+                    if (++s.Index < s.Keys.Count)
+                    {
+                        SoftInput.Down([s.Keys[s.Index]]);
+                        s.Next = now + s.Gap;
+                    }
+                    else s.Phase = Phase.Idle;
+                    break;
             }
         }
 
@@ -487,6 +511,7 @@ public sealed class AdvancedInputEngine : IDisposable
         foreach (var s in _states.Values)
         {
             if (s.Phase is Phase.Holding or Phase.LongHolding) SoftInput.Up(s.Keys);
+            if (s.Phase == Phase.Sequence && s.Index < s.Keys.Count) SoftInput.Up([s.Keys[s.Index]]);
             if (s.Toggled) SoftInput.Up(s.ToggleKeys);
         }
         foreach (var (_, keys) in _pendingUps) SoftInput.Up(keys);

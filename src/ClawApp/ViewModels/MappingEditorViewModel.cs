@@ -274,6 +274,7 @@ public sealed partial class MappingEditorViewModel : ObservableObject, INavPage
         OnPropertyChanged(nameof(EditingKeyLabels));
         OnPropertyChanged(nameof(EditingHasKeys));
         OnPropertyChanged(nameof(EditingEmptyText));
+        NotifySequence();
     }
 
     /// <summary>선택판 위쪽 미리보기 키캡.</summary>

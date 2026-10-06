@@ -33,6 +33,17 @@ public sealed class MappingProfile
     /// <summary>고급 입력 (길게·두 번·연사·토글·레이어·원형 메뉴 — 소프트웨어, 프로필마다 켬). null = 없음.</summary>
     public AdvancedInput? Advanced { get; set; }
 
+    /// <summary>
+    /// 여러 키를 넣은 버튼 중 차례로 누를 버튼 → 키 사이 간격(ms). 없으면 펌웨어가 모든 키를 동시에 누른다.
+    /// 차례로: 첫 키를 누른 채 간격만큼 → 떼고 다음 키 … (스킬 딜레이가 긴 게임에서 뒤 키가 씹히지 않게 — 누르고 있으면 딜레이가
+    /// 끝나는 순간 나간다). 소프트웨어(고급 입력 엔진)가 처리한다 — 고급 입력을 켜지 않아도 된다.
+    /// </summary>
+    public Dictionary<ClawButton, int> Sequence { get; set; } = [];
+
+    /// <summary>이 버튼을 차례로 누르면 그 간격(ms), 아니면 0 (키가 하나뿐이면 의미 없음).</summary>
+    public int SequenceGap(ClawButton button) =>
+        Sequence.TryGetValue(button, out var gap) && gap > 0 && Bindings.TryGetValue(button, out var keys) && keys.Count > 1 ? gap : 0;
+
     /// <summary>M1/M2 매크로 (있으면 그 버튼의 일반 바인딩보다 우선).</summary>
     public Dictionary<ClawButton, List<MacroStepDef>> Macros { get; set; } = [];
 
@@ -55,7 +66,8 @@ public sealed class MappingProfile
     /// 펌웨어에는 운반 키로 쓰인다 (<see cref="AdvancedInput.FirmwareBindings"/>).
     /// </summary>
     public IEnumerable<ClawButton> EngineButtons() =>
-        (Advanced?.EngineButtons() ?? []).Union(Bindings.Where(kv => kv.Value.Any(SystemKeys.Is)).Select(kv => kv.Key));
+        (Advanced?.EngineButtons() ?? []).Union(Bindings.Where(kv => kv.Value.Any(SystemKeys.Is)).Select(kv => kv.Key))
+            .Union(Bindings.Keys.Where(b => SequenceGap(b) > 0));
 
     public IReadOnlyDictionary<ClawButton, byte[]> ToCodes() =>
         AdvancedInput.FirmwareBindings(this).ToDictionary( // 고급 입력이 맡는 버튼은 운반 키
@@ -72,6 +84,7 @@ public sealed class MappingProfile
         Macros = Macros.ToDictionary(kv => kv.Key, kv => kv.Value.Select(s => new MacroStepDef { Key = s.Key, HoldMs = s.HoldMs, GapMs = s.GapMs }).ToList()),
         Tuning = Tuning?.Clone(),
         Advanced = Advanced?.Clone(),
+        Sequence = new(Sequence),
     };
 
 }
