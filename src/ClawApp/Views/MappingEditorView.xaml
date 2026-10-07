@@ -546,6 +546,18 @@
                         <v:ChoiceChip Style="{StaticResource Chip}" Content="차례로" IsChecked="{Binding SequenceOn, Mode=OneWay}"
                                       Command="{Binding SetSequenceCommand}" CommandParameter="sequence"/>
                     </DockPanel>
+                    <!-- 차례로: 버튼을 누르고 있는 동안 (트리거는 기본 '누르는 동안 반복') -->
+                    <ItemsControl ItemsSource="{Binding SequenceModeChoices}" Focusable="False" Margin="0,8,0,0"
+                                  Visibility="{Binding SequenceOn, Converter={StaticResource Vis}}">
+                        <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <v:ChoiceChip Style="{StaticResource Chip}" Content="{Binding Label}" IsChecked="{Binding IsSelected, Mode=OneWay}"
+                                              Command="{Binding DataContext.PickSequenceModeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                              CommandParameter="{Binding}"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
                     <!-- 차례로: 키마다 누르고 있을 시간 (딜레이가 긴 스킬만 길게) -->
                     <ItemsControl ItemsSource="{Binding SequenceSteps}" Focusable="False" Margin="0,8,0,0"
                                   Visibility="{Binding SequenceOn, Converter={StaticResource Vis}}">
@@ -560,7 +572,7 @@
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
                     <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="2,6,0,0"
-                               Text="차례로: 키를 하나씩, 정한 시간만큼 누르고 있다가 다음 키로 넘어가요. 딜레이가 긴 스킬은 그 키의 시간만 딜레이보다 조금 길게 주세요."/>
+                               Text="차례로: 키를 하나씩, 정한 시간만큼 누르고 있다가 다음 키로 넘어가요. 딜레이가 긴 스킬은 그 키의 시간만 딜레이보다 조금 길게 주세요. 누르는 동안 반복: 누르고 있으면 처음부터 되풀이하고, 떼면 바로 멈춰요 (트리거 기본)."/>
                     <TextBlock Text="{Binding SequenceConflictNote}" Style="{StaticResource Caption}" Foreground="{DynamicResource Warn}" TextWrapping="Wrap" Margin="2,4,0,0"
                                Visibility="{Binding SequenceConflictNote, Converter={StaticResource NullVis}}"/>
                 </StackPanel>

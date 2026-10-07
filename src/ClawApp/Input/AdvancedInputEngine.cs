@@ -209,6 +209,7 @@ public sealed class AdvancedInputEngine : IDisposable
         public int Index;             // 차례로 누르기: 지금 누르고 있는 키 번호
         public int[] Gaps = [];       // 차례로 누르기: 키마다 누르고 있을 시간 (ms)
         public long RepeatAt;         // 차례로 누르기: 지금 키의 다음 자동 반복 시각
+        public SequenceMode Mode;     // 차례로 누르기: 한 번 끝까지 / 누르는 동안 반복 / 누르는 동안만
     }
 
     private readonly Dictionary<ClawButton, State> _states = [];
@@ -327,7 +328,7 @@ public sealed class AdvancedInputEngine : IDisposable
         if (_layer && a.Layer.Count > 0)
         {
             var layerKeys = Sendable(a.Layer);
-            if (TryStartSequence(s, layerKeys, a.SequenceGaps("layer", a.Layer.Count), now)) return;
+            if (TryStartSequence(s, layerKeys, a.SequenceGaps("layer", a.Layer.Count), a.SequenceModeOf("layer", b), now)) return;
             s.Keys = layerKeys;
             SoftInput.Down(s.Keys);
             s.Phase = Phase.Holding;
@@ -336,7 +337,7 @@ public sealed class AdvancedInputEngine : IDisposable
         var press = PressKeys(cfg, b);
         // 여러 키를 차례로: 첫 키를 누른 채 간격만큼 → 떼고 다음 키 … (다시 누르면 처음부터).
         // 토글·연사보다 우선 (함께 켜 두면 5개 키가 한꺼번에 눌린 채 고정되던 문제). 길게·두 번이 있으면 짧게 뗄 때 차례로 나간다.
-        if (a.Long.Count == 0 && a.Double.Count == 0 && TryStartSequence(s, press, cfg.Profile.SequenceGaps(b), now)) return;
+        if (a.Long.Count == 0 && a.Double.Count == 0 && TryStartSequence(s, press, cfg.Profile.SequenceGaps(b), cfg.Profile.SequenceModeOf(b), now)) return;
         if (a.Toggle)
         {
             if (s.Toggled) SoftInput.Up(s.ToggleKeys);
@@ -348,7 +349,7 @@ public sealed class AdvancedInputEngine : IDisposable
         {
             s.Phase = Phase.Idle; // 두 번째 누름 → 두 번 누르기
             var doubleKeys = Sendable(a.Double);
-            if (!TryStartSequence(s, doubleKeys, a.SequenceGaps("double", a.Double.Count), now)) Tap(doubleKeys);
+            if (!TryStartSequence(s, doubleKeys, a.SequenceGaps("double", a.Double.Count), a.SequenceModeOf("double", b), now)) Tap(doubleKeys);
             return;
         }
         if (a.Long.Count > 0 || a.Double.Count > 0)
@@ -376,6 +377,12 @@ public sealed class AdvancedInputEngine : IDisposable
         if (EngineLog.On) EngineLog.Write($"up {b} phase={s.Phase}");
         switch (s.Phase)
         {
+            case Phase.Sequence when s.Mode != SequenceMode.Once:
+                // 누르는 동안 반복·누르는 동안만: 떼면 그 자리에서 멈춘다 (누르던 키도 뗀다)
+                if (s.Index < s.Keys.Count) SoftInput.Up([s.Keys[s.Index]]);
+                if (EngineLog.On) EngineLog.Write($"seq stop (released) at {s.Index}");
+                s.Phase = Phase.Idle;
+                break;
             case Phase.Layer:
                 _layer = false;
                 s.Phase = Phase.Idle;
@@ -411,7 +418,7 @@ public sealed class AdvancedInputEngine : IDisposable
                 {
                     s.Phase = Phase.Idle;
                     var shortKeys = PressKeys(cfg, b);
-                    if (!TryStartSequence(s, shortKeys, cfg.Profile.SequenceGaps(b), Now)) Tap(shortKeys);
+                    if (!TryStartSequence(s, shortKeys, cfg.Profile.SequenceGaps(b), SequenceMode.Once, Now)) Tap(shortKeys);
                 }
                 break;
         }
@@ -434,7 +441,7 @@ public sealed class AdvancedInputEngine : IDisposable
             {
                 case Phase.Waiting when a.Long.Count > 0 && now - s.Since >= Math.Clamp(a.LongMs, 150, 2000):
                     var longKeys = Sendable(a.Long);
-                    if (TryStartSequence(s, longKeys, a.SequenceGaps("long", a.Long.Count), now)) break;
+                    if (TryStartSequence(s, longKeys, a.SequenceGaps("long", a.Long.Count), a.SequenceModeOf("long", b), now)) break;
                     s.Keys = longKeys;
                     SoftInput.Down(s.Keys); // 길게: 누르고 있는 동안 계속 눌림
                     s.Phase = Phase.LongHolding;
@@ -442,7 +449,7 @@ public sealed class AdvancedInputEngine : IDisposable
                 case Phase.PendingDouble when now >= s.Next:
                     s.Phase = Phase.Idle; // 두 번째가 안 왔다 → 짧게 한 번
                     var pressKeys = PressKeys(cfg, b);
-                    if (!TryStartSequence(s, pressKeys, cfg.Profile.SequenceGaps(b), now)) Tap(pressKeys);
+                    if (!TryStartSequence(s, pressKeys, cfg.Profile.SequenceGaps(b), SequenceMode.Once, now)) Tap(pressKeys);
                     break;
                 case Phase.Turbo when now >= s.Next:
                     var hold = Math.Max(10, Math.Min(TapMs, a.TurboMs / 2));
@@ -465,6 +472,15 @@ public sealed class AdvancedInputEngine : IDisposable
                         if (EngineLog.On) EngineLog.Write($"seq down {s.Keys[s.Index]} for {StepMs(s, s.Index)}ms");
                         SoftInput.Down([s.Keys[s.Index]]);
                         s.Next = now + StepMs(s, s.Index);
+                        s.RepeatAt = now + KeyRepeatMs;
+                    }
+                    else if (s.Mode == SequenceMode.Repeat)
+                    {
+                        // 누르고 있는 동안 반복: 처음부터 다시 (떼면 OnUp에서 멈춘다)
+                        s.Index = 0;
+                        if (EngineLog.On) EngineLog.Write($"seq again {s.Keys[0]}");
+                        SoftInput.Down([s.Keys[0]]);
+                        s.Next = now + StepMs(s, 0);
                         s.RepeatAt = now + KeyRepeatMs;
                     }
                     else s.Phase = Phase.Idle;
@@ -513,7 +529,7 @@ public sealed class AdvancedInputEngine : IDisposable
     /// 그 칸이 "차례로"(간격 > 0)이고 키가 둘 이상이면: 첫 키를 누른 채 간격만큼 → 떼고 다음 키 … (버튼을 떼도 끝까지, 다시 누르면 처음부터).
     /// 아니면 false — 호출한 쪽이 평소처럼 (동시에) 낸다.
     /// </summary>
-    private bool TryStartSequence(State s, IReadOnlyList<string> keys, int[]? gaps, long now)
+    private bool TryStartSequence(State s, IReadOnlyList<string> keys, int[]? gaps, SequenceMode mode, long now)
     {
         if (gaps is not { Length: > 0 } || keys.Count < 2) return false;
         if (s.Phase == Phase.Sequence && s.Index < s.Keys.Count) SoftInput.Up([s.Keys[s.Index]]);
@@ -521,6 +537,7 @@ public sealed class AdvancedInputEngine : IDisposable
         s.Keys = keys;
         s.Index = 0;
         s.Gaps = gaps;
+        s.Mode = mode;
         s.Next = now + StepMs(s, 0);
         s.RepeatAt = now + KeyRepeatMs;
         if (EngineLog.On) EngineLog.Write($"seq start [{string.Join(" ", keys)}] gaps [{string.Join(",", gaps)}] · down {keys[0]}");

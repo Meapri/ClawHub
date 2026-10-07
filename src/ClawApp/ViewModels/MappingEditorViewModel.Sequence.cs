@@ -58,6 +58,29 @@ public sealed partial class MappingEditorViewModel
         ? "차례로가 켜져 있어 이 버튼의 토글·연사는 쓰지 않아요"
         : null;
 
+    /// <summary>버튼을 누르고 있는 동안의 동작 (트리거는 기본 반복).</summary>
+    public IReadOnlyList<TuningChoice<ClawCore.Mapping.SequenceMode>> SequenceModeChoices { get; } =
+    [
+        new("한 번 끝까지", ClawCore.Mapping.SequenceMode.Once),
+        new("누르는 동안 반복", ClawCore.Mapping.SequenceMode.Repeat),
+        new("누르는 동안만", ClawCore.Mapping.SequenceMode.WhileHeld),
+    ];
+
+    private ClawCore.Mapping.SequenceMode StoredMode(ClawCore.Controller.ClawButton b) => SequenceSlot == "press"
+        ? Profile.SequenceModeOf(b)
+        : Adv(b)?.SequenceModeOf(SequenceSlot, b) ?? ClawCore.Mapping.MappingProfile.DefaultSequenceMode(b);
+
+    [RelayCommand]
+    private void PickSequenceMode(TuningChoice<ClawCore.Mapping.SequenceMode> choice)
+    {
+        if (EditingRow is not { } r || !SequenceOn || StoredMode(r.Button) == choice.Value) return;
+        Remember();
+        if (SequenceSlot == "press") Profile.SequenceModes[r.Button] = choice.Value;
+        else AdvFor(r.Button).SequenceModes[SequenceSlot] = choice.Value;
+        Save();
+        foreach (var c in SequenceModeChoices) c.IsSelected = c == choice;
+    }
+
     /// <summary>차례로일 때 키마다 한 줄.</summary>
     public ObservableCollection<SequenceStepViewModel> SequenceSteps { get; } = [];
 
@@ -75,10 +98,10 @@ public sealed partial class MappingEditorViewModel
         if (SequenceSlot == "press")
         {
             if (on) Profile.Sequence[b] = DefaultSequenceGapMs;
-            else { Profile.Sequence.Remove(b); Profile.SequenceSteps.Remove(b); }
+            else { Profile.Sequence.Remove(b); Profile.SequenceSteps.Remove(b); Profile.SequenceModes.Remove(b); }
         }
         else if (on) AdvFor(b).Sequence[SequenceSlot] = DefaultSequenceGapMs;
-        else if (Adv(b) is { } a) { a.Sequence.Remove(SequenceSlot); a.SequenceSteps.Remove(SequenceSlot); }
+        else if (Adv(b) is { } a) { a.Sequence.Remove(SequenceSlot); a.SequenceSteps.Remove(SequenceSlot); a.SequenceModes.Remove(SequenceSlot); }
     }
 
     /// <summary>i번째 키의 시간을 바꾼다 (목록이 짧으면 지금 값으로 채운다).</summary>
@@ -117,6 +140,8 @@ public sealed partial class MappingEditorViewModel
         OnPropertyChanged(nameof(SequenceConflictNote));
         SequenceSteps.Clear();
         if (EditingRow is not { } r || !CanSequence || !SequenceOn) return;
+        var mode = StoredMode(r.Button);
+        foreach (var c in SequenceModeChoices) c.IsSelected = c.Value == mode;
         var keys = SlotKeys(r.Button);
         var gaps = ClawCore.Mapping.MappingProfile.StepGaps(keys.Count, StoredGap(r.Button), StoredSteps(r.Button));
         for (var i = 0; i < keys.Count; i++) SequenceSteps.Add(new SequenceStepViewModel(i, Label(keys[i]), gaps[i], SetStepMs));

@@ -58,6 +58,16 @@ public sealed class MappingProfile
     public static int[] StepGaps(int count, int gap, List<int>? steps) =>
         [.. Enumerable.Range(0, count).Select(i => steps is not null && i < steps.Count && steps[i] > 0 ? steps[i] : gap)];
 
+    /// <summary>차례로 누를 때 버튼을 누르고 있는 동안의 동작 (없으면 <see cref="DefaultSequenceMode"/>).</summary>
+    public Dictionary<ClawButton, SequenceMode> SequenceModes { get; set; } = [];
+
+    public SequenceMode SequenceModeOf(ClawButton button) =>
+        SequenceModes.TryGetValue(button, out var mode) ? mode : DefaultSequenceMode(button);
+
+    /// <summary>트리거(LT·RT)는 당기는 동안 반복, 나머지는 한 번 끝까지.</summary>
+    public static SequenceMode DefaultSequenceMode(ClawButton button) =>
+        button is ClawButton.LT or ClawButton.RT ? SequenceMode.Repeat : SequenceMode.Once;
+
     /// <summary>M1/M2 매크로 (있으면 그 버튼의 일반 바인딩보다 우선).</summary>
     public Dictionary<ClawButton, List<MacroStepDef>> Macros { get; set; } = [];
 
@@ -100,8 +110,20 @@ public sealed class MappingProfile
         Advanced = Advanced?.Clone(),
         Sequence = new(Sequence),
         SequenceSteps = SequenceSteps.ToDictionary(kv => kv.Key, kv => kv.Value.ToList()),
+        SequenceModes = new(SequenceModes),
     };
 
+}
+
+/// <summary>차례로 누를 때 버튼을 누르고 있는 동안의 동작.</summary>
+public enum SequenceMode
+{
+    /// <summary>한 번 누르면 마지막 키까지 (일찍 떼도 끝까지, 다시 누르면 처음부터).</summary>
+    Once,
+    /// <summary>누르고 있는 동안 처음부터 되풀이, 떼면 그 자리에서 멈춤 (트리거 기본).</summary>
+    Repeat,
+    /// <summary>한 바퀴만, 중간에 떼면 멈춤.</summary>
+    WhileHeld,
 }
 
 /// <summary>
