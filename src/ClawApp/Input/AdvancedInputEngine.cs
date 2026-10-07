@@ -207,7 +207,7 @@ public sealed class AdvancedInputEngine : IDisposable
         public bool Toggled;
         public IReadOnlyList<string> ToggleKeys = [];
         public int Index;             // 차례로 누르기: 지금 누르고 있는 키 번호
-        public int Gap;               // 차례로 누르기: 키 사이 간격 (ms)
+        public int[] Gaps = [];       // 차례로 누르기: 키마다 누르고 있을 시간 (ms)
     }
 
     private readonly Dictionary<ClawButton, State> _states = [];
@@ -325,7 +325,7 @@ public sealed class AdvancedInputEngine : IDisposable
         if (_layer && a.Layer.Count > 0)
         {
             var layerKeys = Sendable(a.Layer);
-            if (TryStartSequence(s, layerKeys, a.SequenceGap("layer"), now)) return;
+            if (TryStartSequence(s, layerKeys, a.SequenceGaps("layer", a.Layer.Count), now)) return;
             s.Keys = layerKeys;
             SoftInput.Down(s.Keys);
             s.Phase = Phase.Holding;
@@ -333,7 +333,7 @@ public sealed class AdvancedInputEngine : IDisposable
         }
         var press = PressKeys(cfg, b);
         // 여러 키를 차례로: 첫 키를 누른 채 간격만큼 → 떼고 다음 키 … (다시 누르면 처음부터)
-        if (!a.NeedsEngine && TryStartSequence(s, press, cfg.Profile.SequenceGap(b), now)) return;
+        if (!a.NeedsEngine && TryStartSequence(s, press, cfg.Profile.SequenceGaps(b), now)) return;
         if (a.Toggle)
         {
             if (s.Toggled) SoftInput.Up(s.ToggleKeys);
@@ -345,7 +345,7 @@ public sealed class AdvancedInputEngine : IDisposable
         {
             s.Phase = Phase.Idle; // 두 번째 누름 → 두 번 누르기
             var doubleKeys = Sendable(a.Double);
-            if (!TryStartSequence(s, doubleKeys, a.SequenceGap("double"), now)) Tap(doubleKeys);
+            if (!TryStartSequence(s, doubleKeys, a.SequenceGaps("double", a.Double.Count), now)) Tap(doubleKeys);
             return;
         }
         if (a.Long.Count > 0 || a.Double.Count > 0)
@@ -407,7 +407,7 @@ public sealed class AdvancedInputEngine : IDisposable
                 {
                     s.Phase = Phase.Idle;
                     var shortKeys = PressKeys(cfg, b);
-                    if (!TryStartSequence(s, shortKeys, cfg.Profile.SequenceGap(b), Now)) Tap(shortKeys);
+                    if (!TryStartSequence(s, shortKeys, cfg.Profile.SequenceGaps(b), Now)) Tap(shortKeys);
                 }
                 break;
         }
@@ -430,7 +430,7 @@ public sealed class AdvancedInputEngine : IDisposable
             {
                 case Phase.Waiting when a.Long.Count > 0 && now - s.Since >= Math.Clamp(a.LongMs, 150, 2000):
                     var longKeys = Sendable(a.Long);
-                    if (TryStartSequence(s, longKeys, a.SequenceGap("long"), now)) break;
+                    if (TryStartSequence(s, longKeys, a.SequenceGaps("long", a.Long.Count), now)) break;
                     s.Keys = longKeys;
                     SoftInput.Down(s.Keys); // 길게: 누르고 있는 동안 계속 눌림
                     s.Phase = Phase.LongHolding;
@@ -438,7 +438,7 @@ public sealed class AdvancedInputEngine : IDisposable
                 case Phase.PendingDouble when now >= s.Next:
                     s.Phase = Phase.Idle; // 두 번째가 안 왔다 → 짧게 한 번
                     var pressKeys = PressKeys(cfg, b);
-                    if (!TryStartSequence(s, pressKeys, cfg.Profile.SequenceGap(b), now)) Tap(pressKeys);
+                    if (!TryStartSequence(s, pressKeys, cfg.Profile.SequenceGaps(b), now)) Tap(pressKeys);
                     break;
                 case Phase.Turbo when now >= s.Next:
                     var hold = Math.Max(10, Math.Min(TapMs, a.TurboMs / 2));
@@ -451,7 +451,7 @@ public sealed class AdvancedInputEngine : IDisposable
                     if (++s.Index < s.Keys.Count)
                     {
                         SoftInput.Down([s.Keys[s.Index]]);
-                        s.Next = now + s.Gap;
+                        s.Next = now + StepMs(s, s.Index);
                     }
                     else s.Phase = Phase.Idle;
                     break;
@@ -499,18 +499,21 @@ public sealed class AdvancedInputEngine : IDisposable
     /// 그 칸이 "차례로"(간격 > 0)이고 키가 둘 이상이면: 첫 키를 누른 채 간격만큼 → 떼고 다음 키 … (버튼을 떼도 끝까지, 다시 누르면 처음부터).
     /// 아니면 false — 호출한 쪽이 평소처럼 (동시에) 낸다.
     /// </summary>
-    private bool TryStartSequence(State s, IReadOnlyList<string> keys, int gap, long now)
+    private bool TryStartSequence(State s, IReadOnlyList<string> keys, int[]? gaps, long now)
     {
-        if (gap <= 0 || keys.Count < 2) return false;
+        if (gaps is not { Length: > 0 } || keys.Count < 2) return false;
         if (s.Phase == Phase.Sequence && s.Index < s.Keys.Count) SoftInput.Up([s.Keys[s.Index]]);
         s.Phase = Phase.Sequence;
         s.Keys = keys;
         s.Index = 0;
-        s.Gap = Math.Clamp(gap, 30, 5000);
-        s.Next = now + s.Gap;
+        s.Gaps = gaps;
+        s.Next = now + StepMs(s, 0);
         SoftInput.Down([keys[0]]);
         return true;
     }
+
+    /// <summary>차례로 누르기에서 i번째 키를 누르고 있을 시간 (키 수가 시간 수보다 많으면 마지막 값).</summary>
+    private static int StepMs(State s, int i) => Math.Clamp(s.Gaps[Math.Min(i, s.Gaps.Length - 1)], 30, 5000);
 
     private void Tap(IReadOnlyList<string> keys)
     {

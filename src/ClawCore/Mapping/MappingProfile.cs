@@ -44,6 +44,20 @@ public sealed class MappingProfile
     public int SequenceGap(ClawButton button) =>
         Sequence.TryGetValue(button, out var gap) && gap > 0 && Bindings.TryGetValue(button, out var keys) && keys.Count > 1 ? gap : 0;
 
+    /// <summary>
+    /// 차례로 누를 때 키마다 누르고 있을 시간 (ms, 키 순서대로) — 딜레이가 긴 스킬 하나만 길게.
+    /// 비었거나 모자라는 키는 <see cref="Sequence"/>의 간격.
+    /// </summary>
+    public Dictionary<ClawButton, List<int>> SequenceSteps { get; set; } = [];
+
+    /// <summary>차례로 누르는 버튼이면 키마다 시간, 아니면 null.</summary>
+    public int[]? SequenceGaps(ClawButton button) =>
+        SequenceGap(button) is > 0 and var gap ? StepGaps(Bindings[button].Count, gap, SequenceSteps.GetValueOrDefault(button)) : null;
+
+    /// <summary>키 수만큼: 정한 값이 있으면 그 값, 없으면 기본 간격.</summary>
+    public static int[] StepGaps(int count, int gap, List<int>? steps) =>
+        [.. Enumerable.Range(0, count).Select(i => steps is not null && i < steps.Count && steps[i] > 0 ? steps[i] : gap)];
+
     /// <summary>M1/M2 매크로 (있으면 그 버튼의 일반 바인딩보다 우선).</summary>
     public Dictionary<ClawButton, List<MacroStepDef>> Macros { get; set; } = [];
 
@@ -85,6 +99,7 @@ public sealed class MappingProfile
         Tuning = Tuning?.Clone(),
         Advanced = Advanced?.Clone(),
         Sequence = new(Sequence),
+        SequenceSteps = SequenceSteps.ToDictionary(kv => kv.Key, kv => kv.Value.ToList()),
     };
 
 }

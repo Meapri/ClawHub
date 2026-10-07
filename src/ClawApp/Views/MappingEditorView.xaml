@@ -545,14 +545,22 @@
                                       Command="{Binding SetSequenceCommand}" CommandParameter="chord"/>
                         <v:ChoiceChip Style="{StaticResource Chip}" Content="차례로" IsChecked="{Binding SequenceOn, Mode=OneWay}"
                                       Command="{Binding SetSequenceCommand}" CommandParameter="sequence"/>
-                        <DockPanel Margin="16,0,0,0" Visibility="{Binding SequenceOn, Converter={StaticResource Vis}}">
-                            <TextBlock Text="간격" VerticalAlignment="Center" Foreground="{DynamicResource TextDim}" Margin="0,0,10,0"/>
-                            <TextBlock DockPanel.Dock="Right" Text="{Binding SequenceGapText}" Width="56" TextAlignment="Right" VerticalAlignment="Center" FontWeight="SemiBold"/>
-                            <Slider Minimum="100" Maximum="3000" SmallChange="50" LargeChange="100" Value="{Binding SequenceGapMs}" VerticalAlignment="Center"/>
-                        </DockPanel>
                     </DockPanel>
+                    <!-- 차례로: 키마다 누르고 있을 시간 (딜레이가 긴 스킬만 길게) -->
+                    <ItemsControl ItemsSource="{Binding SequenceSteps}" Focusable="False" Margin="0,8,0,0"
+                                  Visibility="{Binding SequenceOn, Converter={StaticResource Vis}}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <DockPanel Margin="0,2">
+                                    <TextBlock Text="{Binding Label}" Width="150" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock DockPanel.Dock="Right" Text="{Binding Text}" Width="56" TextAlignment="Right" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                    <Slider Minimum="100" Maximum="3000" SmallChange="50" LargeChange="100" Value="{Binding Ms}" VerticalAlignment="Center"/>
+                                </DockPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
                     <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="2,6,0,0"
-                               Text="차례로: 키를 하나씩, 간격만큼 누르고 있다가 다음 키로 넘어가요. 앞 스킬 딜레이가 길어도 뒤 키가 씹히지 않아요 (간격은 딜레이보다 조금 길게)."/>
+                               Text="차례로: 키를 하나씩, 정한 시간만큼 누르고 있다가 다음 키로 넘어가요. 딜레이가 긴 스킬은 그 키의 시간만 딜레이보다 조금 길게 주세요."/>
                 </StackPanel>
             </Border>
 
