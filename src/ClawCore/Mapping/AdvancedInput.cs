@@ -29,6 +29,14 @@ public sealed class AdvancedButton
     public bool LayerShift { get; set; }
     /// <summary>레이어 버튼을 누르고 있는 동안 이 버튼이 내는 키.</summary>
     public List<string> Layer { get; set; } = [];
+    /// <summary>
+    /// 여러 키를 넣은 칸 중 차례로 누를 칸("long"·"double"·"layer") → 키 사이 간격(ms). 없으면 동시에.
+    /// '누를 때' 칸은 <see cref="MappingProfile.Sequence"/>.
+    /// </summary>
+    public Dictionary<string, int> Sequence { get; set; } = [];
+
+    /// <summary>그 칸을 차례로 누르면 간격(ms), 아니면 0.</summary>
+    public int SequenceGap(string slot) => Sequence.TryGetValue(slot, out var gap) && gap > 0 ? gap : 0;
     /// <summary>원형 메뉴 (null = 아님): 누르고 있으면 메뉴가 뜨고 스틱으로 고른 뒤 떼면 그 칸의 키. 칸 수 = 목록 길이 (4·6·8·12).</summary>
     public List<RadialSlice>? Radial { get; set; }
     /// <summary>원형 메뉴를 고르는 스틱. Auto = 여는 버튼 쪽 (L3·LB·LT·방향 버튼 → 왼쪽, 나머지 → 오른쪽).</summary>
@@ -69,7 +77,7 @@ public sealed class AdvancedButton
     public AdvancedButton Clone() => new()
     {
         Long = [.. Long], LongMs = LongMs, Double = [.. Double], DoubleMs = DoubleMs, TurboMs = TurboMs, Toggle = Toggle,
-        LayerShift = LayerShift, Layer = [.. Layer],
+        LayerShift = LayerShift, Layer = [.. Layer], Sequence = new(Sequence),
         Radial = Radial?.Select(s => new RadialSlice { Label = s.Label, Keys = [.. s.Keys] }).ToList(),
         RadialStick = RadialStick, RadialSize = RadialSize, RadialHaptics = RadialHaptics,
     };

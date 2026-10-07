@@ -324,24 +324,16 @@ public sealed class AdvancedInputEngine : IDisposable
         // 레이어 버튼을 누르고 있으면 "레이어 중" 키 (단순히 누르는 동안)
         if (_layer && a.Layer.Count > 0)
         {
-            s.Keys = Sendable(a.Layer);
+            var layerKeys = Sendable(a.Layer);
+            if (TryStartSequence(s, layerKeys, a.SequenceGap("layer"), now)) return;
+            s.Keys = layerKeys;
             SoftInput.Down(s.Keys);
             s.Phase = Phase.Holding;
             return;
         }
         var press = PressKeys(cfg, b);
         // 여러 키를 차례로: 첫 키를 누른 채 간격만큼 → 떼고 다음 키 … (다시 누르면 처음부터)
-        if (!a.NeedsEngine && press.Count > 1 && cfg.Profile.SequenceGap(b) is > 0 and var gap)
-        {
-            if (s.Phase == Phase.Sequence && s.Index < s.Keys.Count) SoftInput.Up([s.Keys[s.Index]]);
-            s.Phase = Phase.Sequence;
-            s.Keys = press;
-            s.Index = 0;
-            s.Gap = Math.Clamp(gap, 30, 5000);
-            s.Next = now + s.Gap;
-            SoftInput.Down([press[0]]);
-            return;
-        }
+        if (!a.NeedsEngine && TryStartSequence(s, press, cfg.Profile.SequenceGap(b), now)) return;
         if (a.Toggle)
         {
             if (s.Toggled) SoftInput.Up(s.ToggleKeys);
@@ -352,7 +344,8 @@ public sealed class AdvancedInputEngine : IDisposable
         if (s.Phase == Phase.PendingDouble && a.Double.Count > 0)
         {
             s.Phase = Phase.Idle; // 두 번째 누름 → 두 번 누르기
-            Tap(Sendable(a.Double));
+            var doubleKeys = Sendable(a.Double);
+            if (!TryStartSequence(s, doubleKeys, a.SequenceGap("double"), now)) Tap(doubleKeys);
             return;
         }
         if (a.Long.Count > 0 || a.Double.Count > 0)
@@ -412,8 +405,9 @@ public sealed class AdvancedInputEngine : IDisposable
                 }
                 else
                 {
-                    Tap(PressKeys(cfg, b));
                     s.Phase = Phase.Idle;
+                    var shortKeys = PressKeys(cfg, b);
+                    if (!TryStartSequence(s, shortKeys, cfg.Profile.SequenceGap(b), Now)) Tap(shortKeys);
                 }
                 break;
         }
@@ -435,13 +429,16 @@ public sealed class AdvancedInputEngine : IDisposable
             switch (s.Phase)
             {
                 case Phase.Waiting when a.Long.Count > 0 && now - s.Since >= Math.Clamp(a.LongMs, 150, 2000):
-                    s.Keys = Sendable(a.Long);
+                    var longKeys = Sendable(a.Long);
+                    if (TryStartSequence(s, longKeys, a.SequenceGap("long"), now)) break;
+                    s.Keys = longKeys;
                     SoftInput.Down(s.Keys); // 길게: 누르고 있는 동안 계속 눌림
                     s.Phase = Phase.LongHolding;
                     break;
                 case Phase.PendingDouble when now >= s.Next:
-                    Tap(PressKeys(cfg, b)); // 두 번째가 안 왔다 → 짧게 한 번
-                    s.Phase = Phase.Idle;
+                    s.Phase = Phase.Idle; // 두 번째가 안 왔다 → 짧게 한 번
+                    var pressKeys = PressKeys(cfg, b);
+                    if (!TryStartSequence(s, pressKeys, cfg.Profile.SequenceGap(b), now)) Tap(pressKeys);
                     break;
                 case Phase.Turbo when now >= s.Next:
                     var hold = Math.Max(10, Math.Min(TapMs, a.TurboMs / 2));
@@ -496,6 +493,23 @@ public sealed class AdvancedInputEngine : IDisposable
         _radialPick = -1;
         _radialClick = false;
         s.Phase = Phase.Idle;
+    }
+
+    /// <summary>
+    /// 그 칸이 "차례로"(간격 > 0)이고 키가 둘 이상이면: 첫 키를 누른 채 간격만큼 → 떼고 다음 키 … (버튼을 떼도 끝까지, 다시 누르면 처음부터).
+    /// 아니면 false — 호출한 쪽이 평소처럼 (동시에) 낸다.
+    /// </summary>
+    private bool TryStartSequence(State s, IReadOnlyList<string> keys, int gap, long now)
+    {
+        if (gap <= 0 || keys.Count < 2) return false;
+        if (s.Phase == Phase.Sequence && s.Index < s.Keys.Count) SoftInput.Up([s.Keys[s.Index]]);
+        s.Phase = Phase.Sequence;
+        s.Keys = keys;
+        s.Index = 0;
+        s.Gap = Math.Clamp(gap, 30, 5000);
+        s.Next = now + s.Gap;
+        SoftInput.Down([keys[0]]);
+        return true;
     }
 
     private void Tap(IReadOnlyList<string> keys)
