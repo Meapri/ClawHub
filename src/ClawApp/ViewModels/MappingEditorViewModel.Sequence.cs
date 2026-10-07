@@ -53,6 +53,11 @@ public sealed partial class MappingEditorViewModel
     public bool SequenceOn => EditingRow is { } r && StoredGap(r.Button) > 0;
     public bool SequenceOff => !SequenceOn;
 
+    /// <summary>누를 때 칸이 차례로인데 토글·연사도 켜져 있으면 안내 (차례로가 우선).</summary>
+    public string? SequenceConflictNote => SequenceOn && SequenceSlot == "press" && (EditingToggle || EditingTurbo)
+        ? "차례로가 켜져 있어 이 버튼의 토글·연사는 쓰지 않아요"
+        : null;
+
     /// <summary>차례로일 때 키마다 한 줄.</summary>
     public ObservableCollection<SequenceStepViewModel> SequenceSteps { get; } = [];
 
@@ -109,6 +114,7 @@ public sealed partial class MappingEditorViewModel
         OnPropertyChanged(nameof(CanSequence));
         OnPropertyChanged(nameof(SequenceOn));
         OnPropertyChanged(nameof(SequenceOff));
+        OnPropertyChanged(nameof(SequenceConflictNote));
         SequenceSteps.Clear();
         if (EditingRow is not { } r || !CanSequence || !SequenceOn) return;
         var keys = SlotKeys(r.Button);

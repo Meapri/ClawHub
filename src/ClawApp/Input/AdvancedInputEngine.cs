@@ -332,8 +332,9 @@ public sealed class AdvancedInputEngine : IDisposable
             return;
         }
         var press = PressKeys(cfg, b);
-        // 여러 키를 차례로: 첫 키를 누른 채 간격만큼 → 떼고 다음 키 … (다시 누르면 처음부터)
-        if (!a.NeedsEngine && TryStartSequence(s, press, cfg.Profile.SequenceGaps(b), now)) return;
+        // 여러 키를 차례로: 첫 키를 누른 채 간격만큼 → 떼고 다음 키 … (다시 누르면 처음부터).
+        // 토글·연사보다 우선 (함께 켜 두면 5개 키가 한꺼번에 눌린 채 고정되던 문제). 길게·두 번이 있으면 짧게 뗄 때 차례로 나간다.
+        if (a.Long.Count == 0 && a.Double.Count == 0 && TryStartSequence(s, press, cfg.Profile.SequenceGaps(b), now)) return;
         if (a.Toggle)
         {
             if (s.Toggled) SoftInput.Up(s.ToggleKeys);

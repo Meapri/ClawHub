@@ -213,6 +213,7 @@ public sealed partial class MappingEditorViewModel
         OnPropertyChanged(nameof(EditingTurbo));
         OnPropertyChanged(nameof(TurboText));
         OnPropertyChanged(nameof(EditingToggle));
+        OnPropertyChanged(nameof(SequenceConflictNote));
         OnPropertyChanged(nameof(EditingLayerShift));
         OnPropertyChanged(nameof(EditingRadial));
         OnPropertyChanged(nameof(EditingSlotCaption));

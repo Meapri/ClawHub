@@ -561,6 +561,8 @@
                     </ItemsControl>
                     <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="2,6,0,0"
                                Text="차례로: 키를 하나씩, 정한 시간만큼 누르고 있다가 다음 키로 넘어가요. 딜레이가 긴 스킬은 그 키의 시간만 딜레이보다 조금 길게 주세요."/>
+                    <TextBlock Text="{Binding SequenceConflictNote}" Style="{StaticResource Caption}" Foreground="{DynamicResource Warn}" TextWrapping="Wrap" Margin="2,4,0,0"
+                               Visibility="{Binding SequenceConflictNote, Converter={StaticResource NullVis}}"/>
                 </StackPanel>
             </Border>
 
