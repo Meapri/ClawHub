@@ -57,6 +57,15 @@ internal static class SoftInput
         foreach (var id in ids) Send(id, down: true);
     }
 
+    /// <summary>
+    /// 누르고 있는 키의 자동 반복 (진짜 키보드처럼 '눌림'을 다시 보낸다). 키보드 키만 — 마우스·시스템 동작·패드 버튼은
+    /// 다시 보내면 여러 번 실행되므로 무시한다. 눌림 신호가 올 때만 받는 게임이 바쁜 동안 들어온 첫 신호를 놓쳐도 다음 신호로 받게.
+    /// </summary>
+    public static void Repeat(string id)
+    {
+        if (Keys.ContainsKey(id)) Send(id, down: true);
+    }
+
     /// <summary>거꾸로 뗀다 (Q → Ctrl).</summary>
     public static void Up(IReadOnlyList<string> ids)
     {

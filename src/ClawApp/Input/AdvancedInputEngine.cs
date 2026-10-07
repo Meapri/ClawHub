@@ -208,6 +208,7 @@ public sealed class AdvancedInputEngine : IDisposable
         public IReadOnlyList<string> ToggleKeys = [];
         public int Index;             // 차례로 누르기: 지금 누르고 있는 키 번호
         public int[] Gaps = [];       // 차례로 누르기: 키마다 누르고 있을 시간 (ms)
+        public long RepeatAt;         // 차례로 누르기: 지금 키의 다음 자동 반복 시각
     }
 
     private readonly Dictionary<ClawButton, State> _states = [];
@@ -263,8 +264,8 @@ public sealed class AdvancedInputEngine : IDisposable
             {
                 case Phase.Waiting when a.Long.Count > 0: At(s.Since + Math.Clamp(a.LongMs, 150, 2000)); break;
                 case Phase.PendingDouble:
-                case Phase.Turbo:
-                case Phase.Sequence: At(s.Next); break;
+                case Phase.Turbo: At(s.Next); break;
+                case Phase.Sequence: At(Math.Min(s.Next, s.RepeatAt)); break;
             }
         }
         if (_radialButton is not null) At(Now + RadialPollMs);
@@ -295,6 +296,7 @@ public sealed class AdvancedInputEngine : IDisposable
         var a = cfg.Buttons[b];
         var s = S(b);
         var now = Now;
+        if (EngineLog.On) EngineLog.Write($"down {b} phase={s.Phase} layer={_layer} toggle={a.Toggle} turbo={a.TurboMs} long={a.Long.Count} double={a.Double.Count} press=[{string.Join(" ", PressKeys(cfg, b))}] seq=[{string.Join(",", cfg.Profile.SequenceGaps(b) ?? [])}]");
 
         if (a.LayerShift)
         {
@@ -371,6 +373,7 @@ public sealed class AdvancedInputEngine : IDisposable
     {
         var a = cfg.Buttons[b];
         var s = S(b);
+        if (EngineLog.On) EngineLog.Write($"up {b} phase={s.Phase}");
         switch (s.Phase)
         {
             case Phase.Layer:
@@ -447,12 +450,22 @@ public sealed class AdvancedInputEngine : IDisposable
                     _pendingUps.Add((now + hold, s.Keys));
                     s.Next = now + Math.Clamp(a.TurboMs, 20, 2000);
                     break;
-                case Phase.Sequence when now >= s.Next:
+                case Phase.Sequence when now < s.Next:
+                    if (now >= s.RepeatAt)
+                    {
+                        SoftInput.Repeat(s.Keys[s.Index]); // 진짜 키처럼 누르고 있는 동안 '눌림'을 되풀이
+                        s.RepeatAt = now + KeyRepeatMs;
+                    }
+                    break;
+                case Phase.Sequence:
+                    if (EngineLog.On) EngineLog.Write($"seq up {s.Keys[s.Index]}");
                     SoftInput.Up([s.Keys[s.Index]]);
                     if (++s.Index < s.Keys.Count)
                     {
+                        if (EngineLog.On) EngineLog.Write($"seq down {s.Keys[s.Index]} for {StepMs(s, s.Index)}ms");
                         SoftInput.Down([s.Keys[s.Index]]);
                         s.Next = now + StepMs(s, s.Index);
+                        s.RepeatAt = now + KeyRepeatMs;
                     }
                     else s.Phase = Phase.Idle;
                     break;
@@ -509,9 +522,17 @@ public sealed class AdvancedInputEngine : IDisposable
         s.Index = 0;
         s.Gaps = gaps;
         s.Next = now + StepMs(s, 0);
+        s.RepeatAt = now + KeyRepeatMs;
+        if (EngineLog.On) EngineLog.Write($"seq start [{string.Join(" ", keys)}] gaps [{string.Join(",", gaps)}] · down {keys[0]}");
         SoftInput.Down([keys[0]]);
         return true;
     }
+
+    /// <summary>
+    /// 차례로 누르는 키의 자동 반복 간격. 진짜 키보드·컨트롤러 펌웨어처럼 누르고 있는 동안 '눌림'을 되풀이한다 —
+    /// 눌림 신호가 올 때만 받는 게임(메이플 등)이 앞 스킬 동작 중에 들어온 첫 신호를 버려도 동작이 끝나면 다음 신호로 받는다.
+    /// </summary>
+    private const int KeyRepeatMs = 33;
 
     /// <summary>차례로 누르기에서 i번째 키를 누르고 있을 시간 (키 수가 시간 수보다 많으면 마지막 값).</summary>
     private static int StepMs(State s, int i) => Math.Clamp(s.Gaps[Math.Min(i, s.Gaps.Length - 1)], 30, 5000);
