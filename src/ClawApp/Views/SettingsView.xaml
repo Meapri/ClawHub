@@ -78,8 +78,14 @@
                                 <RadioButton Style="{StaticResource ChipRadio}" GroupName="startup" Content="Xbox 모드 동반" IsChecked="{Binding StartupCompanion}"/>
                             </WrapPanel>
                             <TextBlock Text="{Binding CompanionText}" Style="{StaticResource Caption}"/>
-                            <TextBlock Style="{StaticResource Caption}" Margin="0,2,0,0"
-                                       Text="자동: 켤 때 Xbox 앱이 이미 떠 있으면(Xbox 모드) 숨은 채로 버튼·자동 매핑만 담당해요."/>
+                            <TextBlock Style="{StaticResource Caption}" Margin="0,2,0,0" TextWrapping="Wrap"
+                                       Text="자동: Xbox 모드로 켜졌으면(Windows의 '시작할 때 전체 화면 환경' 또는 Xbox 앱이 떠 있음) 숨은 채로 버튼·자동 매핑만 담당해요."/>
+                            <Button Style="{StaticResource ToolButton}" HorizontalAlignment="Left" Margin="0,12,0,0" Command="{Binding ToggleXboxModeCommand}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{StaticResource Icon.MonitorPlay}" Style="{StaticResource Icon}" FontSize="18" Margin="0,0,10,0"/>
+                                    <TextBlock Text="{Binding XboxModeButtonText}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
                         </StackPanel>
                     </Border>
 

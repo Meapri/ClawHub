@@ -109,13 +109,21 @@ public sealed class AppSettings
 
     public const string XboxAppId =@"shell:AppsFolder\Microsoft.GamingApp_8wekyb3d8bbwe!Microsoft.Xbox.App";
 
-    /// <summary>Auto일 때: 시작 시점에 Xbox 앱이 이미 떠 있으면 Xbox 모드로 부팅한 것으로 본다.</summary>
+    /// <summary>
+    /// Auto일 때: 시작 시점에 Xbox 앱이 이미 떠 있거나, Windows가 "시작할 때 전체 화면 환경"으로 설정돼 있고 방금 로그인했으면
+    /// Xbox 모드로 본다 (로그인 직후엔 ClawHub가 Xbox 앱보다 먼저 뜰 수 있다).
+    /// </summary>
     public bool ResolveCompanion() => (App.StartupOverride ?? StartupMode) switch
     {
         StartupMode.Companion => true,
         StartupMode.Shell => false,
-        _ => AnyXboxAppRunning(),
+        _ => AnyXboxAppRunning() || (StartsInXboxMode() && Environment.TickCount64 < 3 * 60_000),
     };
+
+    /// <summary>Windows 설정 > 게임 > 전체 화면 환경 > "시작할 때 들어가기".</summary>
+    private static bool StartsInXboxMode() =>
+        Microsoft.Win32.Registry.GetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\GamingConfiguration",
+            "StartupToGamingHome", 0) is int v && v != 0;
 
     private static bool AnyXboxAppRunning()
     {

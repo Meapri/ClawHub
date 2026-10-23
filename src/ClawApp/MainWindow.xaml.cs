@@ -366,6 +366,7 @@ public partial class MainWindow : Window
                 _vm.OnMsiButton(MsiButton.QuickSettings);
                 return;
             case NavAction.Back:
+                if (BackHandlerAround(Keyboard.FocusedElement as DependencyObject)?.HandleBack() == true) return;
                 if (_vm.IsAnyPanelOpen) _vm.ClosePanels();
                 else if (!(_vm.CurrentPage?.Handle(a) ?? false) && !_vm.GoBack() && _vm.RunningGame is not null)
                     _vm.ReturnToBackground(); // 게임 중 첫 화면에서 B → 게임으로 (홈은 HomeViewModel.Handle이 처리)
@@ -494,6 +495,14 @@ public partial class MainWindow : Window
         // 아래(위)에 더 고를 것이 없으면 읽기 전용 내용(배터리 수명 등)이 보이게 그냥 스크롤한다
         if (Keyboard.FocusedElement == focused && a is NavAction.Up or NavAction.Down && FindScroller(focused) is { } sv)
             sv.ScrollToVerticalOffset(sv.VerticalOffset + (a == NavAction.Down ? 160 : -160));
+    }
+
+    /// <summary>포커스된 요소를 감싼 가장 가까운 <see cref="Views.IBackHandler"/>.</summary>
+    private static Views.IBackHandler? BackHandlerAround(DependencyObject? from)
+    {
+        for (var d = from; d is not null; d = VisualTreeHelper.GetParent(d))
+            if (d is Views.IBackHandler h) return h;
+        return null;
     }
 
     private static ScrollViewer? FindScroller(DependencyObject from)

@@ -152,13 +152,23 @@ public sealed partial class PowerPlanViewModel : ObservableObject
         catch (Exception) { /* 연결 끊김 — 다음 상태 때 */ }
     }
 
+    /// <summary>한 줄의 한 칸만 펼친다 (다른 줄은 접는다). null이면 접기.</summary>
+    internal void Expand(PowerPlanRow row, PowerSourceKind? source)
+    {
+        foreach (var r in Rows)
+            if (r != row) r.Expanded = null;
+        row.Expanded = source;
+    }
+
     internal async Task SetAsync(PowerPlanRow row, PowerPlanChip chip)
     {
         if (_busy || !row.IsEnabled || chip.Value == row.CurrentValue(chip.Source))
         {
             row.Remark(); // 이미 선택된 칩을 눌러 꺼진 모양이 되면 되돌린다
+            row.Expanded = null; // 지금 값을 다시 고른 것 = 확인
             return;
         }
+        row.Expanded = null; // 고르면 바로 접는다 (값 버튼에 새 값이 보인다)
         _busy = true;
         try
         {
@@ -204,6 +214,30 @@ public sealed partial class PowerPlanRow(PowerPlanViewModel owner, PowerPlanSett
     /// <summary>빠른 설정용: 지금 전원 상태 칸의 칩.</summary>
     public ObservableCollection<PowerPlanChip> CurrentChoices => owner.OnBattery || !AcApplies ? DcChoices : AcChoices;
     public string CurrentText => owner.OnBattery || !AcApplies ? DcText : AcText;
+
+    // ── 설정 화면: 값 버튼 두 개(충전 중·배터리) + 누른 칸의 칩만 펼침 ──
+
+    /// <summary>칩을 펼친 칸 (null = 접힘).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsExpanded), nameof(ExpandedChoices), nameof(AcExpanded), nameof(DcExpanded))]
+    private PowerSourceKind? _expanded;
+
+    public bool IsExpanded => Expanded is not null;
+    public bool AcExpanded => Expanded == PowerSourceKind.Ac;
+    public bool DcExpanded => Expanded == PowerSourceKind.Battery;
+    public IEnumerable<PowerPlanChip> ExpandedChoices => Expanded switch
+    {
+        PowerSourceKind.Ac => AcChoices,
+        PowerSourceKind.Battery => DcChoices,
+        _ => [],
+    };
+
+    /// <summary>지금 적용되는 칸 ("지금" 표시).</summary>
+    public bool AcIsCurrent => !owner.OnBattery && AcApplies;
+    public bool DcIsCurrent => owner.OnBattery || !AcApplies;
+
+    [RelayCommand]
+    private void Expand(PowerSourceKind source) => owner.Expand(this, Expanded == source ? null : source);
 
     internal int? CurrentValue(PowerSourceKind source) => source == PowerSourceKind.Ac ? _state?.Ac : _state?.Dc;
 

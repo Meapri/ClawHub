@@ -175,6 +175,17 @@ public sealed partial class SettingsViewModel : ObservableObject, INavPage
         ? "지금: Xbox 모드 동반 — 홈 화면은 Xbox 앱, ClawHub는 버튼·자동 매핑 담당"
         : "지금: ClawHub 전체 화면";
 
+    public string XboxModeButtonText => _shell.IsCompanion ? "Xbox 모드 나가기" : "지금 Xbox 모드로";
+
+    /// <summary>시작 방식과 별개로 지금 바로 Xbox 모드에 들어가거나 나온다 (홈의 'Xbox 모드' 타일과 같음).</summary>
+    [RelayCommand]
+    private void ToggleXboxMode()
+    {
+        _shell.ToggleXboxModeCommand.Execute(null);
+        OnPropertyChanged(nameof(CompanionText));
+        OnPropertyChanged(nameof(XboxModeButtonText));
+    }
+
     public bool MsiCenterKnown => _shell.Status?.MsiCenterEnabled is not null;
 
     public bool MsiCenterEnabled
@@ -371,7 +382,7 @@ public sealed partial class SettingsViewModel : ObservableObject, INavPage
     private void OpenWindows(string page)
     {
         SystemControls.OpenWindowsSettings(page);
-        _shell.GoToDesktopCommand.Execute(null);
+        _shell.ShowOtherWindow();
         _shell.ShowToast("왼쪽 MSI 버튼을 누르면 ClawHub로 돌아와요");
     }
 

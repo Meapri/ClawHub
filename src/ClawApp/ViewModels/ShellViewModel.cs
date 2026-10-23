@@ -358,15 +358,16 @@ public sealed partial class ShellViewModel : ObservableObject
 
     /// <summary>
     /// Windows Xbox 모드(전체 화면 환경)로 들어가거나 나온다 (Win+F11 토글 — Xbox 앱 오른쪽 위 "XBOX 모드" 버튼과 같다).
-    /// 들어가면 홈은 Xbox 앱이 맡으므로 ClawHub는 숨어서 버튼·자동 매핑만 맡는 동반 모드가 된다
-    /// (시작 방식이 "자동"일 때 — 사용자가 고정해 둔 방식은 바꾸지 않는다).
+    /// 들어가면 홈은 Xbox 앱이 맡으므로 ClawHub는 숨어서 버튼·자동 매핑만 맡는 동반 모드가 된다.
+    /// 지금 상태(<see cref="IsCompanion"/>)만 바꾸고 저장된 시작 방식은 그대로 둔다 — Windows가 지금 Xbox 모드인지
+    /// 알려 주지 않으므로 ClawHub가 바꾼 상태를 따라간다 (안 맞으면 한 번 더 누르면 맞춰진다).
     /// </summary>
     [RelayCommand]
     private void ToggleXboxMode()
     {
         var entering = !IsCompanion;
         XboxIntegration.PressWinF11();
-        if (Settings.StartupMode == StartupMode.Auto) IsCompanion = entering;
+        IsCompanion = entering;
         if (!entering) return; // 나올 때는 Windows 바탕화면으로 돌아간다 — ClawHub가 앞에 있으면 그대로
         _inDesktop = false;
         _returnWindow = IntPtr.Zero;
@@ -850,19 +851,33 @@ public sealed partial class ShellViewModel : ObservableObject
             catch (Exception) { /* 권한 없음/이미 종료 */ }
         });
 
+    /// <summary>"데스크톱으로". Xbox 모드면 먼저 빠져나온다 — 전체 화면 환경에는 바탕화면·작업 표시줄이 없어서 숨기기만 하면 Xbox 앱 홈이 보인다.</summary>
     [RelayCommand]
-    private void GoToDesktop() => EnterDesktop(Settings.DesktopController == DesktopController.Gamepad);
+    private void GoToDesktop() => LeaveToDesktop(Settings.DesktopController == DesktopController.Gamepad);
 
-    /// <summary>사용자가 창을 최소화함 (Win+D 등): 게임 중이면 게임으로, 아니면 데스크톱 모드로.</summary>
+    /// <summary>사용자가 창을 최소화함 (Win+D 등): 게임 중이면 게임으로, 아니면 데스크톱 모드로 (Xbox 모드는 그대로).</summary>
     public void OnMinimizedByUser()
     {
         if (RunningGame is not null) ReturnToBackground();
-        else GoToDesktop();
+        else ShowOtherWindow();
     }
 
     /// <summary>데스크톱으로 — 컨트롤러는 게임패드 그대로.</summary>
     [RelayCommand]
-    private void GoToDesktopGamepad() => EnterDesktop(gamepad: true);
+    private void GoToDesktopGamepad() => LeaveToDesktop(gamepad: true);
+
+    /// <summary>Windows 설정 등 방금 띄운 창으로 넘긴다: 데스크톱 모드 컨트롤러로 숨되 Xbox 모드는 나오지 않는다.</summary>
+    public void ShowOtherWindow() => EnterDesktop(Settings.DesktopController == DesktopController.Gamepad);
+
+    private void LeaveToDesktop(bool gamepad)
+    {
+        var leaveXbox = IsCompanion;
+        EnterDesktop(gamepad);
+        if (!leaveXbox) return;
+        XboxIntegration.PressWinF11();
+        IsCompanion = false;
+        ShowToast("Xbox 모드를 나와 데스크톱으로 왔어요 — 홈의 'Xbox 모드' 타일로 다시 들어가요");
+    }
 
     private void EnterDesktop(bool gamepad)
     {

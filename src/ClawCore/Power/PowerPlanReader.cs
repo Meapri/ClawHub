@@ -64,8 +64,8 @@ public static class PowerPlanReader
                     PowerSetting = d.Setting,
                     Unit = d.Unit,
                     AcApplies = d.AcApplies,
-                    Ac = Clamp(v.Ac),
-                    Dc = Clamp(v.Dc),
+                    Ac = d.Unit == PowerPlanUnit.Seconds ? Seconds(v.Ac) : Clamp(v.Ac),
+                    Dc = d.Unit == PowerPlanUnit.Seconds ? Seconds(v.Dc) : Clamp(v.Dc),
                 };
                 if (d.Unit == PowerPlanUnit.Choice)
                 {
@@ -174,4 +174,10 @@ public static class PowerPlanReader
     public const string FastStartupKey = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Session Manager\Power";
 
     private static int Clamp(uint v) => v > int.MaxValue ? int.MaxValue : (int)v;
+
+    /// <summary>
+    /// 시간 값. 0xFFFFFFFF는 Windows가 쓰는 또 다른 "사용 안 함"(모던 스탠바이 기기의 최대 절전 기본값 등)이라 0으로 맞춘다 —
+    /// 그대로 두면 "596523시간 14분"으로 보인다.
+    /// </summary>
+    private static int Seconds(uint v) => v == uint.MaxValue ? 0 : Clamp(v);
 }

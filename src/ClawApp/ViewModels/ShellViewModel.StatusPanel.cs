@@ -84,7 +84,7 @@ public sealed partial class ShellViewModel
     {
         ClosePanels();
         SystemControls.OpenWindowsSettings(page);
-        GoToDesktopCommand.Execute(null);
+        ShowOtherWindow();
         ShowToast("왼쪽 MSI 버튼을 누르면 ClawHub로 돌아와요");
     }
 
