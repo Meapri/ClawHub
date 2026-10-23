@@ -60,6 +60,14 @@ public sealed partial class SettingsViewModel : ObservableObject, INavPage
     public SettingsViewModel(ShellViewModel shell)
     {
         _shell = shell;
+        shell.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName is nameof(ShellViewModel.IsCompanion) or nameof(ShellViewModel.IsXboxModeActive))
+            {
+                OnPropertyChanged(nameof(CompanionText));
+                OnPropertyChanged(nameof(CanEnterXboxMode));
+            }
+        };
         Categories =
         [
             new("general", "", "일반"),
@@ -171,20 +179,20 @@ public sealed partial class SettingsViewModel : ObservableObject, INavPage
         OnPropertyChanged(nameof(CompanionText));
     }
 
-    public string CompanionText => _shell.IsCompanion
-        ? "지금: Xbox 모드 동반 — 홈 화면은 Xbox 앱, ClawHub는 버튼·자동 매핑 담당"
-        : "지금: ClawHub 전체 화면";
-
-    public string XboxModeButtonText => _shell.IsCompanion ? "Xbox 모드 나가기" : "지금 Xbox 모드로";
-
-    /// <summary>시작 방식과 별개로 지금 바로 Xbox 모드에 들어가거나 나온다 (홈의 'Xbox 모드' 타일과 같음).</summary>
-    [RelayCommand]
-    private void ToggleXboxMode()
+    public string CompanionText => (_shell.IsXboxModeActive, _shell.IsCompanion) switch
     {
-        _shell.ToggleXboxModeCommand.Execute(null);
-        OnPropertyChanged(nameof(CompanionText));
-        OnPropertyChanged(nameof(XboxModeButtonText));
-    }
+        (true, true) => "지금: Xbox 모드 — 홈 화면은 Xbox 앱, ClawHub는 버튼·자동 매핑 담당. 나가려면 '데스크톱으로'",
+        (true, false) => "지금: Xbox 모드 (시작 방식이 'ClawHub 전체 화면'이라 ClawHub가 홈을 맡아요). 나가려면 '데스크톱으로'",
+        (false, true) => "지금: 데스크톱 (시작 방식이 'Xbox 모드 동반'이라 홈 버튼은 Xbox 앱을 열어요)",
+        _ => "지금: ClawHub 전체 화면",
+    };
+
+    /// <summary>"지금 Xbox 모드로" 버튼은 Xbox 모드가 아닐 때만 (나가기는 "데스크톱으로"가 맡는다).</summary>
+    public bool CanEnterXboxMode => !_shell.IsXboxModeActive;
+
+    /// <summary>시작 방식과 별개로 지금 바로 Xbox 모드로 (홈의 'Xbox 모드' 타일과 같음).</summary>
+    [RelayCommand]
+    private void EnterXboxMode() => _shell.EnterXboxModeCommand.Execute(null);
 
     public bool MsiCenterKnown => _shell.Status?.MsiCenterEnabled is not null;
 

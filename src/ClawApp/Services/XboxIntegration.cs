@@ -92,6 +92,33 @@ public static class XboxIntegration
         keybd_event(VkLWin, 0, Extended | KeyUp, UIntPtr.Zero);
     }
 
+    /// <summary>
+    /// 지금 Windows Xbox 모드(전체 화면 환경)인지. 공개 API가 없어 탐색기가 남기는 흔적으로 본다
+    /// (Windows 11 26300에서 확인): 들어가면 탐색기가 GamingFallbackWindow를 띄우고 작업 표시줄(Shell_TrayWnd)을
+    /// 가린다(cloak). 나오면 둘 다 원래대로이고, 나가기 확인 창에서 취소하면 그대로다.
+    /// </summary>
+    public static bool IsXboxModeActive()
+    {
+        var fallback = FindWindow("GamingFallbackWindow", null);
+        if (fallback != IntPtr.Zero && IsWindowVisible(fallback)) return true;
+        var tray = FindWindow("Shell_TrayWnd", null);
+        return tray != IntPtr.Zero && DwmGetWindowAttribute(tray, DwmwaCloaked, out var cloaked, sizeof(int)) == 0 && cloaked != 0;
+    }
+
+    /// <summary>Xbox 모드가 <paramref name="active"/> 상태가 될 때까지 기다린다 (나가기 확인 창이 뜨면 사용자가 고를 때까지).</summary>
+    public static async Task<bool> WaitXboxModeAsync(bool active, TimeSpan timeout)
+    {
+        var until = DateTime.UtcNow + timeout;
+        while (DateTime.UtcNow < until)
+        {
+            await Task.Delay(250);
+            if (IsXboxModeActive() == active) return true;
+        }
+        return false;
+    }
+
+    private const int DwmwaCloaked = 14;
+
     // ── 지금 앞에 있는 앱 판별 ──────────────────────────────
 
     public readonly record struct Owner(string Name, string? Path);
@@ -144,5 +171,8 @@ public static class XboxIntegration
 
     [DllImport("user32.dll")] private static extern void keybd_event(byte vk, byte scan, uint flags, UIntPtr extraInfo);
     [DllImport("user32.dll")] private static extern IntPtr GetForegroundWindow();
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern IntPtr FindWindow(string? className, string? title);
+    [DllImport("user32.dll")] private static extern bool IsWindowVisible(IntPtr hwnd);
+    [DllImport("dwmapi.dll")] private static extern int DwmGetWindowAttribute(IntPtr hwnd, int attribute, out int value, int size);
     [DllImport("user32.dll")] private static extern uint GetWindowThreadProcessId(IntPtr hwnd, out uint pid);
 }

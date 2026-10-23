@@ -21,8 +21,6 @@ public sealed partial class StartTileViewModel : ObservableObject, IStartCell
     {
         _shell = shell;
         Def = def;
-        if (def.Kind == StartTileKind.Action && def.Ref == "xboxmode")
-            shell.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(ShellViewModel.IsCompanion)) OnPropertyChanged(nameof(Title)); };
     }
 
     public StartTileDef Def { get; }
@@ -42,7 +40,6 @@ public sealed partial class StartTileViewModel : ObservableObject, IStartCell
     public string Title => Kind switch
     {
         StartTileKind.Folder => Def.Title ?? "폴더",
-        StartTileKind.Action when Def.Ref == "xboxmode" && _shell.IsCompanion => "Xbox 모드 나가기",
         StartTileKind.Action => Action?.Label ?? "",
         StartTileKind.Continue => Game?.Title ?? "이어서 플레이",
         _ => Game?.Title ?? "",

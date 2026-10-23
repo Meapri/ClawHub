@@ -293,6 +293,7 @@ public sealed partial class ShellViewModel : ObservableObject
 
         // Xbox 모드(동반 모드): 홈 화면은 Xbox 앱에 맡기고 숨어서 시작
         IsCompanion = Settings.ResolveCompanion();
+        IsXboxModeActive = XboxIntegration.IsXboxModeActive();
         if (IsCompanion)
         {
             IsWindowVisible = false;
@@ -303,7 +304,11 @@ public sealed partial class ShellViewModel : ObservableObject
 
         // 어디서 실행했든(Xbox 앱, 넥슨 런처, 바탕화면) 라이브러리 게임이 뜨면 붙어서 매핑을 적용
         _watchTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
-        _watchTimer.Tick += async (_, _) => await WatchExternalGamesAsync();
+        _watchTimer.Tick += async (_, _) =>
+        {
+            SyncXboxMode(); // Xbox 앱·Win+F11 등 바깥에서 바꾼 것도 따라간다
+            await WatchExternalGamesAsync();
+        };
         _watchTimer.Start();
 
         _handoffTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(400) };
@@ -357,22 +362,49 @@ public sealed partial class ShellViewModel : ObservableObject
     private void OpenXboxApp() => OpenXboxHome();
 
     /// <summary>
-    /// Windows Xbox 모드(전체 화면 환경)로 들어가거나 나온다 (Win+F11 토글 — Xbox 앱 오른쪽 위 "XBOX 모드" 버튼과 같다).
+    /// Windows Xbox 모드(전체 화면 환경)로 들어간다 (Win+F11 — Xbox 앱 오른쪽 위 "XBOX 모드" 버튼과 같다).
+    /// 이미 Xbox 모드면 Xbox 앱 홈으로. 나오는 건 "데스크톱으로"가 맡는다 (<see cref="LeaveToDesktopAsync"/>).
     /// 들어가면 홈은 Xbox 앱이 맡으므로 ClawHub는 숨어서 버튼·자동 매핑만 맡는 동반 모드가 된다.
-    /// 지금 상태(<see cref="IsCompanion"/>)만 바꾸고 저장된 시작 방식은 그대로 둔다 — Windows가 지금 Xbox 모드인지
-    /// 알려 주지 않으므로 ClawHub가 바꾼 상태를 따라간다 (안 맞으면 한 번 더 누르면 맞춰진다).
     /// </summary>
     [RelayCommand]
-    private void ToggleXboxMode()
+    private async Task EnterXboxMode()
     {
-        var entering = !IsCompanion;
+        if (XboxIntegration.IsXboxModeActive())
+        {
+            OpenXboxHome();
+            return;
+        }
         XboxIntegration.PressWinF11();
-        IsCompanion = entering;
-        if (!entering) return; // 나올 때는 Windows 바탕화면으로 돌아간다 — ClawHub가 앞에 있으면 그대로
+        var entered = await XboxIntegration.WaitXboxModeAsync(true, TimeSpan.FromSeconds(5));
+        SyncXboxMode();
+        if (!entered)
+        {
+            ShowToast("Xbox 모드로 바뀌지 않았어요 — Windows 설정 > 게임 > 전체 화면 환경을 확인해 주세요");
+            return;
+        }
         _inDesktop = false;
         _returnWindow = IntPtr.Zero;
         HideWindow();
         BeginHandoff(Handoff.XboxApp); // Xbox 앱이 앞에 있는 동안은 게임 매핑을 풀어 둔다
+    }
+
+    /// <summary>Xbox 모드 켜고 끄기 (원형 메뉴·위젯의 단축 동작): 지금 상태를 보고 들어가거나 데스크톱으로 나온다.</summary>
+    [RelayCommand]
+    private Task ToggleXboxMode() => XboxIntegration.IsXboxModeActive()
+        ? LeaveToDesktopAsync(Settings.DesktopController == DesktopController.Gamepad)
+        : EnterXboxMode();
+
+    /// <summary>지금 Windows가 Xbox 모드인지 (2초마다·전환 뒤 실제 상태로 맞춘다).</summary>
+    [ObservableProperty] private bool _isXboxModeActive;
+
+    /// <summary>
+    /// 실제 Xbox 모드 상태를 읽어 반영한다. 시작 방식이 "자동"이면 동반 모드도 따라간다
+    /// ("ClawHub 전체 화면"·"Xbox 모드 동반"으로 고정했으면 그대로).
+    /// </summary>
+    private void SyncXboxMode()
+    {
+        IsXboxModeActive = XboxIntegration.IsXboxModeActive();
+        if ((App.StartupOverride ?? Settings.StartupMode) == StartupMode.Auto) IsCompanion = IsXboxModeActive;
     }
 
     /// <summary>
@@ -853,7 +885,7 @@ public sealed partial class ShellViewModel : ObservableObject
 
     /// <summary>"데스크톱으로". Xbox 모드면 먼저 빠져나온다 — 전체 화면 환경에는 바탕화면·작업 표시줄이 없어서 숨기기만 하면 Xbox 앱 홈이 보인다.</summary>
     [RelayCommand]
-    private void GoToDesktop() => LeaveToDesktop(Settings.DesktopController == DesktopController.Gamepad);
+    private Task GoToDesktop() => LeaveToDesktopAsync(Settings.DesktopController == DesktopController.Gamepad);
 
     /// <summary>사용자가 창을 최소화함 (Win+D 등): 게임 중이면 게임으로, 아니면 데스크톱 모드로 (Xbox 모드는 그대로).</summary>
     public void OnMinimizedByUser()
@@ -864,19 +896,27 @@ public sealed partial class ShellViewModel : ObservableObject
 
     /// <summary>데스크톱으로 — 컨트롤러는 게임패드 그대로.</summary>
     [RelayCommand]
-    private void GoToDesktopGamepad() => LeaveToDesktop(gamepad: true);
+    private Task GoToDesktopGamepad() => LeaveToDesktopAsync(gamepad: true);
 
     /// <summary>Windows 설정 등 방금 띄운 창으로 넘긴다: 데스크톱 모드 컨트롤러로 숨되 Xbox 모드는 나오지 않는다.</summary>
     public void ShowOtherWindow() => EnterDesktop(Settings.DesktopController == DesktopController.Gamepad);
 
-    private void LeaveToDesktop(bool gamepad)
+    /// <summary>
+    /// Xbox 모드면 Win+F11로 나가고, Windows가 띄우는 나가기 확인 창에서 사용자가 고를 때까지 기다린다.
+    /// 실제로 나왔을 때만 데스크톱으로 — 취소하면 아무것도 바꾸지 않는다.
+    /// </summary>
+    private async Task LeaveToDesktopAsync(bool gamepad)
     {
-        var leaveXbox = IsCompanion;
-        EnterDesktop(gamepad);
-        if (!leaveXbox) return;
+        if (!XboxIntegration.IsXboxModeActive())
+        {
+            EnterDesktop(gamepad);
+            return;
+        }
         XboxIntegration.PressWinF11();
-        IsCompanion = false;
-        ShowToast("Xbox 모드를 나와 데스크톱으로 왔어요 — 홈의 'Xbox 모드' 타일로 다시 들어가요");
+        var left = await XboxIntegration.WaitXboxModeAsync(false, TimeSpan.FromSeconds(30));
+        SyncXboxMode();
+        if (!left) return; // 확인 창에서 취소 (또는 응답 없음): Xbox 모드 그대로
+        EnterDesktop(gamepad);
     }
 
     private void EnterDesktop(bool gamepad)

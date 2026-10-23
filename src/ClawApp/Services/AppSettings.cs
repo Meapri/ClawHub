@@ -110,39 +110,20 @@ public sealed class AppSettings
     public const string XboxAppId =@"shell:AppsFolder\Microsoft.GamingApp_8wekyb3d8bbwe!Microsoft.Xbox.App";
 
     /// <summary>
-    /// Auto일 때: 시작 시점에 Xbox 앱이 이미 떠 있거나, Windows가 "시작할 때 전체 화면 환경"으로 설정돼 있고 방금 로그인했으면
-    /// Xbox 모드로 본다 (로그인 직후엔 ClawHub가 Xbox 앱보다 먼저 뜰 수 있다).
+    /// Auto일 때: 지금 Xbox 모드면 동반 모드. Windows가 "시작할 때 전체 화면 환경"으로 설정돼 있고 방금 로그인했으면
+    /// 아직 들어가기 전이어도 동반 모드로 시작한다 (로그인 직후엔 ClawHub가 먼저 뜰 수 있다). 이후로는 ShellViewModel이 2초마다 맞춘다.
     /// </summary>
     public bool ResolveCompanion() => (App.StartupOverride ?? StartupMode) switch
     {
         StartupMode.Companion => true,
         StartupMode.Shell => false,
-        _ => AnyXboxAppRunning() || (StartsInXboxMode() && Environment.TickCount64 < 3 * 60_000),
+        _ => XboxIntegration.IsXboxModeActive() || (StartsInXboxMode() && Environment.TickCount64 < 3 * 60_000),
     };
 
     /// <summary>Windows 설정 > 게임 > 전체 화면 환경 > "시작할 때 들어가기".</summary>
     private static bool StartsInXboxMode() =>
         Microsoft.Win32.Registry.GetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\GamingConfiguration",
             "StartupToGamingHome", 0) is int v && v != 0;
-
-    private static bool AnyXboxAppRunning()
-    {
-        var all = System.Diagnostics.Process.GetProcesses();
-        try
-        {
-            return all.Where(p => p.ProcessName.Contains("Xbox", StringComparison.OrdinalIgnoreCase)).Any(IsXboxAppProcess);
-        }
-        finally
-        {
-            foreach (var p in all) p.Dispose(); // 프로세스 핸들(MainModule로 연 것)을 GC까지 들고 있지 않게
-        }
-    }
-
-    private static bool IsXboxAppProcess(System.Diagnostics.Process p)
-    {
-        try { return p.MainModule?.FileName.Contains(@"\Microsoft.GamingApp_", StringComparison.OrdinalIgnoreCase) == true; }
-        catch (Exception) { return false; } // 접근 불가 프로세스
-    }
 
     public static AppSettings Load() => JsonStore.Load<AppSettings>(FilePath);
 
