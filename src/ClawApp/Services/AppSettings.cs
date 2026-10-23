@@ -110,20 +110,17 @@ public sealed class AppSettings
     public const string XboxAppId =@"shell:AppsFolder\Microsoft.GamingApp_8wekyb3d8bbwe!Microsoft.Xbox.App";
 
     /// <summary>
-    /// Auto일 때: 지금 Xbox 모드면 동반 모드. Windows가 "시작할 때 전체 화면 환경"으로 설정돼 있고 방금 로그인했으면
-    /// 아직 들어가기 전이어도 동반 모드로 시작한다 (로그인 직후엔 ClawHub가 먼저 뜰 수 있다). 이후로는 ShellViewModel이 2초마다 맞춘다.
+    /// Auto일 때: Xbox 모드의 홈이 Xbox 앱이고(ClawHub를 홈 앱으로 골랐으면 ClawHub가 홈이므로 동반 모드가 아니다)
+    /// 지금 Xbox 모드면 동반 모드. "시작할 때 전체 화면 환경"이 켜져 있고 방금 로그인했으면 아직 들어가기 전이어도
+    /// 동반 모드로 시작한다 (로그인 직후엔 ClawHub가 먼저 뜰 수 있다). 이후로는 ShellViewModel이 2초마다 맞춘다.
     /// </summary>
     public bool ResolveCompanion() => (App.StartupOverride ?? StartupMode) switch
     {
         StartupMode.Companion => true,
         StartupMode.Shell => false,
-        _ => XboxIntegration.IsXboxModeActive() || (StartsInXboxMode() && Environment.TickCount64 < 3 * 60_000),
+        _ => !XboxIntegration.HomeIsClawHub
+             && (XboxIntegration.IsXboxModeActive() || (XboxIntegration.StartsInXboxMode && Environment.TickCount64 < 3 * 60_000)),
     };
-
-    /// <summary>Windows 설정 > 게임 > 전체 화면 환경 > "시작할 때 들어가기".</summary>
-    private static bool StartsInXboxMode() =>
-        Microsoft.Win32.Registry.GetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\GamingConfiguration",
-            "StartupToGamingHome", 0) is int v && v != 0;
 
     public static AppSettings Load() => JsonStore.Load<AppSettings>(FilePath);
 

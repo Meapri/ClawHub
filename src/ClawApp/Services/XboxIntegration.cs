@@ -119,6 +119,22 @@ public static class XboxIntegration
 
     private const int DwmwaCloaked = 14;
 
+    private const string GamingConfigKey = @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\GamingConfiguration";
+
+    /// <summary>Windows 설정 > 게임 > Xbox 모드 > "시작할 때 들어가기".</summary>
+    public static bool StartsInXboxMode =>
+        Microsoft.Win32.Registry.GetValue(GamingConfigKey, "StartupToGamingHome", 0) is int v && v != 0;
+
+    /// <summary>ClawHub 홈 신원 패키지의 앱 ID (packaging/home, 설치 프로그램의 "Xbox 모드 홈 앱 등록").</summary>
+    public const string HomeAppId = "ClawHub_tj9ced57bhrww!ClawHub";
+
+    /// <summary>
+    /// Windows 설정 > 게임 > Xbox 모드 > 홈 앱이 ClawHub인지. 그러면 Xbox 모드에서도 홈은 ClawHub이고
+    /// Xbox 앱으로 넘기지 않는다 (ClawHub ↔ 데스크톱만 오간다).
+    /// </summary>
+    public static bool HomeIsClawHub =>
+        string.Equals(Microsoft.Win32.Registry.GetValue(GamingConfigKey, "GamingHomeApp", null) as string, HomeAppId, StringComparison.OrdinalIgnoreCase);
+
     // ── 지금 앞에 있는 앱 판별 ──────────────────────────────
 
     public readonly record struct Owner(string Name, string? Path);

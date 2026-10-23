@@ -62,7 +62,7 @@ public sealed partial class SettingsViewModel : ObservableObject, INavPage
         _shell = shell;
         shell.PropertyChanged += (_, e) =>
         {
-            if (e.PropertyName is nameof(ShellViewModel.IsCompanion) or nameof(ShellViewModel.IsXboxModeActive))
+            if (e.PropertyName is nameof(ShellViewModel.IsCompanion) or nameof(ShellViewModel.IsXboxModeActive) or nameof(ShellViewModel.HomeIsClawHub))
             {
                 OnPropertyChanged(nameof(CompanionText));
                 OnPropertyChanged(nameof(CanEnterXboxMode));
@@ -181,6 +181,7 @@ public sealed partial class SettingsViewModel : ObservableObject, INavPage
 
     public string CompanionText => (_shell.IsXboxModeActive, _shell.IsCompanion) switch
     {
+        (true, false) when _shell.HomeIsClawHub => "지금: Xbox 모드 — 홈은 ClawHub (Windows에서 ClawHub를 Xbox 모드 홈 앱으로 골랐어요). 나가려면 '데스크톱으로'",
         (true, true) => "지금: Xbox 모드 — 홈 화면은 Xbox 앱, ClawHub는 버튼·자동 매핑 담당. 나가려면 '데스크톱으로'",
         (true, false) => "지금: Xbox 모드 (시작 방식이 'ClawHub 전체 화면'이라 ClawHub가 홈을 맡아요). 나가려면 '데스크톱으로'",
         (false, true) => "지금: 데스크톱 (시작 방식이 'Xbox 모드 동반'이라 홈 버튼은 Xbox 앱을 열어요)",

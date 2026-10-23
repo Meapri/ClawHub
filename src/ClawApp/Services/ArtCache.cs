@@ -123,6 +123,7 @@ public static class ArtCache
 
     private static ImageSource? ExtractIcon(string exe)
     {
+        if (Path.GetExtension(exe).ToLowerInvariant() is ".png" or ".jpg" or ".jpeg") return Decode(exe, 96); // 패키지 앱 로고
         try
         {
             using var icon = System.Drawing.Icon.ExtractAssociatedIcon(exe);

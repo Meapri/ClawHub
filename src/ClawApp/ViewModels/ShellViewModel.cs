@@ -363,15 +363,17 @@ public sealed partial class ShellViewModel : ObservableObject
 
     /// <summary>
     /// Windows Xbox 모드(전체 화면 환경)로 들어간다 (Win+F11 — Xbox 앱 오른쪽 위 "XBOX 모드" 버튼과 같다).
-    /// 이미 Xbox 모드면 Xbox 앱 홈으로. 나오는 건 "데스크톱으로"가 맡는다 (<see cref="LeaveToDesktopAsync"/>).
-    /// 들어가면 홈은 Xbox 앱이 맡으므로 ClawHub는 숨어서 버튼·자동 매핑만 맡는 동반 모드가 된다.
+    /// 나오는 건 "데스크톱으로"가 맡는다 (<see cref="LeaveToDesktopAsync"/>).
+    /// Xbox 모드 홈 앱이 ClawHub면 ClawHub가 그대로 홈이다 (ClawHub ↔ 데스크톱만 오간다).
+    /// 홈이 Xbox 앱이면 ClawHub는 숨어서 버튼·자동 매핑만 맡는 동반 모드가 되고, 이미 Xbox 모드면 Xbox 앱 홈을 연다.
     /// </summary>
     [RelayCommand]
     private async Task EnterXboxMode()
     {
         if (XboxIntegration.IsXboxModeActive())
         {
-            OpenXboxHome();
+            if (XboxIntegration.HomeIsClawHub) GoHome();
+            else OpenXboxHome();
             return;
         }
         XboxIntegration.PressWinF11();
@@ -379,7 +381,12 @@ public sealed partial class ShellViewModel : ObservableObject
         SyncXboxMode();
         if (!entered)
         {
-            ShowToast("Xbox 모드로 바뀌지 않았어요 — Windows 설정 > 게임 > 전체 화면 환경을 확인해 주세요");
+            ShowToast("Xbox 모드로 바뀌지 않았어요 — Windows 설정 > 게임 > Xbox 모드를 확인해 주세요");
+            return;
+        }
+        if (HomeIsClawHub)
+        {
+            GoHome(); // Windows가 홈 앱(ClawHub)을 앞으로 올린다 — 이미 떠 있는 이 창이 홈
             return;
         }
         _inDesktop = false;
@@ -397,6 +404,9 @@ public sealed partial class ShellViewModel : ObservableObject
     /// <summary>지금 Windows가 Xbox 모드인지 (2초마다·전환 뒤 실제 상태로 맞춘다).</summary>
     [ObservableProperty] private bool _isXboxModeActive;
 
+    /// <summary>Windows Xbox 모드의 홈 앱이 ClawHub인지 (Windows 설정 > 게임 > Xbox 모드 > 홈 앱).</summary>
+    [ObservableProperty] private bool _homeIsClawHub = XboxIntegration.HomeIsClawHub;
+
     /// <summary>
     /// 실제 Xbox 모드 상태를 읽어 반영한다. 시작 방식이 "자동"이면 동반 모드도 따라간다
     /// ("ClawHub 전체 화면"·"Xbox 모드 동반"으로 고정했으면 그대로).
@@ -404,7 +414,9 @@ public sealed partial class ShellViewModel : ObservableObject
     private void SyncXboxMode()
     {
         IsXboxModeActive = XboxIntegration.IsXboxModeActive();
-        if ((App.StartupOverride ?? Settings.StartupMode) == StartupMode.Auto) IsCompanion = IsXboxModeActive;
+        HomeIsClawHub = XboxIntegration.HomeIsClawHub;
+        // Xbox 모드 홈이 ClawHub면 ClawHub가 홈 (Xbox 앱으로 넘기지 않음)
+        if ((App.StartupOverride ?? Settings.StartupMode) == StartupMode.Auto) IsCompanion = IsXboxModeActive && !HomeIsClawHub;
     }
 
     /// <summary>
