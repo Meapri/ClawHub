@@ -395,6 +395,25 @@ public sealed partial class ShellViewModel : ObservableObject
         BeginHandoff(Handoff.XboxApp); // Xbox 앱이 앞에 있는 동안은 게임 매핑을 풀어 둔다
     }
 
+    /// <summary>
+    /// ClawHub를 띄운 방식 바꾸기 (홈 타일·상단 바): 창 모드 → Xbox 모드, Xbox 모드 → 창 모드.
+    /// 창 모드로 갈 때는 Xbox 모드만 나가고 ClawHub는 앞에 그대로 둔다 (데스크톱을 거치지 않는다).
+    /// 나가기 확인 창에서 취소하면 아무것도 바꾸지 않는다.
+    /// </summary>
+    [RelayCommand]
+    private async Task SwitchShellMode()
+    {
+        if (!XboxIntegration.IsXboxModeActive())
+        {
+            await EnterXboxMode();
+            return;
+        }
+        XboxIntegration.PressWinF11();
+        var left = await XboxIntegration.WaitXboxModeAsync(false, TimeSpan.FromSeconds(30));
+        SyncXboxMode();
+        if (left) ShowFromOutside(); // 작업 표시줄이 돌아와도 ClawHub 창이 앞에
+    }
+
     /// <summary>Xbox 모드 켜고 끄기 (원형 메뉴·위젯의 단축 동작): 지금 상태를 보고 들어가거나 데스크톱으로 나온다.</summary>
     [RelayCommand]
     private Task ToggleXboxMode() => XboxIntegration.IsXboxModeActive()
@@ -657,6 +676,9 @@ public sealed partial class ShellViewModel : ObservableObject
 
         if (!IsWindowVisible)
         {
+            // Xbox 모드에서 "데스크톱으로" 나왔던 거면 Xbox 모드로 되돌린다 (창 모드에서 나왔으면 창 모드 그대로)
+            var backToXbox = _inDesktop && _desktopFromXboxMode && XboxIntegration.HomeIsClawHub && !XboxIntegration.IsXboxModeActive();
+            _desktopFromXboxMode = false;
             _returnWindow = SystemControls.ForegroundWindow();
             CaptureForegroundApp(_returnWindow);
             _inDesktop = false;
@@ -664,6 +686,7 @@ public sealed partial class ShellViewModel : ObservableObject
             IsShellVisible = true;  // 창을 띄우기 전에 셸 상태로 (백드롭이 Mica로 시작)
             IsWindowVisible = true; // 여기서 창이 앞으로 (MainWindow.ApplyWindowVisibility)
             GoHome();               // 매핑 해제 포함
+            if (backToXbox) _ = ReturnToXboxModeAsync();
             return;
         }
 
@@ -921,6 +944,7 @@ public sealed partial class ShellViewModel : ObservableObject
     {
         if (!XboxIntegration.IsXboxModeActive())
         {
+            _desktopFromXboxMode = false;
             EnterDesktop(gamepad);
             return;
         }
@@ -928,7 +952,20 @@ public sealed partial class ShellViewModel : ObservableObject
         var left = await XboxIntegration.WaitXboxModeAsync(false, TimeSpan.FromSeconds(30));
         SyncXboxMode();
         if (!left) return; // 확인 창에서 취소 (또는 응답 없음): Xbox 모드 그대로
+        _desktopFromXboxMode = true;
         EnterDesktop(gamepad);
+    }
+
+    /// <summary>"데스크톱으로"를 Xbox 모드에서 눌렀는지 — 왼쪽 버튼으로 돌아올 때 그 모드(Xbox 모드)로 되돌린다.</summary>
+    private bool _desktopFromXboxMode;
+
+    /// <summary>데스크톱에서 돌아올 때 Xbox 모드로 다시 들어간다 (ClawHub 창은 이미 앞에 띄워 둔 상태).</summary>
+    private async Task ReturnToXboxModeAsync()
+    {
+        XboxIntegration.PressWinF11();
+        var entered = await XboxIntegration.WaitXboxModeAsync(true, TimeSpan.FromSeconds(5));
+        SyncXboxMode();
+        if (!entered) ShowToast("Xbox 모드로 돌아가지 못했어요 — 상단 바의 '창 모드'를 누르면 다시 시도해요");
     }
 
     private void EnterDesktop(bool gamepad)

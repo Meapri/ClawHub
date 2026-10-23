@@ -224,6 +224,13 @@
                             <TextBlock Text="{Binding BatteryText}" Style="{StaticResource StatusText}" Margin="6,0,0,0"/>
                         </StackPanel>
                     </Button>
+                    <!-- ClawHub를 띄운 방식 (Xbox 모드 / 창 모드). 누르면 서로 바꾼다 -->
+                    <Button Style="{StaticResource StatusButton}" Command="{Binding SwitchShellModeCommand}" ToolTip="{Binding ShellModeTip}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{Binding ShellModeIcon}" Style="{StaticResource StatusIcon}"/>
+                            <TextBlock Text="{Binding ShellModeText}" Style="{StaticResource StatusText}" Margin="6,0,0,0"/>
+                        </StackPanel>
+                    </Button>
                     <!-- 구분선 뒤 시계: 같은 18px, 굵기만 다르게 -->
                     <Border Width="1" Height="24" Background="{DynamicResource StrokeStrong}" Opacity="0.5" Margin="8,0" VerticalAlignment="Center"/>
                     <Button Style="{StaticResource StatusButton}" Command="{Binding OpenStatusCommand}" CommandParameter="clock" ToolTip="날짜·시간">

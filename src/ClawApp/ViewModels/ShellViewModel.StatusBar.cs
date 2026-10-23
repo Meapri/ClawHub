@@ -41,6 +41,18 @@ public sealed partial class ShellViewModel
 
     public bool ControllerConnected => Status?.ControllerConnected == true;
 
+    /// <summary>지금 ClawHub를 띄운 방식: Xbox 모드(전체 화면 환경) 또는 일반 창. 누르면 서로 바꾼다.</summary>
+    public string ShellModeIcon => Icon(IsXboxModeActive ? "MonitorPlay" : "AppWindow");
+    public string ShellModeText => IsXboxModeActive ? "Xbox 모드" : "창 모드";
+    public string ShellModeTip => IsXboxModeActive ? "Xbox 모드 — 누르면 창 모드로" : "창 모드 — 누르면 Xbox 모드로";
+
+    partial void OnIsXboxModeActiveChanged(bool value)
+    {
+        OnPropertyChanged(nameof(ShellModeIcon));
+        OnPropertyChanged(nameof(ShellModeText));
+        OnPropertyChanged(nameof(ShellModeTip));
+    }
+
     partial void OnIsWindowVisibleChanged(bool value)
     {
         if (value) _ = RefreshStatusBarAsync(); // 게임에서 돌아오면 바로 최신 값

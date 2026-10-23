@@ -21,6 +21,13 @@ public sealed partial class StartTileViewModel : ObservableObject, IStartCell
     {
         _shell = shell;
         Def = def;
+        if (def.Kind == StartTileKind.Action && def.Ref == "xboxmode") // 지금 모드에 따라 "Xbox 모드로"/"창 모드로"
+            shell.PropertyChanged += (_, e) =>
+            {
+                if (e.PropertyName != nameof(ShellViewModel.IsXboxModeActive)) return;
+                OnPropertyChanged(nameof(Title));
+                OnPropertyChanged(nameof(Glyph));
+            };
     }
 
     public StartTileDef Def { get; }
@@ -40,6 +47,7 @@ public sealed partial class StartTileViewModel : ObservableObject, IStartCell
     public string Title => Kind switch
     {
         StartTileKind.Folder => Def.Title ?? "폴더",
+        StartTileKind.Action when Def.Ref == "xboxmode" => _shell.IsXboxModeActive ? "창 모드로" : "Xbox 모드로",
         StartTileKind.Action => Action?.Label ?? "",
         StartTileKind.Continue => Game?.Title ?? "이어서 플레이",
         _ => Game?.Title ?? "",
@@ -49,6 +57,7 @@ public sealed partial class StartTileViewModel : ObservableObject, IStartCell
     public string Glyph => Kind switch
     {
         StartTileKind.Folder => Res("Icon.Folder"),
+        StartTileKind.Action when Def.Ref == "xboxmode" => Res(_shell.IsXboxModeActive ? "Icon.AppWindow" : "Icon.MonitorPlay"),
         StartTileKind.Action => Res("Icon." + (Action?.Icon ?? "Square")),
         StartTileKind.Continue => Res("Icon.Play"),
         _ => "",
